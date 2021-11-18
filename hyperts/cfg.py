@@ -3,7 +3,7 @@ from hypernets.tabular.sklearn_ex import DatetimeEncoder
 
 
 @configure()
-class HyperGBMCfg(Configurable):
+class HyperTSCfg(Configurable):
     # numeric
     numeric_pipeline_mode = \
         Enum(['simple', 'complex'], default_value='complex',
