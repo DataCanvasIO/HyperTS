@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.7, 3.8] # feature-tools only update to 0.23.3 on python3.6 and the latest is 1.2.0(2021/11)
         exclude:
           - os: windows-latest
             python-version: 3.6
