@@ -1,7 +1,10 @@
 import numpy as np
-from fbprophet import Prophet
-from sktime.classification.interval_based import TimeSeriesForestClassifier
+try:
+    from prophet import Prophet
+except:
+    from fbprophet import Prophet
 from statsmodels.tsa.vector_ar.var_model import VAR
+from sktime.classification.interval_based import TimeSeriesForestClassifier
 
 from hypernets.core.search_space import ModuleSpace
 from hypernets.utils import logging
