@@ -1,4 +1,8 @@
 import numpy as np
+try:
+    from prophet import Prophet
+except:
+    from fbprophet import Prophet
 from prophet import Prophet
 from sktime.classification.interval_based import TimeSeriesForestClassifier
 from statsmodels.tsa.vector_ar.var_model import VAR
