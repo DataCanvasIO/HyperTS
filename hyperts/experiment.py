@@ -1,23 +1,15 @@
 import copy
-import math
-import time
-from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
-from hypernets.tabular.ensemble import GreedyEnsemble
-
-from hypernets.tabular.data_cleaner import DataCleaner
-from sklearn.base import BaseEstimator
-from sklearn.metrics import get_scorer
-from sklearn.pipeline import Pipeline
 
 from hypernets.core import set_random_state
-from hypernets.experiment import Experiment, StepNames
-from hypernets.tabular import get_tool_box
-from hypernets.tabular.cache import cache
-from hypernets.utils import logging, const, df_utils
+from hypernets.experiment import StepNames
 from hypernets.experiment.compete import SteppedExperiment, ExperimentStep, EnsembleStep, FinalTrainStep
+from hypernets.tabular import get_tool_box
+from hypernets.tabular.data_cleaner import DataCleaner
+from hypernets.utils import logging
+from hyperts.hyper_ts import HyperTS
 
 logger = logging.get_logger(__name__)
 
@@ -44,7 +36,7 @@ class TSDataPreprocessStep(ExperimentStep):
             excluded_cols = list(set(X_train.columns.tolist()) -set(self.covariate_cols))
             df_exclude = X_train[excluded_cols]
             df_covariate = self.covariate_data_cleaner.fit_transform(X_train[self.covariate_cols])
-            # todo check shape
+            # TODO: check shape
             X_train_cleaned_covariate = pd.concat([df_exclude, df_covariate])
             X_train = X_train_cleaned_covariate
         return hyper_model, X_train, y_train, X_test, X_eval, y_eval
@@ -53,12 +45,12 @@ class TSDataPreprocessStep(ExperimentStep):
         return {}
 
     def transform(self, X, y=None, **kwargs):
-        # 1. transform covariate features
+        # transform covariate features
         X_transform = self.covariate_data_cleaner.fit_transform(X)
-        return X_transform
+        return X_transform[0]  # selected X
 
     def get_fitted_params(self):
-        return {}  # todo
+        return {}  # TODO:
 
 
 class TSSpaceSearchStep(ExperimentStep):
@@ -116,27 +108,29 @@ class TSEnsembleStep(EnsembleStep):
         return tb.greedy_ensemble(ensemble_task, estimators, scoring=self.scorer, ensemble_size=self.ensemble_size)
 
 
-
 class TSExperiment(SteppedExperiment):
 
-    def __init__(self, hyper_model, X_train, y_train, time_series_col, covariate_cols, task='forecast',
-                 covariate_data_clean_args=None, X_eval=None, y_eval=None, scorer='neg_mean_squared_error',
-                 log_level=None, random_state=None, ensemble_size=3, **kwargs):
+    def __init__(self, hyper_model, X_train, y_train, time_series_col=None, covariate_cols=None,
+                 covariate_data_clean_args=None, X_eval=None, y_eval=None, log_level=None,
+                 random_state=None, ensemble_size=3, **kwargs):
 
         if random_state is None:
             random_state = np.random.randint(0, 65535)
         set_random_state(random_state)
 
+        task = hyper_model.task
+
         # todo: check task
         # todo: check scorer
 
         steps = []
-        # experiment, name,  = None, covariate_data_clean_args = None
 
         # data clean
-        steps.append(TSDataPreprocessStep(self,
-                                          StepNames.DATA_CLEAN,
-                                          covariate_data_clean_args=covariate_data_clean_args))
+        # Fix: `df.nunique(dropna=True)` in _get_df_uniques cause
+        # `TypeError: unhashable type: 'Series'` in case of nest pd.Series
+        if task not in [HyperTS.TASK_BINARY_CLASSIFICATION]:
+            steps.append(TSDataPreprocessStep(self, StepNames.DATA_CLEAN,
+                                              covariate_data_clean_args=covariate_data_clean_args))
 
         # search step
         steps.append(TSSpaceSearchStep(self, StepNames.SPACE_SEARCHING))
@@ -155,8 +149,7 @@ class TSExperiment(SteppedExperiment):
 
         self.run_kwargs = kwargs
         super(TSExperiment, self).__init__(steps, hyper_model, X_train, y_train, X_eval=X_eval, y_eval=y_eval,
-                                                eval_size=0.3, task=task, id=id,
-                                                random_state=random_state)
+                                           eval_size=0.3, task=task, id=id, random_state=random_state)
 
     def run(self, **kwargs):
         run_kwargs = {**self.run_kwargs, **kwargs}

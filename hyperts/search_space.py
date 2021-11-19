@@ -1,24 +1,20 @@
 # -*- coding:utf-8 -*-
 
-from hyperts.hyper_ts import TSEstimatorMS, ProphetWrapper, VARWrapper
 from hypernets.core.ops import HyperInput
 from hypernets.core.search_space import HyperSpace, Choice
-from hypernets.utils import logging
-
-logger = logging.get_logger(__name__)
+from hyperts.estimators import TSEstimatorMS, ProphetWrapper, VARWrapper, SKTimeWrapper
 
 
-def ts_stats_search_space():
+def search_space_univariate_forecast():
     space = HyperSpace()
     with space.as_default():
         input = HyperInput(name='input1')
-        TSEstimatorMS(ProphetWrapper, interval_width=Choice([0.5, 0.6, 0.7, 0.8]), seasonality_mode=Choice(['additive', 'multiplicative']))(input)
+        TSEstimatorMS(ProphetWrapper, interval_width=Choice([0.5, 0.6]), seasonality_mode=Choice(['additive', 'multiplicative']))(input)
         space.set_inputs(input)
     return space
 
 
-#
-def ts_multivariate_stats_search_space():
+def search_space_multivariate_forecast():
     space = HyperSpace()
     with space.as_default():
         input = HyperInput(name='input1')
@@ -26,7 +22,15 @@ def ts_multivariate_stats_search_space():
         space.set_inputs(input)
     return space
 
-# todo define a deepts search space
+
+def space_classification_classification():
+    space = HyperSpace()
+    with space.as_default():
+        input = HyperInput(name='input1')
+        TSEstimatorMS(SKTimeWrapper, n_estimators=Choice([50, 100, 150]))(input)
+        space.set_inputs(input)
+    return space
 
 
+# TODO:  define others search space
 
