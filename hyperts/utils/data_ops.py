@@ -4,17 +4,17 @@ import pandas as pd
 import datetime
 import chinese_calendar
 from sklearn.preprocessing import OrdinalEncoder
-
+from sklearn.model_selection import train_test_split as sklearn_tts
 
 class offsets_pool:
     neighbor = [-1, 1]
     second = [-1, 1, -60 * 4, -60 * 3, -60 * 2, -60 * 1, 60 * 1, 60 * 2, 60 * 3, 60 * 4]
     minute = [-1, 1, -60 * 4, -60 * 3, -60 * 2, -60 * 1, 60 * 1, 60 * 2, 60 * 3, 60 * 4]
-    hour = [-1, 1, -24 * 4, -24 * 3, -24 * 2, -24 * 1, 24 * 1, 24 * 2, 24 * 3, 24 * 4,
-            -168 * 4, -168 * 3, -168 * 2, -168 * 1, 168 * 1, 168 * 2, 168 * 3, 168 * 4]
-    day = [-1, 1, -30 * 4, -30 * 3, -30 * 2, -30 * 1, 30 * 1, 30 * 2, 30 * 3, 30 * 4]
-    month = [-1, 1, -12 * 4, -12 * 3, -12 * 2, -12 * 1, 12 * 1, 12 * 2, 12 * 3, 12 * 4]
-    year = [-1, 1]
+    hour   = [-1, 1, -24 * 4, -24 * 3, -24 * 2, -24 * 1, 24 * 1, 24 * 2, 24 * 3, 24 * 4,
+             -168 * 4, -168 * 3, -168 * 2, -168 * 1, 168 * 1, 168 * 2, 168 * 3, 168 * 4]
+    day    = [-1, 1, -30 * 4, -30 * 3, -30 * 2, -30 * 1, 30 * 1, 30 * 2, 30 * 3, 30 * 4]
+    month  = [-1, 1, -12 * 4, -12 * 3, -12 * 2, -12 * 1, 12 * 1, 12 * 2, 12 * 3, 12 * 4]
+    year   = [-1, 1]
 
 
 def reduce_memory_usage(df: pd.DataFrame, verbose=True):
@@ -351,3 +351,58 @@ def from_nested_df_to_3d_array(data: pd.DataFrame):
     else:
         raise ValueError
     return res.transpose(0, 2, 1)
+
+
+def random_train_test_split(*arrays,
+                     test_size=None,
+                     train_size=None,
+                     random_state=None,
+                     shuffle=True,
+                     stratify=None):
+    """Split arrays or matrices into random train and test subsets. This
+    is a wrapper of scikit-learn's ``train_test_split`` that has shuffle.
+    """
+    return sklearn_tts(*arrays,
+                test_size=test_size,
+                train_size=train_size,
+                random_state=random_state,
+                shuffle=shuffle,
+                stratify=stratify)
+
+
+def temporal_train_test_split(*arrays,
+                     test_size=None,
+                     train_size=None,
+                     test_horizion=None):
+    """Split arrays or matrices into sequential train and test subsets.This
+    is a wrapper of scikit-learn's ``train_test_split`` that does not shuffle.
+
+    Parameters
+    ----------
+    *arrays : sequence of indexables with same length / shape[0] Allowed inputs
+    are lists, numpy arrays, scipy-sparse matrices or pandas dataframes.
+    test_size : float, int or None, optional (default=None)
+        If float, should be between 0.0 and 1.0 and represent the proportion
+        of the dataset to include in the test split. If int, represents the
+        absolute number of test samples. If None, the value is set to the
+        complement of the train size. If ``train_size`` is also None, it will
+        be set to 0.25.
+    train_size : float, int, or None, (default=None)
+        If float, should be between 0.0 and 1.0 and represent the
+        proportion of the dataset to include in the train split. If
+        int, represents the absolute number of train samples. If None,
+        the value is automatically set to the complement of the test size.
+    test_horizion: int or None, (default=None)
+        If int, represents the forecast horizon length.
+    Returns
+    -------
+    splitting : list, length=2 * len(arrays)
+        List containing train-test split of inputs.
+    """
+    test_size = test_horizion if test_horizion != None else test_size
+    return sklearn_tts(
+        *arrays,
+        test_size=test_size,
+        train_size=train_size,
+        shuffle=False,
+        stratify=None)
