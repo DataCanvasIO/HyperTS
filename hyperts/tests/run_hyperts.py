@@ -6,7 +6,8 @@ from hypernets.core.search_space import HyperSpace, Choice
 from hypernets.core.searcher import OptimizeDirection
 from hypernets.searchers.random_searcher import RandomSearcher
 from hypernets.utils import fs
-from hyperts.hyper_ts import HyperTS, ProphetWrapper, TSEstimatorMS
+from hyperts.hyper_ts import HyperTS
+from hyperts.estimators import ProphetWrapper, TSEstimatorMS
 
 logger = logging.get_logger(__name__)
 
