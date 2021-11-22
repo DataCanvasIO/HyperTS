@@ -10,14 +10,15 @@ from hyperts.experiment import TSExperiment
 from hyperts.hyper_ts import HyperTS
 from hyperts.search_space import search_space_univariate_forecast_generator, search_space_multivariate_forecast, \
     space_classification_classification
-from .datasets import *
 
+from .datasets import *
+from hyperts.utils.data_ops import  random_train_test_split, temporal_train_test_split
 
 class Test_Task():
 
     def test_univariate_forecast(self):
         X, y = get_random_univariate_forecast_dataset()
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+        X_train, X_test, y_train, y_test = temporal_train_test_split(X,  y,  test_horizion=128)
 
         rs = RandomSearcher(search_space_univariate_forecast_generator(covariate=['id']), optimize_direction=OptimizeDirection.Minimize)
         hyper_model = HyperTS(rs, task='univariate-forecast', reward_metric='neg_mean_squared_error', callbacks=[SummaryCallback()])
@@ -31,7 +32,7 @@ class Test_Task():
     def test_multivariate_forecast(self):
 
         X, y = get_random_multivariate_forecast_dataset()
-        X_train, X_test, y_train, y_test, = train_test_split(X, y, test_size=0.2, shuffle=False)
+        X_train, X_test, y_train, y_test, = temporal_train_test_split(X,  y,  test_horizion=128)
 
         rs = RandomSearcher(search_space_multivariate_forecast, optimize_direction=OptimizeDirection.Minimize)
         hyper_model = HyperTS(rs, task='multivariate-forecast', reward_metric='neg_mean_squared_error')
@@ -45,7 +46,7 @@ class Test_Task():
 
     def test_univariate_classification(self):
         X, y = load_arrow_head(return_X_y=True)
-        X_train, X_test, y_train, y_test = train_test_split(X, y)
+        X_train, X_test, y_train, y_test = random_train_test_split(X,  y,  test_size=0.2)
 
         rs = RandomSearcher(space_classification_classification, optimize_direction=OptimizeDirection.Maximize)
         hyper_model = HyperTS(rs, task='binary-classification', reward_metric='accuracy')
