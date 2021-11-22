@@ -6,11 +6,14 @@ import pickle
 
 import numpy as np
 from sklearn import metrics as sk_metrics
+from sklearn import pipeline as sk_pipeline
 
+from hypergbm.pipeline import ComposeTransformer
 from hypernets.dispatchers.in_process_dispatcher import InProcessDispatcher
 from hypernets.model.estimator import Estimator
 from hypernets.model.hyper_model import HyperModel
-from hypernets.utils import logging, fs
+from hypernets.utils import fs
+from hypernets.utils import logging
 
 logger = logging.get_logger(__name__)
 
@@ -39,10 +42,34 @@ class HyperTSEstimator(Estimator):
         assert len(outputs) == 1, 'The space can only contains 1 output.'
 
         self.model = outputs[0].build_estimator()
-
         # logger.debug(f'data_pipeline:{self.data_pipeline}')
-        # todo self.pipeline_signature = self.get_pipeline_signature(self.data_pipeline)
         # self.model = ProphetWrapper(**sampled_estimator_params)
+        pipeline_module = space.get_inputs(outputs[0])
+        assert len(pipeline_module) == 1, 'The `HyperEstimator` can only contains 1 input.'
+        assert isinstance(pipeline_module[0],
+                          ComposeTransformer), 'The upstream node of `HyperEstimator` must be `ComposeTransformer`.'
+        # next, (name, p) = pipeline_module[0].compose()
+        self.data_pipeline = self.build_pipeline(space, pipeline_module[0])
+        # print(self.data_pipeline)
+        # todo self.pipeline_signature = self.get_pipeline_signature(self.data_pipeline)
+
+    def build_pipeline(self, space, last_transformer):
+        transformers = []
+        while True:
+            next, (name, p) = last_transformer.compose()
+            transformers.insert(0, (name, p))
+            inputs = space.get_inputs(next)
+            if inputs == space.get_inputs():
+                break
+            assert len(inputs) == 1, 'The `ComposeTransformer` can only contains 1 input.'
+            assert isinstance(inputs[0], ComposeTransformer), 'The upstream node of `ComposeTransformer` must be `ComposeTransformer`.'
+            last_transformer = inputs[0]
+        assert len(transformers) > 0
+        if len(transformers) == 1:
+            return transformers[0][1]
+        else:
+            pipeline = sk_pipeline.Pipeline(steps=transformers)
+            return pipeline
 
     def summary(self):
         return "HyperTSEstimator"
@@ -55,10 +82,12 @@ class HyperTSEstimator(Estimator):
         return None
 
     def fit(self, X, y, pos_label=None, verbose=0, **kwargs):
-        self.model.fit(X, y)
+        X_transformed = self.data_pipeline.fit_transform(X)
+        self.model.fit(X_transformed, y)
 
     def predict(self, X, verbose=0, **kwargs):
-        return self.model.predict(X)
+        X_transformed = self.data_pipeline.transform(X)
+        return self.model.predict(X_transformed)
 
     def predict_proba(self, X, verbose=0, **kwargs):
         return None

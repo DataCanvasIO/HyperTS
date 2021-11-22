@@ -8,7 +8,7 @@ from hypernets.core.searcher import OptimizeDirection
 from hypernets.searchers.random_searcher import RandomSearcher
 from hyperts.experiment import TSExperiment
 from hyperts.hyper_ts import HyperTS
-from hyperts.search_space import search_space_univariate_forecast, search_space_multivariate_forecast, \
+from hyperts.search_space import search_space_univariate_forecast_generator, search_space_multivariate_forecast, \
     space_classification_classification
 from .datasets import *
 
@@ -19,7 +19,7 @@ class Test_Task():
         X, y = get_random_univariate_forecast_dataset()
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
 
-        rs = RandomSearcher(search_space_univariate_forecast, optimize_direction=OptimizeDirection.Minimize)
+        rs = RandomSearcher(search_space_univariate_forecast_generator(covariate=['id']), optimize_direction=OptimizeDirection.Minimize)
         hyper_model = HyperTS(rs, task='univariate-forecast', reward_metric='neg_mean_squared_error', callbacks=[SummaryCallback()])
 
         exp = TSExperiment(hyper_model, X_train, y_train, time_series_col='ds', X_eval=X_test, y_eval=y_test)

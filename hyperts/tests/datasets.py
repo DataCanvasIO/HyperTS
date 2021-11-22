@@ -32,6 +32,14 @@ def get_random_multivariate_forecast_dataset():
 
 
 def get_random_univariate_forecast_dataset():
-    X = pd.DataFrame({'ds': pd.date_range("20130101", periods=100)})
+
+    def get_num(num):
+        return 0 if num < 0.5 else 1
+
+    id_data = [get_num(random()) for i in range(100)]
+    id_data[10] = None
+
+    X = pd.DataFrame({'ds': pd.date_range("20130101", periods=100), 'id': id_data})
+
     y = pd.DataFrame({'value':  np.random.rand(1, 100)[0].tolist()})
     return X, y
