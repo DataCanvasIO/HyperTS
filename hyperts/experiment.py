@@ -33,12 +33,15 @@ class TSDataPreprocessStep(ExperimentStep):
         super().fit_transform(hyper_model, X_train, y_train, X_test=X_test, X_eval=X_eval, y_eval=y_eval)
         # 1. process covariate features
         if self.covariate_cols is not None and len(self.covariate_cols) > 0:
-            excluded_cols = list(set(X_train.columns.tolist()) -set(self.covariate_cols))
+            excluded_cols = list(set(X_train.columns.tolist()) - set(self.covariate_cols))
             df_exclude = X_train[excluded_cols]
             df_covariate = self.covariate_data_cleaner.fit_transform(X_train[self.covariate_cols])
             # TODO: check shape
             X_train_cleaned_covariate = pd.concat([df_exclude, df_covariate])
             X_train = X_train_cleaned_covariate
+
+        # 2. target plus covariable features process
+
         return hyper_model, X_train, y_train, X_test, X_eval, y_eval
 
     def get_params(self, deep=True):
@@ -110,7 +113,7 @@ class TSEnsembleStep(EnsembleStep):
 
 class TSExperiment(SteppedExperiment):
 
-    def __init__(self, hyper_model, X_train, y_train, time_series_col=None, covariate_cols=None,
+    def __init__(self, hyper_model, X_train, y_train, timestamp_col=None, covariate_cols=None,
                  covariate_data_clean_args=None, X_eval=None, y_eval=None, log_level=None,
                  random_state=None, ensemble_size=3, **kwargs):
 
@@ -157,7 +160,7 @@ class TSExperiment(SteppedExperiment):
 
     def _repr_html_(self):
         try:
-            from hn_widget.widget import ExperimentSummary
+            from hypernets.hn_widget.hn_widget.widget import ExperimentSummary
             from IPython.display import display
             display(ExperimentSummary(self))
         except:

@@ -3,9 +3,9 @@ try:
     from prophet import Prophet
 except:
     from fbprophet import Prophet
-from prophet import Prophet
-from sktime.classification.interval_based import TimeSeriesForestClassifier
 from statsmodels.tsa.vector_ar.var_model import VAR
+from sktime.classification.interval_based import TimeSeriesForestClassifier
+
 
 from hypernets.core.search_space import ModuleSpace
 from hypernets.utils import logging
@@ -63,7 +63,6 @@ class VARWrapper(EstimatorWrapper):
         self.model = model.fit(**self.init_kwargs)
 
     def predict(self, X):
-
         last_date = X['ds'].tail(1).to_list()[0].to_pydatetime()
         steps = int((last_date - self._end_date).total_seconds()/self._freq)
         predict_result = self.model.forecast(self.model.y, steps=steps)

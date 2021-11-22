@@ -1,3 +1,5 @@
+import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 
 from hypernets.core.callbacks import *
@@ -22,17 +24,17 @@ def search_space_one_trial():
 
 
 rs = RandomSearcher(search_space_one_trial, optimize_direction=OptimizeDirection.Maximize)
-hk = HyperTS(rs, reward_metric='neg_mean_squared_error')
+ht = HyperTS(rs, reward_metric='neg_mean_squared_error')
 
 
-X = pd.DataFrame({'ds': pd.date_range("20130101", periods=100)})
+X = pd.DataFrame({'ds': pd.date_range("2013-01-01", periods=100, freq='D')})
 y = pd.DataFrame({'value':  np.random.rand(1, 100)[0].tolist()})
 
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
 
-hk.search(X_train, y_train, X_test, y_test, max_trials=3)
-best_trial = hk.get_best_trial()
+ht.search(X_train, y_train, X_test, y_test, max_trials=1)
+best_trial = ht.get_best_trial()
 print(f'best_train:{best_trial}')
 assert best_trial
 
