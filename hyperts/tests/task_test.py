@@ -31,7 +31,7 @@ class Test_Task():
     def test_multivariate_forecast(self):
 
         X, y = get_random_multivariate_forecast_dataset()
-        X_train, X_test, y_train, y_test, = temporal_train_test_split(X, y, test_horizion=128)
+        X_train, X_test, y_train, y_test = temporal_train_test_split(X, y, test_horizion=128)
 
         rs = RandomSearcher(search_space_multivariate_forecast, optimize_direction=OptimizeDirection.Minimize)
         hyper_model = HyperTS(rs, task='multivariate-forecast', reward_metric='neg_mean_squared_error')
