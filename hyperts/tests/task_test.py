@@ -22,7 +22,7 @@ class Test_Task():
         rs = RandomSearcher(search_space_univariate_forecast_generator(covariate=['id']), optimize_direction=OptimizeDirection.Minimize)
         hyper_model = HyperTS(rs, task='univariate-forecast', reward_metric='neg_mean_squared_error', callbacks=[SummaryCallback()])
 
-        exp = TSExperiment(hyper_model, X_train, y_train, timestamp_col='ds', X_eval=X_test, y_eval=y_test)
+        exp = TSExperiment(hyper_model, X_train, y_train, X_eval=X_test, y_eval=y_test, timestamp_col='ds')
         pipeline_model = exp.run(max_trials=3)
 
         y_pred = pipeline_model.predict(X_test)
@@ -36,7 +36,7 @@ class Test_Task():
         rs = RandomSearcher(search_space_multivariate_forecast, optimize_direction=OptimizeDirection.Minimize)
         hyper_model = HyperTS(rs, task='multivariate-forecast', reward_metric='neg_mean_squared_error')
 
-        exp = TSExperiment(hyper_model, X_train, y_train, timestamp_col='ds', X_eval=X_test, y_eval=y_test)
+        exp = TSExperiment(hyper_model, X_train, y_train, X_eval=X_test, y_eval=y_test, timestamp_col='ds')
         pipeline_model = exp.run(max_trials=3)
 
         y_pred = pipeline_model.predict(X_test)
