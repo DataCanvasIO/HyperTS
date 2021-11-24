@@ -7,9 +7,24 @@ from hypernets.pipeline.base import Pipeline
 from hypernets.pipeline.transformers import SimpleImputer
 from hypernets.core.ops import HyperInput
 from hypernets.core.search_space import HyperSpace, Choice
-from hypernets.tabular.column_selector import column_object
+from hypernets.tabular import column_selector
+
 from hyperts.estimators import TSEstimatorMS, ProphetWrapper, VARWrapper, SKTimeWrapper
 from hyperts.transformers import TimeSeriesHyperTransformer
+
+
+class WithinColumnSelector:
+    def __init__(self, selector, selected_cols):
+        self.selector = selector
+        self.selected_cols = selected_cols
+
+    def __call__(self, df):
+        intersection = set(df.columns.tolist()).intersection(self.selected_cols)
+        if len(intersection) > 0:
+            selected_df = df[intersection]
+            return self.selector(selected_df)
+        else:
+            return []
 
 
 def search_space_univariate_forecast_generator(covariate=(), time_series=None):
@@ -24,17 +39,17 @@ def search_space_univariate_forecast_generator(covariate=(), time_series=None):
                                                       strategy=impute_strategy,
                                                       name=f'covariate_imputer_{seq_no}',
                                                       force_output_as_float=True)
-                    covariate_pipeline = Pipeline([covariate_imputer],
-                                                  columns=covariate,
+                    covariate_num_pipeline = Pipeline([covariate_imputer],
+                                                  columns=WithinColumnSelector(column_selector.column_number_exclude_timedelta, covariate),
                                                   name=f'covariate_pipeline_simple_{seq_no}')(input)
-                    dfm_inputs.append(covariate_pipeline)
+                    dfm_inputs.append(covariate_num_pipeline)
                 if time_series is not None:
                     time_series_pipeline = Pipeline([TimeSeriesHyperTransformer()],
                                                     columns=[time_series],
                                                     name=f'default_pipeline_simple_{seq_no}')(input)
                     dfm_inputs.append(time_series_pipeline)
                 last_transformer = DataFrameMapper(default=dataframe_mapper_default, input_df=True, df_out=True,
-                                                   df_out_dtype_transforms=[(column_object, 'int')])(dfm_inputs)
+                                                   df_out_dtype_transforms=[(column_selector.column_object, 'int')])(dfm_inputs)
             else:
                 last_transformer = input
             TSEstimatorMS(ProphetWrapper, interval_width=Choice([0.5, 0.6]), seasonality_mode=Choice(['additive', 'multiplicative']))(last_transformer)
