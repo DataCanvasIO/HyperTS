@@ -8,7 +8,7 @@ import numpy as np
 from sklearn import metrics as sk_metrics
 from sklearn import pipeline as sk_pipeline
 
-from hypergbm.pipeline import ComposeTransformer
+from hypernets.pipeline.base import ComposeTransformer
 from hypernets.dispatchers.in_process_dispatcher import InProcessDispatcher
 from hypernets.model.estimator import Estimator
 from hypernets.model.hyper_model import HyperModel
@@ -46,12 +46,11 @@ class HyperTSEstimator(Estimator):
         # self.model = ProphetWrapper(**sampled_estimator_params)
         pipeline_module = space.get_inputs(outputs[0])
         assert len(pipeline_module) == 1, 'The `HyperEstimator` can only contains 1 input.'
-        assert isinstance(pipeline_module[0],
-                          ComposeTransformer), 'The upstream node of `HyperEstimator` must be `ComposeTransformer`.'
-        # next, (name, p) = pipeline_module[0].compose()
-        self.data_pipeline = self.build_pipeline(space, pipeline_module[0])
-        # print(self.data_pipeline)
-        # todo self.pipeline_signature = self.get_pipeline_signature(self.data_pipeline)
+        if isinstance(pipeline_module[0], ComposeTransformer):
+            # next, (name, p) = pipeline_module[0].compose()
+            self.data_pipeline = self.build_pipeline(space, pipeline_module[0])
+            # print(self.data_pipeline)
+            # todo self.pipeline_signature = self.get_pipeline_signature(self.data_pipeline)
 
     def build_pipeline(self, space, last_transformer):
         transformers = []
@@ -82,11 +81,17 @@ class HyperTSEstimator(Estimator):
         return None
 
     def fit(self, X, y, pos_label=None, verbose=0, **kwargs):
-        X_transformed = self.data_pipeline.fit_transform(X)
+        if self.data_pipeline is not None:
+            X_transformed = self.data_pipeline.fit_transform(X)
+        else:
+            X_transformed = X
         self.model.fit(X_transformed, y)
 
     def predict(self, X, verbose=0, **kwargs):
-        X_transformed = self.data_pipeline.transform(X)
+        if self.data_pipeline is not None:
+            X_transformed = self.data_pipeline.transform(X)
+        else:
+            X_transformed = X
         return self.model.predict(X_transformed)
 
     def predict_proba(self, X, verbose=0, **kwargs):
