@@ -91,7 +91,7 @@ class TSDataPreprocessStep(ExperimentStep):
     def covariate_transform(self, X, training=False):
         df_timestamp = X[self.timestamp_col]
         if training:
-            df_covariate = self.covariate_data_cleaner.fit_transform(X[self.covariate_cols])
+            df_covariate, _ = self.covariate_data_cleaner.fit_transform(X[self.covariate_cols])
         else:
             df_covariate = self.covariate_data_cleaner.transform(X[self.covariate_cols])
         assert df_covariate.shape[0] == X.shape[0], \

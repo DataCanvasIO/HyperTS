@@ -75,7 +75,7 @@ def _inpute(values, offsets):
     return values, missing_rate
 
 
-def multi_period_loop_imputer(df: pd.DataFrame, offsets: list, freq: str, max_loops: int = 10):
+def multi_period_loop_imputer(df: pd.DataFrame, freq: str, offsets: list = None, max_loops: int = 10):
     """Multiple Period Loop Impute NAN.
     Args:
         offsets: list
@@ -403,6 +403,8 @@ def temporal_train_test_split(*arrays,
         List containing train-test split of inputs.
     """
     test_size = test_horizion if test_horizion != None else test_size
+    if test_horizion != None and test_horizion > arrays[0].shape[0]:
+        raise ValueError(f'{test_horizion} is greater than data shape {arrays[0].shape[0]}.')
     return sklearn_tts(
         *arrays,
         test_size=test_size,
