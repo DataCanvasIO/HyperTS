@@ -7,14 +7,14 @@ from sklearn.preprocessing import OrdinalEncoder
 from sklearn.model_selection import train_test_split as sklearn_tts
 
 class offsets_pool:
-    neighbor = [-1, 1]
-    second = [-1, 1, -60 * 4, -60 * 3, -60 * 2, -60 * 1, 60 * 1, 60 * 2, 60 * 3, 60 * 4]
-    minute = [-1, 1, -60 * 4, -60 * 3, -60 * 2, -60 * 1, 60 * 1, 60 * 2, 60 * 3, 60 * 4]
-    hour   = [-1, 1, -24 * 4, -24 * 3, -24 * 2, -24 * 1, 24 * 1, 24 * 2, 24 * 3, 24 * 4,
-             -168 * 4, -168 * 3, -168 * 2, -168 * 1, 168 * 1, 168 * 2, 168 * 3, 168 * 4]
-    day    = [-1, 1, -30 * 4, -30 * 3, -30 * 2, -30 * 1, 30 * 1, 30 * 2, 30 * 3, 30 * 4]
-    month  = [-1, 1, -12 * 4, -12 * 3, -12 * 2, -12 * 1, 12 * 1, 12 * 2, 12 * 3, 12 * 4]
-    year   = [-1, 1]
+    neighbor  = [-1, 1]
+    second    = [-1, 1, -60*4,-60*3,-60*2,-60*1, 60*1,60*2,60*3,60*4]
+    minute    = [-1, 1, -60*4,-60*3,-60*2,-60*1, 60*1,60*2,60*3,60*4]
+    hour      = [-1, 1, -24*4,-24*3,-24*2,-24*1, 24*1,24*2,24*3,24*4,
+                -168*4,-168*3,-168*2,-168*1, 168*1,168*2,168*3,168*4]
+    day       = [-1, 1, -7*4, -7*3, -7*2, -7*1, 7*1, 7*2, 7*3, 7*4]
+    month     = [-1, 1, -12*4,-12*3,-12*2,-12*1, 12*1,12*2,12*3,12*4]
+    year      = [-1, 1]
 
 
 def reduce_memory_usage(df: pd.DataFrame, verbose=True):
@@ -59,16 +59,19 @@ def infer_ts_freq(df: pd.DataFrame, ts_name: str = 'TimeStamp'):
 
 def _inpute(values, offsets):
     indices0, indices1 = np.where(np.isnan(values))
-    padding = []
-    for offset in offsets:
-        offset_indices0 = indices0 + offset
-        start_bound_limit = np.where(indices0 + offset < 0)
-        end_bound_limit = np.where(indices0 + offset > len(values) - 1)
-        offset_indices0[start_bound_limit] = indices0[start_bound_limit]
-        offset_indices0[end_bound_limit] = indices0[end_bound_limit]
-        padding.append(values[(offset_indices0, indices1)])
-    values[(indices0, indices1)] = np.nanmean(padding, axis=0)
-    missing_rate = np.sum(np.isnan(values)) / values.size
+    if len(indices0) > 0 and len(indices1) > 0:
+        padding = []
+        for offset in offsets:
+            offset_indices0 = indices0 + offset
+            start_bound_limit = np.where(indices0 + offset < 0)
+            end_bound_limit = np.where(indices0 + offset > len(values) - 1)
+            offset_indices0[start_bound_limit] = indices0[start_bound_limit]
+            offset_indices0[end_bound_limit] = indices0[end_bound_limit]
+            padding.append(values[(offset_indices0, indices1)])
+        values[(indices0, indices1)] = np.nanmean(padding, axis=0)
+        missing_rate = np.sum(np.isnan(values)) / values.size
+    else:
+        missing_rate = 0.
     return values, missing_rate
 
 
@@ -406,3 +409,26 @@ def temporal_train_test_split(*arrays,
         train_size=train_size,
         shuffle=False,
         stratify=None)
+
+def list_diff(p: list, q: list):
+    """Gets the difference set of two lists.
+    Parameters
+    p: list.
+    q: list.
+    ----------
+    Returns
+    A list.
+    -------
+    Example
+        p = [1, 2, 3, 4, 5],  q = [2, 4]
+        >> list_diff(p, q)
+        >> [1, 3, 5]
+
+        p = [1, 2, 3, 4, 5],  q = []
+        >> list_diff(p, q)
+        >> [1, 2, 3, 4, 5]
+    """
+    if q is not None and len(q)>0:
+        return list(set(p).difference(set(q)))
+    else:
+        return p
