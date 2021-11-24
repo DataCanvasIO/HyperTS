@@ -17,12 +17,12 @@ class Test_Task():
 
     def test_univariate_forecast(self):
         X, y = get_random_univariate_forecast_dataset()
-        X_train, X_test, y_train, y_test = temporal_train_test_split(X, y, test_horizion=128)
+        X_train, X_test, y_train, y_test = temporal_train_test_split(X, y, test_horizion=16)
 
         rs = RandomSearcher(search_space_univariate_forecast_generator(covariate=['id'], time_series='ds'), optimize_direction=OptimizeDirection.Minimize)
         hyper_model = HyperTS(rs, task='univariate-forecast', reward_metric='neg_mean_squared_error', callbacks=[SummaryCallback()])
 
-        exp = TSExperiment(hyper_model, X_train, y_train, X_eval=X_test, y_eval=y_test, timestamp_col='ds')
+        exp = TSExperiment(hyper_model, X_train, y_train, X_eval=X_test, y_eval=y_test, timestamp_col='ds', covariate_cols=['id'])
         pipeline_model = exp.run(max_trials=3)
 
         y_pred = pipeline_model.predict(X_test)
@@ -31,7 +31,7 @@ class Test_Task():
     def test_multivariate_forecast(self):
 
         X, y = get_random_multivariate_forecast_dataset()
-        X_train, X_test, y_train, y_test = temporal_train_test_split(X, y, test_horizion=128)
+        X_train, X_test, y_train, y_test = temporal_train_test_split(X, y, test_horizion=16)
 
         rs = RandomSearcher(search_space_multivariate_forecast_generator(time_series='ds'), optimize_direction=OptimizeDirection.Minimize)
         hyper_model = HyperTS(rs, task='multivariate-forecast', reward_metric='neg_mean_squared_error')
@@ -48,7 +48,7 @@ class Test_Task():
         X_train, X_test, y_train, y_test = random_train_test_split(X, y, test_size=0.2)
 
         rs = RandomSearcher(space_classification_classification, optimize_direction=OptimizeDirection.Maximize)
-        hyper_model = HyperTS(rs, task='binary-classification', reward_metric='accuracy')
+        hyper_model = HyperTS(rs, task='multiclass', reward_metric='accuracy')
 
         exp = TSExperiment(hyper_model, X_train, y_train, X_eval=X_test, y_eval=y_test)
         pipeline_model = exp.run(max_trials=3)

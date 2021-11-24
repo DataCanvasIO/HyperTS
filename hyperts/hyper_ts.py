@@ -5,15 +5,16 @@
 import pickle
 
 import numpy as np
-from sklearn import metrics as sk_metrics
 from sklearn import pipeline as sk_pipeline
 
-from hypernets.pipeline.base import ComposeTransformer
-from hypernets.dispatchers.in_process_dispatcher import InProcessDispatcher
+from hypernets.utils import fs, logging
+from hypernets.tabular.metrics import calc_score
 from hypernets.model.estimator import Estimator
 from hypernets.model.hyper_model import HyperModel
-from hypernets.utils import fs
-from hypernets.utils import logging
+from hypernets.pipeline.base import ComposeTransformer
+from hypernets.dispatchers.in_process_dispatcher import InProcessDispatcher
+
+from hyperts.utils import consts
 
 logger = logging.get_logger(__name__)
 
@@ -98,26 +99,18 @@ class HyperTSEstimator(Estimator):
         return None
 
     def evaluate(self, X, y, metrics=None, verbose=0, **kwargs):
-        if not isinstance(y, np.ndarray):
-            y = np.array(y)
+        y = np.array(y) if not isinstance(y, np.ndarray) else y
+        if metrics is None:
+            if self.task in [consts.TASK_FORECAST, consts.TASK_REGRESSION]:
+                metrics = ['rmse']
+            elif self.task in [consts.TASK_BINARY, consts.TASK_MULTICLASS]:
+                metrics = ['accuracy']
 
         y_pred = self.model.predict(X)
-        if self.task == HyperTS.TASK_MULTIVARIATE_FORECAST:
-            scores = []
-            for i in range(y.shape[1]):
-                y_true_part = y[:, i]
-                y_pred_part = y_pred[:, i]
-                score_part = sk_metrics.mean_squared_error(y_true_part, y_pred_part)  # todo calc mse
-                scores.append(score_part)
-            score = np.mean(scores)
-            return {'neg_mean_squared_error': score}
-        elif self.task == HyperTS.TASK_BINARY_CLASSIFICATION:
-            score = sk_metrics.accuracy_score(y, y_pred)
-            return {'accuracy': score}
-        # TODO: others task types and metrics
-        else:
-            score = sk_metrics.mean_squared_error(y, y_pred)  # todo calc mse
-            return {'neg_mean_squared_error': score}
+        scores = calc_score(y, y_pred, metrics=metrics, task=self.task,
+            pos_label=self.pos_label, classes=self.classes_)
+
+        return scores
 
     def save(self, model_file):
         with fs.open(f'{model_file}', 'wb') as output:
@@ -148,6 +141,23 @@ class HyperTS(HyperModel):
 
     def load_estimator(self, model_file):
         return HyperTSEstimator.load(model_file)
+
+    def _get_reward(self, value, key=None):
+        def cast_float(value):
+            try:
+                fv = float(value)
+                return fv
+            except TypeError:
+                return None
+
+        if isinstance(value, dict) and isinstance(key, str):
+            reward = cast_float(value[key])
+        elif isinstance(value, dict) and not isinstance(key, str):
+            reward = cast_float(value[key.__name__])
+        else:
+            raise ValueError(f'"{key}" should be a string or function name for metric.')
+
+        return reward
 
     def export_trial_configuration(self, trial):
         return '`export_trial_configuration` does not implemented'

@@ -8,11 +8,9 @@ from hypernets.experiment import StepNames
 from hypernets.experiment.compete import SteppedExperiment, ExperimentStep, \
                                          EnsembleStep, FinalTrainStep
 
+from hypernets.utils import logging
 from hypernets.tabular import get_tool_box
 from hypernets.tabular.data_cleaner import DataCleaner
-
-from hypernets.utils import logging
-from hyperts.hyper_ts import HyperTS
 
 from hyperts.utils import data_ops as dp, consts
 
@@ -91,7 +89,7 @@ class TSDataPreprocessStep(ExperimentStep):
     def covariate_transform(self, X, training=False):
         df_timestamp = X[self.timestamp_col]
         if training:
-            df_covariate = self.covariate_data_cleaner.fit_transform(X[self.covariate_cols])
+            df_covariate, _ = self.covariate_data_cleaner.fit_transform(X[self.covariate_cols])
         else:
             df_covariate = self.covariate_data_cleaner.transform(X[self.covariate_cols])
         assert df_covariate.shape[0] == X.shape[0], \
@@ -152,8 +150,6 @@ class TSSpaceSearchStep(ExperimentStep):
 
     def fit_transform(self, hyper_model, X_train, y_train, X_test=None, X_eval=None, y_eval=None, **kwargs):
         super().fit_transform(hyper_model, X_train, y_train, X_test=X_test, X_eval=X_eval, y_eval=y_eval)
-
-
         if X_eval is not None:
             kwargs['eval_set'] = (X_eval, y_eval)
         model = copy.deepcopy(self.experiment.hyper_model)  # copy from original hyper_model instance
@@ -231,7 +227,7 @@ class TSExperiment(SteppedExperiment):
         steps = []
 
         # data clean
-        if task not in [HyperTS.TASK_BINARY_CLASSIFICATION]:
+        if task not in [consts.TASK_BINARY, consts.TASK_MULTICLASS]:
             steps.append(TSDataPreprocessStep(self, StepNames.DATA_CLEAN,
                                              freq=freq,
                                              timestamp_col=timestamp_col,
