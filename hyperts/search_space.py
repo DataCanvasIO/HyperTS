@@ -80,7 +80,7 @@ def search_space_multivariate_forecast_generator(covariate=(), time_series=None)
                                                     name=f'default_pipeline_simple_{seq_no}')(input)
                     dfm_inputs.append(time_series_pipeline)
                 last_transformer = DataFrameMapper(default=dataframe_mapper_default, input_df=True, df_out=True,
-                                                   df_out_dtype_transforms=[(column_object, 'int')])(dfm_inputs)
+                                                   df_out_dtype_transforms=[(column_selector.column_object, 'int')])(dfm_inputs)
             else:
                 last_transformer = input
             TSEstimatorMS(VARWrapper, ic=Choice(['aic', 'fpe', 'hqic', 'bic']))(last_transformer)
