@@ -2,9 +2,10 @@
 
 import numpy as np
 
-from hypergbm.pipeline import DataFrameMapper
-from hypergbm.pipeline import Pipeline
-from hypergbm.sklearn.transformers import SimpleImputer
+from hypernets.pipeline.base import Pipeline
+from hypernets.pipeline.base import DataFrameMapper
+from hypernets.pipeline.transformers import SimpleImputer
+
 from hypernets.core.ops import HyperInput
 from hypernets.core.search_space import HyperSpace, Choice
 from hypernets.tabular.column_selector import column_object
