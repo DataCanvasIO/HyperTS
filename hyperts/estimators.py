@@ -77,7 +77,7 @@ class VARWrapper(EstimatorWrapper):
 
 class SKTimeWrapper(EstimatorWrapper):
 
-    def __init__(self, **kwargs):
+    def __init__(self, fit_kwargs, **kwargs):
         self.model = TimeSeriesForestClassifier(**kwargs)
 
     def fit(self, X, y):
