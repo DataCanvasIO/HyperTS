@@ -2,7 +2,7 @@
 
 from sktime.datasets import load_arrow_head
 
-from hypernets.core.callbacks import *
+from hypernets.core.callbacks import SummaryCallback
 from hypernets.core.searcher import OptimizeDirection
 from hypernets.searchers.random_searcher import RandomSearcher
 from hyperts.experiment import TSExperiment

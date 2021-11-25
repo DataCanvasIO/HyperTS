@@ -125,10 +125,6 @@ class HyperTSEstimator(Estimator):
 
 class HyperTS(HyperModel):
 
-    TASK_BINARY_CLASSIFICATION = 'binary-classification'
-    TASK_MULTIVARIATE_FORECAST = 'multivariate-forecast'
-    TASK_UNIVARIATE_FORECAST = 'univariate-forecast'
-
     def __init__(self, searcher, dispatcher=None, callbacks=None, reward_metric='accuracy', task=None,
                  discriminator=None, data_cleaner_params=None, cache_dir=None, clear_cache=None):
         self.data_cleaner_params = data_cleaner_params
