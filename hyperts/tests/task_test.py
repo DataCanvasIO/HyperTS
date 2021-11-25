@@ -19,7 +19,7 @@ class Test_Task():
         X, y = get_random_univariate_forecast_dataset()
         X_train, X_test, y_train, y_test = temporal_train_test_split(X, y, test_horizion=16)
 
-        rs = RandomSearcher(search_space_univariate_forecast_generator(covariate=['id'], time_series='ds'), optimize_direction=OptimizeDirection.Minimize)
+        rs = RandomSearcher(search_space_univariate_forecast_generator(covariate=['id'], timestamp='ds'), optimize_direction=OptimizeDirection.Minimize)
         hyper_model = HyperTS(rs, task='univariate-forecast', reward_metric='mse', callbacks=[SummaryCallback()])
 
         exp = TSExperiment(hyper_model, X_train, y_train, X_eval=X_test, y_eval=y_test, timestamp_col='ds', covariate_cols=['id'])
@@ -33,7 +33,7 @@ class Test_Task():
         X, y = get_random_multivariate_forecast_dataset()
         X_train, X_test, y_train, y_test = temporal_train_test_split(X, y, test_horizion=16)
 
-        rs = RandomSearcher(search_space_multivariate_forecast_generator(time_series='ds'), optimize_direction=OptimizeDirection.Minimize)
+        rs = RandomSearcher(search_space_multivariate_forecast_generator(timestamp='ds'), optimize_direction=OptimizeDirection.Minimize)
         hyper_model = HyperTS(rs, task='multivariate-forecast', reward_metric='mse')
 
         exp = TSExperiment(hyper_model, X_train, y_train, X_eval=X_test, y_eval=y_test, timestamp_col='ds')
