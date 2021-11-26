@@ -8,11 +8,11 @@ from .datasets import *
 
 class Test_Estimator():
 
-    def test_var_wrapper(self):
+    def test_VAR_wrapper(self):
         X, y = get_random_multivariate_forecast_dataset()
         X_train, X_test, y_train, y_test, = train_test_split(X, y, test_size=0.2, shuffle=False)
-
-        model = VARWrapper()
+        fit_kwargs = {'timestamp': 'timestamp'}
+        model = VARWrapper(fit_kwargs)
         model.fit(X_train, y_train)
 
         y_pred = model.predict(X_test)
@@ -21,8 +21,8 @@ class Test_Estimator():
     def test_SKTime_wrapper(self):
         X, y = load_arrow_head(return_X_y=True)
         X_train, X_test, y_train, y_test = train_test_split(X, y)
-
-        classifier = SKTimeWrapper(n_estimators=200)
+        fit_kwargs = {}
+        classifier = SKTimeWrapper(fit_kwargs=fit_kwargs, n_estimators=200)
 
         classifier.fit(X_train, y_train)
         y_pred = classifier.predict(X_test)
