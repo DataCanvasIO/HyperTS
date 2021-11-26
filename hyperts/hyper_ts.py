@@ -9,10 +9,11 @@ from sklearn import pipeline as sk_pipeline
 
 from hypernets.utils import fs, logging
 from hypernets.tabular.metrics import calc_score
+from hypernets.dispatchers import get_dispatcher
 from hypernets.model.estimator import Estimator
 from hypernets.model.hyper_model import HyperModel
+from hypernets.core.meta_learner import MetaLearner
 from hypernets.pipeline.base import ComposeTransformer
-from hypernets.dispatchers.in_process_dispatcher import InProcessDispatcher
 
 from hyperts.utils import consts
 
@@ -125,11 +126,26 @@ class HyperTSEstimator(Estimator):
 
 class HyperTS(HyperModel):
 
-    def __init__(self, searcher, dispatcher=None, callbacks=None, reward_metric='accuracy', task=None,
-                 discriminator=None, data_cleaner_params=None, cache_dir=None, clear_cache=None):
+    def __init__(self,
+                 searcher,
+                 dispatcher=None,
+                 callbacks=None,
+                 reward_metric='accuracy',
+                 task=None,
+                 discriminator=None,
+                 data_cleaner_params=None,
+                 cache_dir=None,
+                 clear_cache=None):
+
         self.data_cleaner_params = data_cleaner_params
-        HyperModel.__init__(self, searcher, dispatcher=dispatcher, callbacks=callbacks, reward_metric=reward_metric,
-                            task=task, discriminator=discriminator)
+
+        HyperModel.__init__(self,
+                            searcher,
+                            dispatcher=dispatcher,
+                            callbacks=callbacks,
+                            reward_metric=reward_metric,
+                            task=task,
+                            discriminator=discriminator)
 
     def _get_estimator(self, space_sample):
         estimator = HyperTSEstimator(task=self.task, space_sample=space_sample, data_cleaner_params=self.data_cleaner_params)
@@ -158,12 +174,33 @@ class HyperTS(HyperModel):
     def export_trial_configuration(self, trial):
         return '`export_trial_configuration` does not implemented'
 
-    def search(self, X, y, X_eval, y_eval, max_trials=3, dataset_id=None, trial_store=None, **kwargs):
+    def search(self, X, y, X_eval, y_eval, cv=False, num_folds=3, max_trials=3, dataset_id=None, trial_store=None, **fit_kwargs):
+        ##task
+
         if dataset_id is None:
             dataset_id = self.generate_dataset_id(X, y)
 
-        for callback in self.callbacks:
-            callback.on_search_start(self, X, y, X_eval, y_eval, None, None, max_trials, dataset_id, trial_store=trial_store)
+        if self.searcher.use_meta_learner:
+            self.searcher.set_meta_learner(MetaLearner(self.history, dataset_id, trial_store))
 
-        dispatcher = InProcessDispatcher('/tmp/tmp_data')  # TODO:
-        dispatcher.dispatch(self, X, y, X_eval, y_eval, cv=False, num_folds=None, max_trials=max_trials, dataset_id=dataset_id, trial_store=trial_store)
+        self._before_search()
+
+        dispatcher = self.dispatcher if self.dispatcher else get_dispatcher(self)
+
+        for callback in self.callbacks:
+            callback.on_search_start(self, X, y, X_eval, y_eval,
+                                     cv, num_folds, max_trials, dataset_id, trial_store,
+                                     **fit_kwargs)
+        try:
+            trial_no = dispatcher.dispatch(self, X, y, X_eval, y_eval,
+                                           cv, num_folds, max_trials, dataset_id, trial_store,
+                                           **fit_kwargs)
+
+            for callback in self.callbacks:
+                callback.on_search_end(self)
+        except Exception as e:
+            for callback in self.callbacks:
+                callback.on_search_error(self)
+            raise e
+
+        self._after_search(trial_no)
