@@ -227,7 +227,7 @@ class TSExperiment(SteppedExperiment):
         steps = []
 
         # data clean
-        if task in [consts.TASK_FORECAST, consts.TASK_UNVARIABLE_FORECAST, consts.TASK_MULTIVARIABLE_FORECAST]:
+        if task in [consts.TASK_FORECAST, consts.TASK_UNIVARIABLE_FORECAST, consts.TASK_MULTIVARIABLE_FORECAST]:
             steps.append(TSDataPreprocessStep(self, StepNames.DATA_CLEAN,
                                              freq=freq,
                                              timestamp_col=timestamp_col,

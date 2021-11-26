@@ -3,7 +3,7 @@
 
 TIMESTAMP                          = "timestamp"
 
-TASK_UNVARIABLE_FORECAST           = 'unvariable-forecast'
+TASK_UNIVARIABLE_FORECAST          = 'univariable-forecast'
 TASK_MULTIVARIABLE_FORECAST        = 'multivariable-forecast'
 TASK_BINARY_CLASSIFICATION         = 'binary-classification'
 TASK_MULTICLASS_CLASSIFICATION     = 'multiclass-classification'
