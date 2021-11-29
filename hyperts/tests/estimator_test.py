@@ -11,7 +11,7 @@ class Test_Estimator():
     def test_VAR_wrapper(self):
         X, y = get_random_multivariate_forecast_dataset()
         X_train, X_test, y_train, y_test, = train_test_split(X, y, test_size=0.2, shuffle=False)
-        fit_kwargs = {'timestamp': 'timestamp'}
+        fit_kwargs = {'timestamp': 'ds'}
         model = VARWrapper(fit_kwargs)
         model.fit(X_train, y_train)
 
