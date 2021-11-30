@@ -80,7 +80,7 @@ class ProphetForecastEstimator(HyperEstimator):
         HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
 
     def _build_estimator(self, task, fit_kwargs, kwargs):
-        if task == consts.TASK_UNVARIABLE_FORECAST:
+        if task == consts.TASK_UNIVARIABLE_FORECAST:
             prophet = ProphetWrapper(fit_kwargs, **kwargs)
         else:
             raise ValueError('Prophet model supports only univariate forecast task.')
