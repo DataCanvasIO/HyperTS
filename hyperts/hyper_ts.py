@@ -1,13 +1,10 @@
-# -*- coding:utf-8 -*-
-"""
-
-"""
 import pickle
 
 import numpy as np
 from sklearn import pipeline as sk_pipeline
 
 from hypernets.utils import fs, logging
+from hypernets.tabular import get_tool_box
 from hypernets.tabular.metrics import calc_score
 from hypernets.dispatchers import get_dispatcher
 from hypernets.model.estimator import Estimator
@@ -26,7 +23,7 @@ class HyperTSEstimator(Estimator):
         self.data_pipeline = None
         self.data_cleaner_params = data_cleaner_params
         self.model = None  # Time-Series model
-        self.cv_gbm_models_ = None
+        self.cv_ts_models_ = None
         self.data_cleaner = None
         self.pipeline_signature = None
         self.fit_kwargs = None
@@ -42,17 +39,15 @@ class HyperTSEstimator(Estimator):
 
         outputs = space.get_outputs()
         assert len(outputs) == 1, 'The space can only contains 1 output.'
+        if outputs[0].estimator is None:
+            outputs[0].build_estimator(self.task)
+        self.model = outputs[0].estimator
+        self.fit_kwargs = outputs[0].fit_kwargs
 
-        self.model = outputs[0].build_estimator()
-        # logger.debug(f'data_pipeline:{self.data_pipeline}')
-        # self.model = ProphetWrapper(**sampled_estimator_params)
         pipeline_module = space.get_inputs(outputs[0])
         assert len(pipeline_module) == 1, 'The `HyperEstimator` can only contains 1 input.'
         if isinstance(pipeline_module[0], ComposeTransformer):
-            # next, (name, p) = pipeline_module[0].compose()
             self.data_pipeline = self.build_pipeline(space, pipeline_module[0])
-            # print(self.data_pipeline)
-            # todo self.pipeline_signature = self.get_pipeline_signature(self.data_pipeline)
 
     def build_pipeline(self, space, last_transformer):
         transformers = []
@@ -63,7 +58,8 @@ class HyperTSEstimator(Estimator):
             if inputs == space.get_inputs():
                 break
             assert len(inputs) == 1, 'The `ComposeTransformer` can only contains 1 input.'
-            assert isinstance(inputs[0], ComposeTransformer), 'The upstream node of `ComposeTransformer` must be `ComposeTransformer`.'
+            assert isinstance(inputs[0], ComposeTransformer), \
+                'The upstream node of `ComposeTransformer` must be `ComposeTransformer`.'
             last_transformer = inputs[0]
         assert len(transformers) > 0
         if len(transformers) == 1:
@@ -73,7 +69,8 @@ class HyperTSEstimator(Estimator):
             return pipeline
 
     def summary(self):
-        return "HyperTSEstimator"
+        s = f"{self.data_pipeline.__repr__(1000000)}"
+        return s
 
     def fit_cross_validation(self, X, y, verbose=0, stratified=True, num_folds=3, pos_label=None,
                              shuffle=False, random_state=9527, metrics=None, **kwargs):
@@ -94,17 +91,23 @@ class HyperTSEstimator(Estimator):
             X_transformed = self.data_pipeline.transform(X)
         else:
             X_transformed = X
-        return self.model.predict(X_transformed)
+        preds = self.model.predict(X_transformed)
+        return preds
 
     def predict_proba(self, X, verbose=0, **kwargs):
         return None
 
     def evaluate(self, X, y, metrics=None, verbose=0, **kwargs):
         y = np.array(y) if not isinstance(y, np.ndarray) else y
+        if self.data_pipeline is not None:
+            X_transformed = self.data_pipeline.transform(X)
+        else:
+            X_transformed = X
         if metrics is None:
-            if self.task in [consts.TASK_FORECAST, consts.TASK_REGRESSION]:
+            if self.task in [consts.TASK_FORECAST, consts.TASK_UNIVARIABLE_FORECAST,
+                                consts.TASK_MULTIVARIABLE_FORECAST, consts.TASK_REGRESSION]:
                 metrics = ['rmse']
-            elif self.task in [consts.TASK_BINARY, consts.TASK_MULTICLASS]:
+            elif self.task in [consts.TASK_BINARY_CLASSIFICATION, consts.TASK_MULTICLASS_CLASSIFICATION]:
                 metrics = ['accuracy']
 
         y_pred = self.model.predict(X)
