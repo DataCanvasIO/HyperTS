@@ -23,7 +23,7 @@ class HyperTSEstimator(Estimator):
         self.data_pipeline = None
         self.data_cleaner_params = data_cleaner_params
         self.model = None  # Time-Series model
-        self.cv_ts_models_ = None
+        self.cv_models_ = None
         self.data_cleaner = None
         self.pipeline_signature = None
         self.fit_kwargs = None
@@ -69,8 +69,10 @@ class HyperTSEstimator(Estimator):
             return pipeline
 
     def summary(self):
-        s = f"{self.data_pipeline.__repr__(1000000)}"
-        return s
+        if self.data_pipeline is not None:
+            return f"{self.data_pipeline.__repr__(1000000)}"
+        else:
+            return "HyperTSEstimator"
 
     def fit_cross_validation(self, X, y, verbose=0, stratified=True, num_folds=3, pos_label=None,
                              shuffle=False, random_state=9527, metrics=None, **kwargs):

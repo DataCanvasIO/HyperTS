@@ -17,21 +17,35 @@ class TimeSeriesTransformer:
         # TODO:
         return self
 
+
 class LogXplus1Transformer(BaseEstimator, TransformerMixin):
 
     def __init__(self):
         super(LogXplus1Transformer, self).__init__()
 
-    def fit(self, X, y=None):
+    def fit(self, X, y=None, **kwargs):
+        return self
+
+    def transform(self, X, y=None, **kwargs):
         X = np.log(X + 1)
         return X
 
-    def transform(self, X):
-        X = np.log(X + 1)
-        return X
-
-    def inverse_transform(self, X):
+    def inverse_transform(self, X, y=None, **kwargs):
         X = np.exp(X) - 1
+        return X
+
+
+class IdentityTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self):
+        super(IdentityTransformer, self).__init__()
+
+    def fit(self, X, y=None, **kwargs):
+        return self
+
+    def transform(self, X, y=None, **kwargs):
+        return X
+
+    def inverse_transform(self, X, y=None, **kwargs):
         return X
 
 

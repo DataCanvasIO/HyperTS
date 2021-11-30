@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 try:
     from prophet import Prophet
@@ -10,6 +11,10 @@ from sktime.classification.interval_based import TimeSeriesForestClassifier
 from hypernets.utils import logging
 
 from hyperts.utils import consts
+from hyperts.transformers import LogXplus1Transformer, IdentityTransformer
+
+from sklearn.preprocessing import MinMaxScaler, MaxAbsScaler
+from sklearn.pipeline import Pipeline
 
 logger = logging.get_logger(__name__)
 
@@ -31,10 +36,59 @@ class EstimatorWrapper:
         raise NotImplementedError
 
 
-class ProphetWrapper(EstimatorWrapper):
+class WrapperMixin:
 
     def __init__(self, fit_kwargs, **kwargs):
         self.timestamp = fit_kwargs.get('timestamp', consts.TIMESTAMP)
+        self.init_kwargs = kwargs if kwargs is not None else {}
+        self.y_scale = kwargs.pop('y_scale', None)
+        self.y_log = kwargs.pop('y_log', None)
+
+        self.trans = None
+        self.sc = None
+        self.log = None
+
+    @property
+    def scaler(self):
+        return {
+            'min_max': MinMaxScaler(),
+            'max_abs': MaxAbsScaler()
+        }
+
+    @property
+    def logx(self):
+        return {
+            'logx': LogXplus1Transformer()
+        }
+
+    def fit_transform(self, y):
+        self.sc = self.scaler.get(self.y_scale, None)
+        self.log = self.logx.get(self.y_log, None)
+
+        pipelines = []
+        if self.log is not None:
+            pipelines.append((f'{self.y_log}', self.log))
+        if self.sc is not None:
+            pipelines.append((f'{self.y_scale}', self.sc))
+        pipelines.append(('identity', IdentityTransformer()))
+        self.trans = Pipeline(pipelines)
+
+        cols = y.columns.tolist() if isinstance(y, pd.DataFrame) else None
+        transform_y = self.trans.fit_transform(y)
+        if isinstance(transform_y, np.ndarray):
+            transform_y = pd.DataFrame(transform_y, columns=cols)
+
+        return transform_y
+
+    def inverse_transform(self, y):
+        inverse_y = self.trans._inverse_transform(y)
+        return inverse_y
+
+
+class ProphetWrapper(EstimatorWrapper, WrapperMixin):
+
+    def __init__(self, fit_kwargs, **kwargs):
+        super(ProphetWrapper, self).__init__(fit_kwargs, **kwargs)
         self.model = Prophet(**kwargs)
 
     def fit(self, X, y=None, **kwargs):
@@ -50,14 +104,12 @@ class ProphetWrapper(EstimatorWrapper):
         return df_predict['yhat'].values
 
 
-class VARWrapper(EstimatorWrapper):
+class VARWrapper(EstimatorWrapper, WrapperMixin):
 
     def __init__(self, fit_kwargs, **kwargs):
-        self.timestamp = fit_kwargs.get('timestamp', consts.TIMESTAMP)
-        self.init_kwargs = kwargs if kwargs is not None else {}
-        self.model = None
-
+        super(VARWrapper, self).__init__(fit_kwargs, **kwargs)
         # fitted
+        self.model = None
         self._end_date = None
         self._freq = None
 
@@ -66,6 +118,8 @@ class VARWrapper(EstimatorWrapper):
         date_series_top2 = X[self.timestamp][:2].tolist()
         self._freq = (date_series_top2[1] - date_series_top2[0]).total_seconds()
         self._end_date = X[self.timestamp].tail(1).to_list()[0].to_pydatetime()
+
+        y = self.fit_transform(y)
 
         model = VAR(endog=y, dates=X[self.timestamp])
         self.model = model.fit(**self.init_kwargs)
@@ -79,7 +133,10 @@ class VARWrapper(EstimatorWrapper):
             r_i = int((date - self._end_date).total_seconds() / self._freq) - 1
             return predict_result[r_i].tolist()
 
-        return np.array(X[self.timestamp].map(calc_index).to_list())
+        preds = np.array(X[self.timestamp].map(calc_index).to_list())
+        preds = self.inverse_transform(preds)
+
+        return preds
 
 
 class TSFClassifierWrapper(EstimatorWrapper):

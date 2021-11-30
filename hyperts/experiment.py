@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 
 from hypernets.core import set_random_state
-from hypernets.experiment import StepNames
 from hypernets.experiment.compete import SteppedExperiment, ExperimentStep, \
                                          EnsembleStep, FinalTrainStep
 
@@ -34,7 +33,7 @@ class TSDataPreprocessStep(ExperimentStep):
         self.timestamp_col = timestamp_col if timestamp_col is not None else consts.TIMESTAMP
         self.covariate_cols = covariate_cols
         self.covariate_data_clean_args = covariate_data_clean_args if covariate_data_clean_args is not None else {}
-
+        self.covariate_data_clean_args.update({'correct_object_dtype': False})
         # fitted
         self.covariate_data_cleaner = DataCleaner(**self.covariate_data_clean_args)
 
@@ -55,7 +54,7 @@ class TSDataPreprocessStep(ExperimentStep):
         # 3. eval variables data process
         if X_eval is None or y_eval is None:
             eval_size = self.experiment.eval_size
-            if self.task == consts.TASK_FORECAST:
+            if self.task in [consts.TASK_FORECAST, consts.TASK_UNIVARIABLE_FORECAST, consts.TASK_MULTIVARIABLE_FORECAST]:
                 X_train, X_eval, y_train, y_eval = \
                     dp.temporal_train_test_split(X_train, y_train, test_size=eval_size)
         else:
@@ -228,19 +227,19 @@ class TSExperiment(SteppedExperiment):
 
         # data clean
         if task in [consts.TASK_FORECAST, consts.TASK_UNIVARIABLE_FORECAST, consts.TASK_MULTIVARIABLE_FORECAST]:
-            steps.append(TSDataPreprocessStep(self, StepNames.DATA_CLEAN,
+            steps.append(TSDataPreprocessStep(self, consts.StepName_DATA_PREPROCESSING,
                                              freq=freq,
                                              timestamp_col=timestamp_col,
                                              covariate_cols=covariate_cols,
                                              covariate_data_clean_args=covariate_data_clean_args))
 
         # search step
-        steps.append(TSSpaceSearchStep(self, StepNames.SPACE_SEARCHING))
+        steps.append(TSSpaceSearchStep(self, consts.StepName_SPACE_SEARCHING))
 
         # ensemble step,
         # steps.append(TSEnsembleStep(self, StepNames.FINAL_ENSEMBLE, scorer=scorer, ensemble_size=ensemble_size))
 
-        steps.append(FinalTrainStep(self, StepNames.FINAL_TRAINING, retrain_on_wholedata=False))
+        steps.append(FinalTrainStep(self, consts.StepName_FINAL_TRAINING, retrain_on_wholedata=False))
 
         # ignore warnings
         import warnings

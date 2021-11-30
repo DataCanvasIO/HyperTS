@@ -135,7 +135,7 @@ def space_classification_classification():
     space = HyperSpace()
     with space.as_default():
         input = HyperInput(name='input1')
-        TSEstimatorMS(SKTimeWrapper, n_estimators=Choice([50, 100, 150]))(input)
+        TSEstimatorMS(SKTimeWrapper, fit_kwargs=None, n_estimators=Choice([50, 100, 150]))(input)
         space.set_inputs(input)
     return space
 
