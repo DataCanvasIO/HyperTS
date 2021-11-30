@@ -110,7 +110,7 @@ class HyperTSEstimator(Estimator):
             elif self.task in [consts.TASK_BINARY_CLASSIFICATION, consts.TASK_MULTICLASS_CLASSIFICATION]:
                 metrics = ['accuracy']
 
-        y_pred = self.model.predict(X)
+        y_pred = self.model.predict(X_transformed)
         scores = calc_score(y, y_pred, metrics=metrics, task=self.task,
             pos_label=self.pos_label, classes=self.classes_)
 
