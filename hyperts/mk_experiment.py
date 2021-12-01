@@ -39,7 +39,7 @@ def make_experiment(train_df,
     else:
         search_pace = stats_classification_search_space(task=task, timestamp=timestamp)
 
-    if searcher ==None:
+    if searcher == None:
         searcher = RandomSearcher(search_pace, optimize_direction=optimize_direction)
     hyper_model = HyperTS(searcher, reward_metric=reward_metric, task=task, callbacks=[SummaryCallback()])
 
