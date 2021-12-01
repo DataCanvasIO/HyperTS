@@ -10,7 +10,6 @@ from hypernets.model.estimator import Estimator
 from hypernets.model.hyper_model import HyperModel
 from hypernets.core.meta_learner import MetaLearner
 from hypernets.pipeline.base import ComposeTransformer
-from hypernets.dispatchers import get_dispatcher
 from hypernets.dispatchers.in_process_dispatcher import InProcessDispatcher
 
 from hyperts.utils import consts
