@@ -6,11 +6,12 @@ from sklearn import pipeline as sk_pipeline
 from hypernets.utils import fs, logging
 from hypernets.tabular import get_tool_box
 from hypernets.tabular.metrics import calc_score
-from hypernets.dispatchers import get_dispatcher
 from hypernets.model.estimator import Estimator
 from hypernets.model.hyper_model import HyperModel
 from hypernets.core.meta_learner import MetaLearner
 from hypernets.pipeline.base import ComposeTransformer
+from hypernets.dispatchers import get_dispatcher
+from hypernets.dispatchers.in_process_dispatcher import InProcessDispatcher
 
 from hyperts.utils import consts
 
@@ -190,7 +191,8 @@ class HyperTS(HyperModel):
 
         self._before_search()
 
-        dispatcher = self.dispatcher if self.dispatcher else get_dispatcher(self)
+        # dispatcher = self.dispatcher if self.dispatcher else get_dispatcher(self)
+        dispatcher = InProcessDispatcher('/models')   # TODO：
 
         for callback in self.callbacks:
             callback.on_search_start(self, X, y, X_eval, y_eval,
