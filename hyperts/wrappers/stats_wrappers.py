@@ -9,6 +9,7 @@ from statsmodels.tsa.vector_ar.var_model import VAR
 from sktime.classification.interval_based import TimeSeriesForestClassifier
 
 from hypernets.utils import logging
+from hypernets.core.search_space import ModuleSpace
 
 from hyperts.utils import consts
 from hyperts.transformers import LogXplus1Transformer, IdentityTransformer
@@ -158,3 +159,22 @@ class TSFClassifierWrapper(EstimatorWrapper):
     def predict(self, X, **kwargs):
         predict_result = self.model.predict(X)
         return predict_result
+
+
+class SimpleTSEstimator(ModuleSpace):
+    def __init__(self, wrapper_cls, fit_kwargs=None, space=None, name=None, **hyperparams):
+        ModuleSpace.__init__(self, space, name, **hyperparams)
+        self.fit_kwargs = fit_kwargs if fit_kwargs is not None else {}
+        self.wrapper_cls = wrapper_cls
+        self.estimator = None
+
+    def build_estimator(self, task=None):
+        pv = self.param_values
+        self.estimator = self.wrapper_cls(self.fit_kwargs, **pv)
+        return self.estimator
+
+    def _forward(self, inputs):
+        return self.estimator
+
+    def _compile(self):
+        pass

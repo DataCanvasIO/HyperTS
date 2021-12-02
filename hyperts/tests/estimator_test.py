@@ -2,14 +2,14 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sktime.datasets import load_arrow_head
 
-from hyperts.estimators import SKTimeWrapper, VARWrapper
-from .datasets import *
+from hyperts.wrappers.stats_wrappers import VARWrapper, TSFClassifierWrapper
+from hyperts.datasets import load_random_multivariate_forecast_dataset
 
 
 class Test_Estimator():
 
     def test_VAR_wrapper(self):
-        X, y = get_random_multivariate_forecast_dataset()
+        X, y = load_random_multivariate_forecast_dataset()
         X_train, X_test, y_train, y_test, = train_test_split(X, y, test_size=0.2, shuffle=False)
         fit_kwargs = {'timestamp': 'ds'}
         model = VARWrapper(fit_kwargs)
@@ -21,8 +21,7 @@ class Test_Estimator():
     def test_SKTime_wrapper(self):
         X, y = load_arrow_head(return_X_y=True)
         X_train, X_test, y_train, y_test = train_test_split(X, y)
-        fit_kwargs = {}
-        classifier = SKTimeWrapper(fit_kwargs=fit_kwargs, n_estimators=200)
+        classifier = TSFClassifierWrapper(fit_kwargs=None, n_estimators=200)
 
         classifier.fit(X_train, y_train)
         y_pred = classifier.predict(X_test)

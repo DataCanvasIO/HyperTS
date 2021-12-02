@@ -1,5 +1,4 @@
-import pandas as pd
-
+from hyperts.datasets import load_network_traffic
 from hyperts.utils import consts
 from hyperts.utils import data_ops as dp
 from hyperts.mk_experiment import make_experiment, test_data_process
@@ -7,10 +6,10 @@ from hyperts.mk_experiment import make_experiment, test_data_process
 class Test_Experiment():
 
     def test_univariable_forecast(self):
-        df = pd.read_csv('../../datasets/network_traffic_forecast.csv', encoding='utf-8')
+        df = load_network_traffic()
         df = df[['TimeStamp', 'Var_1', 'HourSin', 'WeekCos', 'CBWD']]
 
-        train_df, test_df = dp.temporal_train_test_split(df, test_size=0.2)
+        train_df, test_df = dp.temporal_train_test_split(df, test_size=0.1)
 
         timestamp = 'TimeStamp'
         covariables = ['HourSin', 'WeekCos', 'CBWD']
@@ -33,9 +32,8 @@ class Test_Experiment():
         assert y_pred.shape == y_test.shape
 
     def test_multivariable_forecast(self):
-        df = pd.read_csv('../../datasets/network_traffic_forecast.csv', encoding='utf-8')
-
-        train_df, test_df = dp.temporal_train_test_split(df, test_size=0.2)
+        df = load_network_traffic()
+        train_df, test_df = dp.temporal_train_test_split(df, test_size=0.1)
 
         timestamp = 'TimeStamp'
         covariables = ['HourSin', 'WeekCos', 'CBWD']
