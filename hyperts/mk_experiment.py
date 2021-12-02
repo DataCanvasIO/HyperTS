@@ -47,3 +47,17 @@ def make_experiment(train_df,
                 timestamp_col=timestamp, covariate_cols=covariables, task=task)
 
     return experiment
+
+
+def test_data_process(test_df, timestamp, covariables, freq=None, impute=False):
+    if freq is None:
+        freq = dp.infer_ts_freq(test_df[[timestamp]])
+    target_varibales = dp.list_diff(test_df.columns.tolist(), [timestamp] + covariables)
+    test_df = dp.drop_duplicated_ts_rows(test_df, ts_name=timestamp)
+    test_df = dp.smooth_missed_ts_rows(test_df, ts_name=timestamp, freq=freq)
+
+    if impute is not False:
+        test_df[target_varibales] = dp.multi_period_loop_imputer(test_df[target_varibales], freq=freq)
+
+    X_test, y_test = test_df[[timestamp] + covariables], test_df[target_varibales]
+    return X_test, y_test

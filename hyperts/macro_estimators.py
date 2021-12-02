@@ -63,7 +63,7 @@ class ProphetForecastEstimator(HyperEstimator):
         if holidays is not None:
             kwargs['holidays'] = holidays
         if seasonality_mode is not None and seasonality_mode != 'additive':
-            kwargs['additive'] = 'additive'
+            kwargs['seasonality_mode'] = 'additive'
         if seasonality_prior_scale is not None and seasonality_prior_scale != 10.0:
             kwargs['seasonality_prior_scale'] = seasonality_prior_scale
         if holidays_prior_scale is not None and holidays_prior_scale != 10.0:

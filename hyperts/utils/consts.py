@@ -18,3 +18,6 @@ DATATYPE_OBJECT                    = 'object'
 StepName_DATA_PREPROCESSING        = 'data_preprocessing'
 StepName_SPACE_SEARCHING           = 'space_searching'
 StepName_FINAL_TRAINING            = 'final_training'
+
+OptimizeDirection_Minimize         = 'min'
+OptimizeDirection_Maximize         = 'max'

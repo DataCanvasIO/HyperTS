@@ -100,8 +100,12 @@ class ProphetWrapper(EstimatorWrapper, WrapperMixin):
         self.model.fit(df_train)
 
     def predict(self, X, **kwargs):
-        df_predict = self.model.predict(X)
-        return df_predict['yhat'].values
+        df_test = X[[self.timestamp]]
+        if self.timestamp != 'ds':
+            df_test.rename(columns={self.timestamp: 'ds'}, inplace=True)
+        df_preds = self.model.predict(df_test)
+        preds = df_preds['yhat'].values.reshape((-1, 1))
+        return preds
 
 
 class VARWrapper(EstimatorWrapper, WrapperMixin):
