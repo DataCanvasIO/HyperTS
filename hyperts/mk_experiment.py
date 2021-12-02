@@ -49,7 +49,7 @@ def make_experiment(train_df,
     return experiment
 
 
-def test_data_process(test_df, timestamp, covariables, freq=None, impute=False):
+def process_test_data(test_df, timestamp, covariables, freq=None, impute=False):
     if freq is None:
         freq = dp.infer_ts_freq(test_df[[timestamp]])
     target_varibales = dp.list_diff(test_df.columns.tolist(), [timestamp] + covariables)

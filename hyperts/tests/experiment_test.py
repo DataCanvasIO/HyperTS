@@ -1,7 +1,7 @@
 from hyperts.datasets import load_network_traffic
 from hyperts.utils import consts
 from hyperts.utils import data_ops as dp
-from hyperts.mk_experiment import make_experiment, test_data_process
+from hyperts.mk_experiment import make_experiment, process_test_data
 
 class Test_Experiment():
 
@@ -26,7 +26,7 @@ class Test_Experiment():
 
         model = exp.run(max_trials=3)
 
-        X_test, y_test = test_data_process(test_df, timestamp, covariables, impute=True)
+        X_test, y_test = process_test_data(test_df, timestamp, covariables, impute=True)
 
         y_pred = model.predict(X_test)
         assert y_pred.shape == y_test.shape
