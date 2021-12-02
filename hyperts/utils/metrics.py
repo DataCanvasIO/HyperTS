@@ -1,6 +1,12 @@
 import numpy as np
 from sklearn.metrics import *
 
+def check_is_array(y_true, y_pred):
+    if not isinstance(y_true, np.ndarray):
+        y_true = np.array(y_true)
+    if not isinstance(y_pred, np.ndarray):
+        y_pred = np.array(y_pred)
+    return y_true, y_pred
 
 def mse(y_true, y_pred):
     """Mean squared error.
@@ -9,10 +15,10 @@ def mse(y_true, y_pred):
 
     Parameters
     ----------
-    y_true : array-like of shape (n_samples,) or (n_samples, n_outputs)
+    y_true : pd.DataFrame or array-like of shape (n_samples,) or (n_samples, n_outputs)
         Ground truth (correct) target values.
 
-    y_pred : array-like of shape (n_samples,) or (n_samples, n_outputs)
+    y_pred : pd.DataFrame or array-like of shape (n_samples,) or (n_samples, n_outputs)
         Estimated target values.
     Returns
     -------
@@ -20,6 +26,8 @@ def mse(y_true, y_pred):
         A non-negative floating point value (the best value is 0.0), or an
         array of floating point values, one for each individual target.
     """
+    y_true, y_pred = check_is_array(y_true, y_pred)
+
     return np.nanmean((y_true - y_pred)**2, axis=0)
 
 
@@ -30,10 +38,10 @@ def mae(y_true, y_pred):
 
     Parameters
     ----------
-    y_true : array-like of shape (n_samples,) or (n_samples, n_outputs)
+    y_true : pd.DataFrame or array-like of shape (n_samples,) or (n_samples, n_outputs)
         Ground truth (correct) target values.
 
-    y_pred : array-like of shape (n_samples,) or (n_samples, n_outputs)
+    y_pred : pd.DataFrame or array-like of shape (n_samples,) or (n_samples, n_outputs)
         Estimated target values.
     Returns
     -------
@@ -41,6 +49,8 @@ def mae(y_true, y_pred):
         A non-negative floating point value (the best value is 0.0), or an
         array of floating point values, one for each individual target.
     """
+    y_true, y_pred = check_is_array(y_true, y_pred)
+
     return np.nanmean(np.abs(y_pred - y_true), axis=0)
 
 
@@ -51,10 +61,10 @@ def rmse(y_true, y_pred):
 
     Parameters
     ----------
-    y_true : array-like of shape (n_samples,) or (n_samples, n_outputs)
+    y_true : pd.DataFrame or array-like of shape (n_samples,) or (n_samples, n_outputs)
         Ground truth (correct) target values.
 
-    y_pred : array-like of shape (n_samples,) or (n_samples, n_outputs)
+    y_pred : pd.DataFrame or array-like of shape (n_samples,) or (n_samples, n_outputs)
         Estimated target values.
     Returns
     -------
@@ -62,6 +72,8 @@ def rmse(y_true, y_pred):
         A non-negative floating point value (the best value is 0.0), or an
         array of floating point values, one for each individual target.
     """
+    y_true, y_pred = check_is_array(y_true, y_pred)
+
     return np.sqrt(mse(y_true, y_pred))
 
 
@@ -72,10 +84,10 @@ def mape(y_true, y_pred, epsihon=1e-06, mask=False):
 
     Parameters
     ----------
-    y_true : array-like of shape (n_samples,) or (n_samples, n_outputs)
+    y_true : pd.DataFrame or array-like of shape (n_samples,) or (n_samples, n_outputs)
         Ground truth (correct) target values.
 
-    y_pred : array-like of shape (n_samples,) or (n_samples, n_outputs)
+    y_pred : pd.DataFrame or array-like of shape (n_samples,) or (n_samples, n_outputs)
         Estimated target values.
 
     epsihon: float, threshold to avoid division by zero. Default is 1e-06.
@@ -87,6 +99,8 @@ def mape(y_true, y_pred, epsihon=1e-06, mask=False):
         A non-negative floating point value (the best value is 0.0), or an
         array of floating point values, one for each individual target.
     """
+    y_true, y_pred = check_is_array(y_true, y_pred)
+
     masks = y_true!=0. if mask else y_true==y_true
     diff = np.abs((y_pred[masks] - y_true[masks]) / np.clip(np.abs(y_true[masks]), epsihon, None))
     return np.nanmean(diff, axis=0)
@@ -99,10 +113,10 @@ def smape(y_true, y_pred):
 
     Parameters
     ----------
-    y_true : array-like of shape (n_samples,) or (n_samples, n_outputs)
+    y_true : pd.DataFrame or array-like of shape (n_samples,) or (n_samples, n_outputs)
         Ground truth (correct) target values.
 
-    y_pred : array-like of shape (n_samples,) or (n_samples, n_outputs)
+    y_pred : pd.DataFrame or array-like of shape (n_samples,) or (n_samples, n_outputs)
         Estimated target values.
     Returns
     -------
@@ -110,5 +124,10 @@ def smape(y_true, y_pred):
         A non-negative floating point value (the best value is 0.0), or an
         array of floating point values, one for each individual target.
     """
+    y_true, y_pred = check_is_array(y_true, y_pred)
+
     diff = np.nanmean(np.abs(y_pred - y_true) / (np.abs(y_pred) + np.abs(y_true)), axis=0)
     return 2.0 * diff
+
+
+
