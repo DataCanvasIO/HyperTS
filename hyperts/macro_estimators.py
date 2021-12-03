@@ -118,7 +118,7 @@ class VARForecastEstimator(HyperEstimator):
 
 class TSFClassificationEstimator(HyperEstimator):
     """Time Series Classfication Estimator based on Hypernets.
-    Estimator: Vector Autoregression (VAR).
+    Estimator: Time Series Forest (TSF).
     Suitable for: Classfication Task.
     """
 
@@ -143,12 +143,3 @@ class TSFClassificationEstimator(HyperEstimator):
         else:
             raise ValueError('TSF model supports only classification task.')
         return tsf
-
-
-
-
-
-
-
-
-
