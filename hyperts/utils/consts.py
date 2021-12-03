@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 
 
-TIMESTAMP                          = "timestamp"
+TIMESTAMP                          = 'timestamp'
 
 Task_UNIVARIABLE_FORECAST          = 'univariable-forecast'
 Task_MULTIVARIABLE_FORECAST        = 'multivariable-forecast'
@@ -10,6 +10,10 @@ Task_MULTICLASS_CLASSIFICATION     = 'multiclass-classification'
 Task_REGRESSION                    = 'regression'
 Task_FORECAST                      = 'forecast'
 Task_CLASSIFICATION                = 'classification'
+
+Mode_STATS                         = 'stats'
+Mode_DL                            = 'dl'
+Mode_NAS                           = 'nas'
 
 DataType_INT                       = 'int'
 DataType_FLOAT                     = 'float'
