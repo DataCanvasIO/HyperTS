@@ -25,9 +25,9 @@ class Test_HyperTS():
         X, y = load_random_univariate_forecast_dataset()
         X_train, X_test, y_train, y_test = dp.temporal_train_test_split(X, y, test_horizion=24)
 
-        task = consts.TASK_UNIVARIABLE_FORECAST
-        optimize_direction = consts.OptimizeDirection_Minimize
-        reward_metric = 'rmse'
+        task = consts.Task_UNIVARIABLE_FORECAST
+        optimize_direction = consts.OptimizeDirection_MINIMIZE
+        reward_metric = consts.Metric_RMSE
 
         rs = RandomSearcher(lambda : self.search_space_one_trial(timestamp='ds'), optimize_direction=optimize_direction)
         ht = HyperTS(rs, reward_metric=reward_metric, task=task, callbacks=[SummaryCallback()])

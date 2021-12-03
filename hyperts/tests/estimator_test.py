@@ -1,7 +1,7 @@
-from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split
 from sktime.datasets import load_arrow_head
 
+import hyperts.utils.data_ops as dp
+from hyperts.utils.metrics import accuracy_score
 from hyperts.wrappers.stats_wrappers import VARWrapper, TSFClassifierWrapper
 from hyperts.datasets import load_random_multivariate_forecast_dataset
 
@@ -10,7 +10,7 @@ class Test_Estimator():
 
     def test_VAR_wrapper(self):
         X, y = load_random_multivariate_forecast_dataset()
-        X_train, X_test, y_train, y_test, = train_test_split(X, y, test_size=0.2, shuffle=False)
+        X_train, X_test, y_train, y_test, = dp.temporal_train_test_split(X, y, test_size=0.2)
         fit_kwargs = {'timestamp': 'ds'}
         model = VARWrapper(fit_kwargs)
         model.fit(X_train, y_train)
@@ -20,7 +20,7 @@ class Test_Estimator():
 
     def test_SKTime_wrapper(self):
         X, y = load_arrow_head(return_X_y=True)
-        X_train, X_test, y_train, y_test = train_test_split(X, y)
+        X_train, X_test, y_train, y_test = dp.random_train_test_split(X, y)
         classifier = TSFClassifierWrapper(fit_kwargs=None, n_estimators=200)
 
         classifier.fit(X_train, y_train)

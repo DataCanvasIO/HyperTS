@@ -80,7 +80,7 @@ class ProphetForecastEstimator(HyperEstimator):
         HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
 
     def _build_estimator(self, task, fit_kwargs, kwargs):
-        if task == consts.TASK_UNIVARIABLE_FORECAST:
+        if task == consts.Task_UNIVARIABLE_FORECAST:
             prophet = ProphetWrapper(fit_kwargs, **kwargs)
         else:
             raise ValueError('Prophet model supports only univariate forecast task.')
@@ -109,7 +109,7 @@ class VARForecastEstimator(HyperEstimator):
         HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
 
     def _build_estimator(self, task, fit_kwargs, kwargs):
-        if task == consts.TASK_MULTIVARIABLE_FORECAST:
+        if task == consts.Task_MULTIVARIABLE_FORECAST:
             var = VARWrapper(fit_kwargs, **kwargs)
         else:
             raise ValueError('VAR model supports only multivariate forecast task.')
@@ -138,7 +138,7 @@ class TSFClassificationEstimator(HyperEstimator):
         HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
 
     def _build_estimator(self, task, fit_kwargs, kwargs):
-        if task in [consts.TASK_BINARY_CLASSIFICATION, consts.TASK_MULTICLASS_CLASSIFICATION]:
+        if task in [consts.Task_BINARY_CLASSIFICATION, consts.Task_MULTICLASS_CLASSIFICATION]:
             tsf = TSFClassifierWrapper(fit_kwargs, **kwargs)
         else:
             raise ValueError('TSF model supports only classification task.')

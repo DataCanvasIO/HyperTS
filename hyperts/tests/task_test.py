@@ -8,7 +8,6 @@ from hyperts.hyper_ts import HyperTS
 from hyperts.search_space import search_space_univariate_forecast_generator, search_space_multivariate_forecast_generator, \
     space_classification_classification
 
-# from .datasets import *
 from sktime.datasets import load_arrow_head
 from hyperts.datasets import load_random_univariate_forecast_dataset, load_random_multivariate_forecast_dataset
 from hyperts.utils.data_ops import random_train_test_split, temporal_train_test_split

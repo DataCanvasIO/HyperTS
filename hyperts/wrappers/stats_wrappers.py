@@ -149,7 +149,7 @@ class VARWrapper(EstimatorWrapper, WrapperMixin):
 
 class TSFClassifierWrapper(EstimatorWrapper):
 
-    def __init__(self, fit_kwargs, **kwargs):
+    def __init__(self, fit_kwargs=None, **kwargs):
         self.model = TimeSeriesForestClassifier(**kwargs)
 
     def fit(self, X, y=None, **kwargs):

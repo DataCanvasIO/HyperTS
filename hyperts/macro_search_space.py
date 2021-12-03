@@ -245,13 +245,13 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
             multivar_containers['var'] = (
             VARForecastEstimator, self.default_var_init_kwargs, self.default_var_fit_kwargs)
 
-        if self.task == consts.TASK_UNIVARIABLE_FORECAST:
+        if self.task == consts.Task_UNIVARIABLE_FORECAST:
             return univar_containers
-        elif self.task == consts.TASK_MULTIVARIABLE_FORECAST:
+        elif self.task == consts.Task_MULTIVARIABLE_FORECAST:
             return multivar_containers
         else:
-            raise ValueError(f'Incorrect task name, default {consts.TASK_UNIVARIABLE_FORECAST}'
-                             f' or {consts.TASK_MULTIVARIABLE_FORECAST}.')
+            raise ValueError(f'Incorrect task name, default {consts.Task_UNIVARIABLE_FORECAST}'
+                             f' or {consts.Task_MULTIVARIABLE_FORECAST}.')
 
 
 class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):

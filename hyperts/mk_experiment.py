@@ -32,9 +32,9 @@ def make_experiment(train_df,
     else:
         X_eval, y_eval = None, None
 
-    if task in [consts.TASK_FORECAST, consts.TASK_UNIVARIABLE_FORECAST, consts.TASK_MULTIVARIABLE_FORECAST]:
+    if task in [consts.Task_FORECAST, consts.Task_UNIVARIABLE_FORECAST, consts.Task_MULTIVARIABLE_FORECAST]:
         if len(y_train.columns) == 1:
-            task = consts.TASK_UNIVARIABLE_FORECAST
+            task = consts.Task_UNIVARIABLE_FORECAST
         search_pace = stats_forecast_search_space(task=task, timestamp=timestamp, covariables=covariables)
     else:
         search_pace = stats_classification_search_space(task=task, timestamp=timestamp)

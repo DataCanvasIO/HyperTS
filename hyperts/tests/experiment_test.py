@@ -13,15 +13,16 @@ class Test_Experiment():
 
         timestamp = 'TimeStamp'
         covariables = ['HourSin', 'WeekCos', 'CBWD']
-        task = consts.TASK_UNIVARIABLE_FORECAST
-        optimize_direction = consts.OptimizeDirection_Minimize
+        task = consts.Task_UNIVARIABLE_FORECAST
+        reward_metric = consts.Metric_RMSE
+        optimize_direction = consts.OptimizeDirection_MINIMIZE
 
         exp = make_experiment(train_df,
                               timestamp=timestamp,
                               covariables=covariables,
                               task=task,
                               callbacks=None,
-                              reward_metric='rmse',
+                              reward_metric=reward_metric,
                               optimize_direction=optimize_direction)
 
         model = exp.run(max_trials=3)
@@ -37,15 +38,16 @@ class Test_Experiment():
 
         timestamp = 'TimeStamp'
         covariables = ['HourSin', 'WeekCos', 'CBWD']
-        task = consts.TASK_MULTIVARIABLE_FORECAST
-        optimize_direction = consts.OptimizeDirection_Minimize
+        task = consts.Task_MULTIVARIABLE_FORECAST
+        reward_metric = consts.Metric_RMSE
+        optimize_direction = consts.OptimizeDirection_MINIMIZE
 
         exp = make_experiment(train_df,
                               timestamp=timestamp,
                               covariables=covariables,
                               task=task,
                               callbacks=None,
-                              reward_metric='rmse',
+                              reward_metric=reward_metric,
                               optimize_direction=optimize_direction)
 
         model = exp.run(max_trials=3)
