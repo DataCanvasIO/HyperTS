@@ -1,14 +1,12 @@
 from hyperts.datasets import load_network_traffic
 from hyperts.utils import consts
-from hyperts.utils import data_ops as dp
-from hyperts.mk_experiment import make_experiment, process_test_data
+from hyperts.utils import toolbox as dp
+from hyperts.experiment import make_experiment, process_test_data
 
 class Test_Experiment():
 
     def test_univariable_forecast(self):
-        df = load_network_traffic()
-        df = df[['TimeStamp', 'Var_1', 'HourSin', 'WeekCos', 'CBWD']]
-
+        df = load_network_traffic(univariate=True)
         train_df, test_df = dp.temporal_train_test_split(df, test_size=0.1)
 
         timestamp = 'TimeStamp'

@@ -180,8 +180,6 @@ class HyperTS(HyperModel):
         return '`export_trial_configuration` does not implemented'
 
     def search(self, X, y, X_eval, y_eval, cv=False, num_folds=3, max_trials=3, dataset_id=None, trial_store=None, **fit_kwargs):
-        ##task
-
         if dataset_id is None:
             dataset_id = self.generate_dataset_id(X, y)
 

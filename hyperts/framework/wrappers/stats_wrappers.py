@@ -12,7 +12,7 @@ from hypernets.utils import logging
 from hypernets.core.search_space import ModuleSpace
 
 from hyperts.utils import consts
-from hyperts.transformers import LogXplus1Transformer, IdentityTransformer
+from hyperts.utils.transformers import LogXplus1Transformer, IdentityTransformer
 
 from sklearn.preprocessing import MinMaxScaler, MaxAbsScaler
 from sklearn.pipeline import Pipeline

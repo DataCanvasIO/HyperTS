@@ -1,269 +1,254 @@
-import copy
+# -*- coding:utf-8 -*-
+"""
 
-import numpy as np
-import pandas as pd
+"""
+from sklearn.metrics import get_scorer
 
-from hypernets.core import set_random_state
-from hypernets.experiment.compete import SteppedExperiment, ExperimentStep, \
-                                         EnsembleStep, FinalTrainStep
-
-from hypernets.utils import logging
 from hypernets.tabular import get_tool_box
-from hypernets.tabular.data_cleaner import DataCleaner
+from hypernets.searchers import make_searcher
+from hypernets.discriminators import make_discriminator
+from hypernets.tabular.metrics import metric_to_scoring
+from hypernets.experiment.cfg import ExperimentCfg as cfg
+from hypernets.utils import load_data, logging, isnotebook, load_module
 
-from hyperts.utils import data_ops as dp, consts
+from hyperts.utils import consts, toolbox
+from hyperts.hyper_ts import HyperTS as hyper_ts_cls
+from hyperts.framework.compete import TSCompeteExperiment
+from hyperts.macro_search_space import stats_forecast_search_space, stats_classification_search_space
 
 logger = logging.get_logger(__name__)
 
-DEFAULT_EVAL_SIZE = 0.2
+forecast_task_list = [
+    consts.Task_UNIVARIABLE_FORECAST,
+    consts.Task_MULTIVARIABLE_FORECAST,
+    consts.Task_FORECAST
+]
 
-def _set_log_level(log_level):
+classfication_task_list = [
+    consts.Task_BINARY_CLASSIFICATION,
+    consts.Task_MULTICLASS_CLASSIFICATION,
+    consts.Task_CLASSIFICATION
+]
+
+regression_task_list = [
+    consts.Task_REGRESSION
+]
+
+
+def make_experiment(train_data,
+                    task,
+                    eval_data=None,
+                    mode='stats',
+                    target=None,
+                    timestamp=None,
+                    covariables=None,
+                    id=None,
+                    searcher=None,
+                    search_space=None,
+                    search_callbacks=None,
+                    searcher_options=None,
+                    callbacks=None,
+                    early_stopping_rounds=10,
+                    early_stopping_time_limit=3600,
+                    early_stopping_reward=None,
+                    reward_metric=None,
+                    optimize_direction=None,
+                    discriminator=None,
+                    hyper_model_options=None,
+                    log_level='info',
+                    **kwargs):
+    """
+    Parameters
+    ----------
+
+    kwargs:
+        Parameters to initialize experiment instance, refrence CompeteExperiment for more details.
+    Returns
+    -------
+    Runnable experiment object
+
+    """
+
+    def find_target(df):
+        columns = df.columns.to_list()
+        for col in columns:
+            if col.lower() in cfg.experiment_default_target_set:
+                return col
+        raise ValueError(f'Not found one of {cfg.experiment_default_target_set} from your data,'
+                         f' implicit target must be specified.')
+
+    def to_search_object(searcher, search_space):
+        from hypernets.core.searcher import Searcher as SearcherSpec
+        from hypernets.searchers import EvolutionSearcher
+
+        if searcher is None:
+            searcher = default_searcher(EvolutionSearcher, search_space, searcher_options)
+        elif isinstance(searcher, (type, str)):
+            searcher = default_searcher(searcher, search_space, searcher_options)
+        elif not isinstance(searcher, SearcherSpec):
+            logger.warning(f'Unrecognized searcher "{searcher}".')
+
+        return searcher
+
+    def default_search_space(mode, task, timestamp=None, covariables=None):
+        if mode == consts.Mode_STATS and task in forecast_task_list:
+            search_pace = stats_forecast_search_space(task=task, timestamp=timestamp, covariables=covariables)
+        elif mode == consts.Mode_STATS and task in classfication_task_list:
+            search_pace = stats_classification_search_space(task=task, timestamp=timestamp)
+        elif mode == consts.Mode_STATS and task in regression_task_list:
+            search_pace = None
+        elif mode == consts.Mode_DL and task in forecast_task_list:
+            search_pace = None
+        elif mode == consts.Mode_DL and task in classfication_task_list:
+            search_pace = None
+        elif mode == consts.Mode_DL and task in regression_task_list:
+            search_pace = None
+        elif mode == consts.Mode_NAS and task in forecast_task_list:
+            search_pace = None
+        elif mode == consts.Mode_NAS and task in classfication_task_list:
+            search_pace = None
+        elif mode == consts.Mode_NAS and task in regression_task_list:
+            search_pace = None
+
+        return search_pace
+
+    def default_searcher(cls, search_space, options):
+        assert search_space is not None, '"search_space" should be specified when "searcher" is None or str.'
+        assert optimize_direction in {'max', 'min'}
+        if options is None:
+            options = {}
+        options['optimize_direction'] = optimize_direction
+        s = make_searcher(cls, search_space, **options)
+
+        return s
+
+    def default_experiment_callbacks():
+        cbs = cfg.experiment_callbacks_notebook if isnotebook() else cfg.experiment_callbacks_console
+        cbs = [load_module(cb)() if isinstance(cb, str) else cb for cb in cbs]
+        return cbs
+
+    def default_search_callbacks():
+        cbs = cfg.hyper_model_callbacks_notebook if isnotebook() else cfg.hyper_model_callbacks_console
+        cbs = [load_module(cb)() if isinstance(cb, str) else cb for cb in cbs]
+        return cbs
+
+    def append_early_stopping_callbacks(cbs):
+        from hypernets.core.callbacks import EarlyStoppingCallback
+
+        assert isinstance(cbs, (tuple, list))
+        if any([isinstance(cb, EarlyStoppingCallback) for cb in cbs]):
+            return cbs
+
+        op = optimize_direction if optimize_direction is not None \
+            else 'max' if scorer._sign > 0 else 'min'
+        es = EarlyStoppingCallback(early_stopping_rounds, op,
+                                   time_limit=early_stopping_time_limit,
+                                   expected_reward=early_stopping_reward)
+        return [es] + cbs
+
+    # Parameters checking
+    assert train_data is not None, 'train data is required.'
+    assert task is not None, 'task is required. Task naming paradigm:' \
+                             f'{forecast_task_list + classfication_task_list + regression_task_list}'
+
+    if task not in [forecast_task_list + classfication_task_list + regression_task_list]:
+        ValueError(f'Task naming paradigm:' 
+                   f'{forecast_task_list + classfication_task_list + regression_task_list}')
+
+    kwargs = kwargs.copy()
+
+    if log_level is None:
+        log_level = logging.WARN
     logging.set_level(log_level)
 
+    # Data checking
+    train_data, eval_data = [load_data(data) if data is not None else None for data in (train_data, eval_data)]
 
-class TSDataPreprocessStep(ExperimentStep):
-    def __init__(self, experiment, name, timestamp_col=None, freq=None,
-                 covariate_cols=None, covariate_data_clean_args=None):
-        super().__init__(experiment, name)
+    tb = get_tool_box(train_data, eval_data)
+    if hasattr(tb, 'is_dask_dataframe'):
+        train_data, eval_data = [tb.reset_index(x) if tb.is_dask_dataframe(x) else x for x in (train_data, eval_data)]
 
-        timestamp_col = [timestamp_col] if isinstance(timestamp_col, str) else timestamp_col
-        covariate_cols = [covariate_cols] if isinstance(covariate_cols, str) else covariate_cols
+    if target is None and task in classfication_task_list:
+        target = find_target(train_data)
+    else:
+        target = toolbox.list_diff(train_data.columns.tolist(), [timestamp] + covariables)
 
-        self.freq = freq
-        self.timestamp_col = timestamp_col if timestamp_col is not None else consts.TIMESTAMP
-        self.covariate_cols = covariate_cols
-        self.covariate_data_clean_args = covariate_data_clean_args if covariate_data_clean_args is not None else {}
-        self.covariate_data_clean_args.update({'correct_object_dtype': False})
-        # fitted
-        self.covariate_data_cleaner = DataCleaner(**self.covariate_data_clean_args)
+    X_train, y_train = train_data[[timestamp] + covariables], train_data[target]
+    if eval_data is not None:
+        X_eval, y_eval = eval_data[[timestamp] + covariables], eval_data[target]
+    else:
+        X_eval, y_eval = None, None
 
-    def fit_transform(self, hyper_model, X_train, y_train, X_test=None, X_eval=None, y_eval=None, **kwargs):
-        super().fit_transform(hyper_model, X_train, y_train, X_test=X_test, X_eval=X_eval, y_eval=y_eval)
-        # 1. covariate variables data clean procsss
-        if self.covariate_cols is not None and len(self.covariate_cols) > 0:
-            X_train = self.covariate_transform(X_train, training=True)
+    if task == consts.Task_FORECAST and len(y_train.columns) == 1:
+        task = consts.Task_UNIVARIABLE_FORECAST
+    if task == consts.Task_CLASSIFICATION and y_train.nunique() == 2:
+        task = consts.Task_BINARY_CLASSIFICATION
 
-        # 2. target plus covariable process
-        train_Xy = pd.concat([X_train, y_train], axis=1)
-        variable_cols = dp.list_diff(train_Xy.columns, self.timestamp_col)
-        target_variable_cols = dp.list_diff(variable_cols, self.covariate_cols)
-        excluded_cols = dp.list_diff(train_Xy.columns, target_variable_cols)
-        train_Xy = self.series_transform(train_Xy, target_variable_cols)
-        X_train, y_train = train_Xy[excluded_cols], train_Xy[target_variable_cols]
+    if reward_metric is None:
+        if task in forecast_task_list:
+            reward_metric = 'mae'
+        if task in classfication_task_list:
+            reward_metric = 'accuracy'
+        if task in regression_task_list:
+            reward_metric = 'rmse'
+        logger.info(f'no reward metric specified, use "{reward_metric}" for {task} task by default.')
 
-        # 3. eval variables data process
-        if X_eval is None or y_eval is None:
-            eval_size = self.experiment.eval_size
-            if self.task in [consts.TASK_FORECAST, consts.TASK_UNIVARIABLE_FORECAST, consts.TASK_MULTIVARIABLE_FORECAST]:
-                X_train, X_eval, y_train, y_eval = \
-                    dp.temporal_train_test_split(X_train, y_train, test_size=eval_size)
-        else:
-            if self.covariate_cols is not None and len(self.covariate_cols) > 0:
-                X_eval = self.covariate_transform(X_eval, training=False)
-            eval_Xy = pd.concat([X_eval, y_eval], axis=1)
-            eval_Xy = self.series_transform(eval_Xy, target_variable_cols)
-            X_eval, y_eval = eval_Xy[excluded_cols], eval_Xy[target_variable_cols]
+    if kwargs.get('scorer') is None:
+        scorer = metric_to_scoring(reward_metric, task=task, pos_label=kwargs.get('pos_label'))
+    else:
+        scorer = kwargs.pop('scorer')
 
-        # 4. compute new data shape
-        data_shapes = {'X_train.shape': X_train.shape,
-                       'y_train.shape': y_train.shape,
-                       'X_eval.shape': None if X_eval is None else X_eval.shape,
-                       'y_eval.shape': None if y_eval is None else y_eval.shape,
-                       'X_test.shape': None if X_test is None else X_test.shape
-                       }
+    if isinstance(scorer, str):
+        scorer = get_scorer(scorer)
 
-        # 5. reset part parameters
-        self.data_shapes = data_shapes
+    if optimize_direction is None or len(optimize_direction) == 0:
+        optimize_direction = 'max' if scorer._sign > 0 else 'min'
 
-        return hyper_model, X_train, y_train, X_test, X_eval, y_eval
+    if (searcher is None or isinstance(searcher, str)) and search_space is None:
+        search_space = default_search_space(mode, task, timestamp=timestamp, covariables=covariables)
 
-    def transform(self, X, y=None, **kwargs):
-        if self.covariate_cols is not None and len(self.covariate_cols) > 0:
-            X_transform = self.covariate_transform(X, training=False)
-            X_transform = self.series_transform(X_transform)
-        else:
-            X_transform = self.series_transform(X)
-        return X_transform
+    searcher = to_search_object(searcher, search_space)
 
-    def covariate_transform(self, X, training=False):
-        df_timestamp = X[self.timestamp_col]
-        if training:
-            df_covariate, _ = self.covariate_data_cleaner.fit_transform(X[self.covariate_cols])
-        else:
-            df_covariate = self.covariate_data_cleaner.transform(X[self.covariate_cols])
-        assert df_covariate.shape[0] == X.shape[0], \
-            'The row of clearned covariable is not equal the row of X_train.'
-        X = pd.concat([df_timestamp, df_covariate], axis=1)
-        return X
+    if search_callbacks is None:
+        search_callbacks = default_search_callbacks()
+    # search_callbacks = append_early_stopping_callbacks(search_callbacks)
 
-    def series_transform(self, X, target_variable_cols=None):
-        covar_object_names, covar_float_names = [], []
+    if callbacks is None:
+        callbacks = default_experiment_callbacks()
 
-        if self.covariate_cols is not None and len(self.covariate_cols) > 0:
-            for col in self.covariate_cols:
-                if X[col].dtypes == consts.DATATYPE_OBJECT:
-                    covar_object_names.append(col)
-                elif X[col].dtypes == consts.DATATYPE_FLOAT:
-                    covar_float_names.append(col)
+    # if discriminator is None and cfg.experiment_discriminator is not None and len(cfg.experiment_discriminator) > 0:
+    #     discriminator = make_discriminator(cfg.experiment_discriminator,
+    #                                        optimize_direction=optimize_direction,
+    #                                        **(cfg.experiment_discriminator_options or {}))
 
-        if target_variable_cols is not None:
-            impute_col_names = target_variable_cols + covar_float_names
-        else:
-            impute_col_names = covar_float_names
+    if id is None:
+        hasher = tb.data_hasher()
+        id = hasher(dict(X_train=X_train, y_train=y_train, X_eval=X_eval, y_eval=y_eval,
+                         eval_size=kwargs.get('eval_size'), target=target, task=task))
+        id = f'{hyper_ts_cls.__name__}_{id}'
 
-        self.freq = self.freq if self.freq is not None else \
-            dp.infer_ts_freq(X[self.timestamp_col], ts_name=self.timestamp_col[0])
-        X = dp.drop_duplicated_ts_rows(X, ts_name=self.timestamp_col[0])
-        X = dp.smooth_missed_ts_rows(X, freq=self.freq, ts_name=self.timestamp_col[0])
+    # if searcher == None:
+    if hyper_model_options is None:
+        hyper_model_options = {}
+    hyper_model = hyper_ts_cls(searcher, reward_metric=reward_metric, task=task, callbacks=search_callbacks,
+                               discriminator=discriminator, **hyper_model_options)
 
-        if target_variable_cols is not None and len(target_variable_cols) > 0:
-            X[target_variable_cols] = dp.nan_to_outliers(X[target_variable_cols])
-        if impute_col_names is not None and len(impute_col_names) > 0:
-            X[impute_col_names] = dp.multi_period_loop_imputer(X[impute_col_names], freq=self.freq)
-        if covar_object_names is not None and len(covar_object_names) > 0:
-            X[covar_object_names] = X[covar_object_names].fillna(method='ffill').fillna(method='bfill')
+    experiment = TSCompeteExperiment(hyper_model, X_train=X_train, y_train=y_train, X_eval=X_eval, y_eval=y_eval,
+                                     timestamp_col=timestamp, covariate_cols=covariables,
+                                     task=task, id=id, callbacks=callbacks, scorer=scorer, **kwargs)
 
-        return X
-
-    def get_params(self, deep=True):
-        params = super(TSDataPreprocessStep, self).get_params()
-        params['covariate_data_clean_args'] = self.covariate_data_cleaner.get_params()
-        return params
-
-    def get_fitted_params(self):
-        freq = self.freq if self.freq is not None else None
-        data_shapes = self.data_shapes if self.data_shapes is not None else {}
-        return {**super(TSDataPreprocessStep, self).get_fitted_params(),
-                **data_shapes,
-                'freq': freq}
+    return experiment
 
 
-class TSSpaceSearchStep(ExperimentStep):
-    def __init__(self, experiment, name):
-        super().__init__(experiment, name)
-        # fitted
-        self.dataset_id = None
-        self.model = None
-        self.history_ = None
-        self.best_reward_ = None
+def process_test_data(test_df, timestamp, covariables, freq=None, impute=False):
+    if freq is None:
+        freq = toolbox.infer_ts_freq(test_df[[timestamp]])
+    target_varibales = toolbox.list_diff(test_df.columns.tolist(), [timestamp] + covariables)
+    test_df = toolbox.drop_duplicated_ts_rows(test_df, ts_name=timestamp)
+    test_df = toolbox.smooth_missed_ts_rows(test_df, ts_name=timestamp, freq=freq)
 
-    def fit_transform(self, hyper_model, X_train, y_train, X_test=None, X_eval=None, y_eval=None, **kwargs):
-        super().fit_transform(hyper_model, X_train, y_train, X_test=X_test, X_eval=X_eval, y_eval=y_eval)
-        if X_eval is not None:
-            kwargs['eval_set'] = (X_eval, y_eval)
-        model = copy.deepcopy(self.experiment.hyper_model)  # copy from original hyper_model instance
-        model.search(X_train, y_train, X_eval, y_eval, **kwargs)
+    if impute is not False:
+        test_df[target_varibales] = toolbox.multi_period_loop_imputer(test_df[target_varibales], freq=freq)
 
-        if model.get_best_trial() is None or model.get_best_trial().reward == 0:
-            raise RuntimeError('Not found available trial, change experiment settings and try again pls.')
-
-        self.dataset_id = 'abc'  # fixme
-        self.model = model
-        self.history_ = model.history
-        self.best_reward_ = model.get_best_trial().reward
-
-        logger.info(f'{self.name} best_reward: {self.best_reward_}')
-
-        return self.model, X_train, y_train, X_test, X_eval, y_eval
-
-    def transform(self, X, y=None, **kwargs):
-        return X
-
-    def is_transform_skipped(self):
-        return True
-
-    def get_fitted_params(self):
-        return {**super().get_fitted_params(),
-                'best_reward': self.best_reward_,
-                'history': self.history_,
-                }
-
-
-class TSEnsembleStep(EnsembleStep):
-
-    def get_ensemble(self, estimators, X_train, y_train):
-        # return GreedyEnsemble(self.task, estimators, scoring=self.scorer, ensemble_size=self.ensemble_size)
-        tb = get_tool_box(X_train, y_train)
-        if self.task in ['forecast', "multivariate-forecast"]:
-            ensemble_task = 'regression'
-        else:
-            ensemble_task = self.task
-        return tb.greedy_ensemble(ensemble_task, estimators, scoring=self.scorer, ensemble_size=self.ensemble_size)
-
-
-class TSExperiment(SteppedExperiment):
-
-    def __init__(self, hyper_model, X_train, y_train, X_eval=None, y_eval=None, X_test=None,
-                 eval_size=0.2,
-                 freq=None,
-                 timestamp_col=None,
-                 covariate_cols=None,
-                 covariate_data_clean_args=None,
-                 cv=True, num_folds=3,
-                 task=None,
-                 callbacks=None,
-                 log_level=None,
-                 random_state=None,
-                 ensemble_size=3,
-                 **kwargs):
-        """
-        Parameters
-
-        ----------
-        Return
-
-        """
-        if random_state is None:
-            random_state = np.random.randint(0, 65535)
-        set_random_state(random_state)
-
-        task = hyper_model.task
-
-        # todo: check task
-
-        # todo: check scorer
-
-        steps = []
-
-        # data clean
-        if task in [consts.TASK_FORECAST, consts.TASK_UNIVARIABLE_FORECAST, consts.TASK_MULTIVARIABLE_FORECAST]:
-            steps.append(TSDataPreprocessStep(self, consts.StepName_DATA_PREPROCESSING,
-                                             freq=freq,
-                                             timestamp_col=timestamp_col,
-                                             covariate_cols=covariate_cols,
-                                             covariate_data_clean_args=covariate_data_clean_args))
-
-        # search step
-        steps.append(TSSpaceSearchStep(self, consts.StepName_SPACE_SEARCHING))
-
-        # ensemble step,
-        # steps.append(TSEnsembleStep(self, StepNames.FINAL_ENSEMBLE, scorer=scorer, ensemble_size=ensemble_size))
-
-        steps.append(FinalTrainStep(self, consts.StepName_FINAL_TRAINING, retrain_on_wholedata=False))
-
-        # ignore warnings
-        import warnings
-        warnings.filterwarnings('ignore')
-
-        if log_level is not None:
-            _set_log_level(log_level)
-
-        self.run_kwargs = kwargs
-        super(TSExperiment, self).__init__(steps,
-                                           hyper_model, X_train, y_train, X_eval=X_eval, y_eval=y_eval,
-                                           X_test=X_test, eval_size=eval_size, task=task,
-                                           id=id,
-                                           callbacks=callbacks,
-                                           random_state=random_state)
-
-    def run(self, **kwargs):
-        run_kwargs = {**self.run_kwargs, **kwargs}
-        return super().run(**run_kwargs)
-
-    def _repr_html_(self):
-        try:
-            from hypernets.hn_widget.hn_widget.widget import ExperimentSummary
-            from IPython.display import display
-            display(ExperimentSummary(self))
-        except:
-            return self.__repr__()
+    X_test, y_test = test_df[[timestamp] + covariables], test_df[target_varibales]
+    return X_test, y_test

@@ -1,8 +1,8 @@
 from sktime.datasets import load_arrow_head
 
-import hyperts.utils.data_ops as dp
+import hyperts.utils.toolbox as dp
 from hyperts.utils.metrics import accuracy_score
-from hyperts.wrappers.stats_wrappers import VARWrapper, TSFClassifierWrapper
+from hyperts.framework.wrappers.stats_wrappers import VARWrapper, TSFClassifierWrapper
 from hyperts.datasets import load_random_multivariate_forecast_dataset
 
 

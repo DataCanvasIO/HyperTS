@@ -4,9 +4,9 @@
 """
 import numpy as np
 
-from hyperts.macro_estimators import ProphetForecastEstimator, \
+from hyperts.estimators import ProphetForecastEstimator, \
     VARForecastEstimator, TSFClassificationEstimator
-from hyperts.transformers import TimeSeriesHyperTransformer
+from hyperts.utils.transformers import TimeSeriesHyperTransformer
 
 from hyperts.utils import consts
 
@@ -195,7 +195,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
                  enable_var=True,
                  **kwargs):
         kwargs['timestamp'] = timestamp
-        print("Tip: If other parameters exist, set them directly. For example, covariables=['is_holiday'].")
+        logger.info("Tip: If other parameters exist, set them directly. For example, covariables=['is_holiday'].")
 
         super(StatsForecastSearchSpace, self).__init__(**kwargs)
 
@@ -261,7 +261,7 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
                  **kwargs):
         if hasattr(kwargs, 'covariables'):
             kwargs.pop('covariables', None)
-        print("Tip: If other parameters exist, set them directly. For example, n_estimators=200.")
+        logger.info("Tip: If other parameters exist, set them directly. For example, n_estimators=200.")
 
         super(StatsClassificationSearchSpace, self).__init__(**kwargs)
 
