@@ -4,13 +4,16 @@ import pandas as pd
 from random import random
 from os.path import join, dirname
 
-def load_network_traffic():
+def load_network_traffic(univariate=False):
     """Network Traffic Forecast
 
     """
     module_path = dirname(__file__)
     data_file_name = join(module_path, 'network_traffic_forecast.csv')
     df = pd.read_csv(data_file_name, encoding='utf-8')
+    if univariate:
+        variable = np.random.choice(['Var_1', 'Var_2', 'Var_3', 'Var_4', 'Var_5', 'Var_6'], size=1)[0]
+        df = df[['TimeStamp', variable, 'HourSin', 'WeekCos', 'CBWD']]
 
     return df
 
@@ -45,10 +48,6 @@ def load_random_multivariate_forecast_dataset():
     y = pd.DataFrame(data=data)
     y.columns = ['Var_1', 'Var_2']
     return X, y
-
-
-
-
 
 
 if __name__ == '__main__':
