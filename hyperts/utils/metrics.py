@@ -8,7 +8,7 @@ def check_is_array(y_true, y_pred):
         y_pred = np.array(y_pred)
     return y_true, y_pred
 
-def mse(y_true, y_pred):
+def mse(y_true, y_pred, axis=None):
     """Mean squared error.
 
     Note that this implementation can handle NaN.
@@ -28,10 +28,10 @@ def mse(y_true, y_pred):
     """
     y_true, y_pred = check_is_array(y_true, y_pred)
 
-    return np.nanmean((y_true - y_pred)**2, axis=0)
+    return np.nanmean((y_true - y_pred)**2, axis=axis)
 
 
-def mae(y_true, y_pred):
+def mae(y_true, y_pred, axis=None):
     """Mean absolute error.
 
     Note that this implementation can handle NaN.
@@ -51,7 +51,7 @@ def mae(y_true, y_pred):
     """
     y_true, y_pred = check_is_array(y_true, y_pred)
 
-    return np.nanmean(np.abs(y_pred - y_true), axis=0)
+    return np.nanmean(np.abs(y_pred - y_true), axis=axis)
 
 
 def rmse(y_true, y_pred):
@@ -77,7 +77,7 @@ def rmse(y_true, y_pred):
     return np.sqrt(mse(y_true, y_pred))
 
 
-def mape(y_true, y_pred, epsihon=1e-06, mask=False):
+def mape(y_true, y_pred, epsihon=1e-06, mask=False, axis=None):
     """Mean absolute percentage error.
 
     Note that this implementation can handle NaN.
@@ -103,10 +103,10 @@ def mape(y_true, y_pred, epsihon=1e-06, mask=False):
 
     masks = y_true!=0. if mask else y_true==y_true
     diff = np.abs((y_pred[masks] - y_true[masks]) / np.clip(np.abs(y_true[masks]), epsihon, None))
-    return np.nanmean(diff, axis=0)
+    return np.nanmean(diff, axis=axis)
 
 
-def smape(y_true, y_pred):
+def smape(y_true, y_pred, axis=None):
     """Symmetric mean absolute percentage error.
 
     Note that this implementation can handle NaN.
@@ -126,7 +126,7 @@ def smape(y_true, y_pred):
     """
     y_true, y_pred = check_is_array(y_true, y_pred)
 
-    diff = np.nanmean(np.abs(y_pred - y_true) / (np.abs(y_pred) + np.abs(y_true)), axis=0)
+    diff = np.nanmean(np.abs(y_pred - y_true) / (np.abs(y_pred) + np.abs(y_true)), axis=axis)
     return 2.0 * diff
 
 
