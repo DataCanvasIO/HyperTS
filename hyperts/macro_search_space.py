@@ -4,11 +4,12 @@
 """
 import numpy as np
 
+from hyperts.utils import consts
+from hyperts.config import Config as cfg
+
 from hyperts.estimators import ProphetForecastEstimator, \
     VARForecastEstimator, TSFClassificationEstimator
 from hyperts.utils.transformers import TimeSeriesHyperTransformer
-
-from hyperts.utils import consts
 
 from hypernets.tabular import column_selector as tcs
 from hypernets.core.ops import HyperInput, ModuleChoice, Optional
@@ -121,9 +122,11 @@ class BaseSearchSpaceGenerator:
 
         if covariables is not None:
             # category
-            pipelines.append(categorical_transform_pipeline(covariables=covariables)(hyper_input))
+            if cfg.category_pipeline_enabled:
+                pipelines.append(categorical_transform_pipeline(covariables=covariables)(hyper_input))
             # numeric
-            pipelines.append(numeric_transform_pipeline(covariables=covariables)(hyper_input))
+            if cfg.numeric_pipeline_enabled:
+                pipelines.append(numeric_transform_pipeline(covariables=covariables)(hyper_input))
         # timestamp
         if timestamp is not None:
             pipelines.append(Pipeline([TimeSeriesHyperTransformer()],
