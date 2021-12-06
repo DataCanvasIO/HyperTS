@@ -6,7 +6,10 @@ from hypernets.utils import logging
 from hypernets.core.search_space import ModuleSpace
 
 from hyperts.utils import consts
-from hyperts.framework.wrappers.stats_wrappers import ProphetWrapper, VARWrapper, TSFClassifierWrapper
+from hyperts.framework.wrappers.stats_wrappers import (ProphetWrapper,
+                                                       VARWrapper,
+                                                       ARIMAWrapper,
+                                                       TSFClassifierWrapper)
 
 logger = logging.get_logger(__name__)
 
@@ -85,6 +88,37 @@ class ProphetForecastEstimator(HyperEstimator):
         else:
             raise ValueError('Prophet model supports only univariate forecast task.')
         return prophet
+
+
+class ARIMAForecastEstimator(HyperEstimator):
+    """Time Series Forecast Estimator based on Hypernets.
+    Estimator: Autoregressive Integrated Moving Average (ARIMA).
+    Suitable for: Univariate Forecast Task.
+    """
+
+    def __init__(self, fit_kwargs=None,
+                 p=1, d=0, q=0, seasonal_order=(0, 0, 0, 0), trend='c',
+                 space=None, name=None, **kwargs):
+
+        if p is not None and p != 1:
+            kwargs['p'] = p
+        if d is not None and d != 0:
+            kwargs['d'] = d
+        if q is not None and q != 0:
+            kwargs['q'] = q
+        if seasonal_order is not None and seasonal_order != (0, 0, 0, 0):
+            kwargs['seasonal_order'] = seasonal_order
+        if trend is not None and trend != 'c':
+            kwargs['trend'] = trend
+
+        HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
+
+    def _build_estimator(self, task, fit_kwargs, kwargs):
+        if task == consts.Task_UNIVARIABLE_FORECAST:
+            var = ARIMAWrapper(fit_kwargs, **kwargs)
+        else:
+            raise ValueError('ARIMA model supports only univariate forecast task.')
+        return var
 
 
 class VARForecastEstimator(HyperEstimator):

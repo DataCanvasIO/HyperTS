@@ -5,6 +5,7 @@ try:
     from prophet import Prophet
 except:
     from fbprophet import Prophet
+from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.vector_ar.var_model import VAR
 from sktime.classification.interval_based import TimeSeriesForestClassifier
 
@@ -109,6 +110,48 @@ class ProphetWrapper(EstimatorWrapper, WrapperMixin):
             df_test.rename(columns={self.timestamp: 'ds'}, inplace=True)
         df_preds = self.model.predict(df_test)
         preds = df_preds['yhat'].values.reshape((-1, 1))
+        return preds
+
+
+class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
+
+    def __init__(self, fit_kwargs, **kwargs):
+        super(ARIMAWrapper, self).__init__(fit_kwargs, **kwargs)
+        # fitted
+        self.model = None
+        self._end_date = None
+        self._freq = None
+
+    def fit(self, X, y=None, **kwargs):
+        # adapt for prophet
+        date_series_top2 = X[self.timestamp][:2].tolist()
+        self._freq = (date_series_top2[1] - date_series_top2[0]).total_seconds()
+        self._end_date = X[self.timestamp].tail(1).to_list()[0].to_pydatetime()
+
+        y = self.fit_transform(y)
+
+        p = self.init_kwargs.pop('p', 1)
+        d = self.init_kwargs.pop('d', 1)
+        q = self.init_kwargs.pop('q', 1)
+        trend = self.init_kwargs.pop('trend', 'c')
+        seasonal_order = self.init_kwargs.pop('seasonal_order', (0, 0, 0, 0))
+
+        model = ARIMA(endog=y, order=(p, d, q), trend=trend,
+                      seasonal_order=seasonal_order, dates=X[self.timestamp])
+        self.model = model.fit(**self.init_kwargs)
+
+    def predict(self, X, **kwargs):
+        last_date = X[self.timestamp].tail(1).to_list()[0].to_pydatetime()
+        steps = int((last_date - self._end_date).total_seconds() / self._freq)
+        predict_result = self.model.forecast(steps=steps).values
+
+        def calc_index(date):
+            r_i = int((date - self._end_date).total_seconds() / self._freq) - 1
+            return predict_result[r_i].tolist()
+
+        preds = np.array(X[self.timestamp].map(calc_index).to_list()).reshape(-1, 1)
+        preds = self.inverse_transform(preds)
+
         return preds
 
 

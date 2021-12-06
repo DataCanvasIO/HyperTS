@@ -4,18 +4,23 @@
 """
 import numpy as np
 
-from hyperts.utils import consts
 from hyperts.config import Config as cfg
-
-from hyperts.estimators import ProphetForecastEstimator, \
-    VARForecastEstimator, TSFClassificationEstimator
+from hyperts.utils import consts
 from hyperts.utils.transformers import TimeSeriesHyperTransformer
+from hyperts.estimators import (ProphetForecastEstimator,
+                                ARIMAForecastEstimator,
+                                VARForecastEstimator,
+                                TSFClassificationEstimator)
 
 from hypernets.tabular import column_selector as tcs
 from hypernets.core.ops import HyperInput, ModuleChoice, Optional
 from hypernets.core.search_space import HyperSpace, Choice
-from hypernets.pipeline.transformers import SimpleImputer, StandardScaler, \
-    MinMaxScaler, MaxAbsScaler, SafeOrdinalEncoder, AsTypeTransformer
+from hypernets.pipeline.transformers import (SimpleImputer,
+                                             StandardScaler,
+                                             MinMaxScaler,
+                                             MaxAbsScaler,
+                                             SafeOrdinalEncoder,
+                                             AsTypeTransformer)
 
 from hypernets.pipeline.base import Pipeline, DataFrameMapper
 from hypernets.utils import logging, get_params
@@ -195,6 +200,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
 
     def __init__(self, task, timestamp=None,
                  enable_prophet=True,
+                 enable_arima=True,
                  enable_var=True,
                  **kwargs):
         kwargs['timestamp'] = timestamp
@@ -205,6 +211,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
         self.task = task
         self.timestamp = timestamp
         self.enable_prophet = enable_prophet
+        self.enable_arima = enable_arima
         self.enable_var = enable_var
 
     @property
@@ -217,6 +224,25 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
 
     @property
     def default_prophet_fit_kwargs(self):
+        return {
+            'timestamp': self.timestamp
+        }
+
+    @property
+    def default_arima_init_kwargs(self):
+        return {
+            'p': Choice([1, 2, 3, 4, 5]),
+            'd': Choice([0, 1, 2]),
+            'q': Choice([0, 1, 2, 3, 4, 5]),
+            'trend': Choice(['n', 'c', 't', 'ct']),
+            'seasonal_order': Choice([(0, 0, 0, 0), (1, 0, 1, 7), (1, 0, 2, 7),
+                                      (2, 0, 1, 7), (2, 0, 2, 7), (1, 1, 1, 7), (0, 1, 1, 7)]),
+            'y_scale': Choice(['min_max', 'max_abs', 'identity']),
+            'y_log': Choice(['logx', 'identity'])
+        }
+
+    @property
+    def default_arima_fit_kwargs(self):
         return {
             'timestamp': self.timestamp
         }
@@ -244,6 +270,9 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
         if self.enable_prophet:
             univar_containers['prophet'] = (
             ProphetForecastEstimator, self.default_prophet_init_kwargs, self.default_prophet_fit_kwargs)
+        if self.enable_arima:
+            univar_containers['arima'] = (
+            ARIMAForecastEstimator, self.default_arima_init_kwargs, self.default_arima_fit_kwargs)
         if self.enable_var:
             multivar_containers['var'] = (
             VARForecastEstimator, self.default_var_init_kwargs, self.default_var_fit_kwargs)
