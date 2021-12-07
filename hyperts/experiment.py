@@ -216,10 +216,10 @@ def make_experiment(train_data,
     if callbacks is None:
         callbacks = default_experiment_callbacks()
 
-    # if discriminator is None and cfg.experiment_discriminator is not None and len(cfg.experiment_discriminator) > 0:
-    #     discriminator = make_discriminator(cfg.experiment_discriminator,
-    #                                        optimize_direction=optimize_direction,
-    #                                        **(cfg.experiment_discriminator_options or {}))
+    if discriminator is None and cfg.experiment_discriminator is not None and len(cfg.experiment_discriminator) > 0:
+        discriminator = make_discriminator(cfg.experiment_discriminator,
+                                           optimize_direction=optimize_direction,
+                                           **(cfg.experiment_discriminator_options or {}))
 
     if id is None:
         hasher = tb.data_hasher()
