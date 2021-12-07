@@ -4,7 +4,7 @@ import pandas as pd
 from random import random
 from os.path import join, dirname
 
-def load_network_traffic(univariate=False):
+def load_network_traffic(return_X_y=False, univariate=False):
     """Network Traffic Forecast
 
     """
@@ -14,11 +14,27 @@ def load_network_traffic(univariate=False):
     if univariate:
         variable = np.random.choice(['Var_1', 'Var_2', 'Var_3', 'Var_4', 'Var_5', 'Var_6'], size=1)[0]
         df = df[['TimeStamp', variable, 'HourSin', 'WeekCos', 'CBWD']]
+    else:
+        variable = ['Var_1', 'Var_2', 'Var_3', 'Var_4', 'Var_5', 'Var_6']
 
-    return df
+    if return_X_y:
+        return df[['TimeStamp', 'HourSin', 'WeekCos', 'CBWD']], df[variable]
+    else:
+        return df
 
 
-def load_random_univariate_forecast_dataset():
+def load_arrow_head(return_X_y=False):
+    module_path = dirname(__file__)
+    data_file_name = join(module_path, 'arrow_head.pkl')
+    df = pd.read_pickle(data_file_name)
+
+    if return_X_y:
+        return df[['Var_1']], df['target']
+    else:
+        return df
+
+
+def load_random_univariate_forecast_dataset(return_X_y=False):
 
     def get_num(num):
         return 0 if num < 0.5 else 1
@@ -27,12 +43,15 @@ def load_random_univariate_forecast_dataset():
     id_data[10] = None
 
     X = pd.DataFrame({'ds': pd.date_range("2013-01-01", periods=100), 'id': id_data})
-
     y = pd.DataFrame({'value':  np.random.rand(1, 100)[0].tolist()})
-    return X, y
+
+    if return_X_y:
+        return X, y
+    else:
+        return pd.concat([X, y], axis=1)
 
 
-def load_random_multivariate_forecast_dataset():
+def load_random_multivariate_forecast_dataset(return_X_y=False):
     now_date = datetime.datetime.now()
     # contrived dataset with dependency
     data = list()
@@ -47,7 +66,12 @@ def load_random_multivariate_forecast_dataset():
     X = pd.DataFrame(data={'ds': X})
     y = pd.DataFrame(data=data)
     y.columns = ['Var_1', 'Var_2']
-    return X, y
+
+    if return_X_y:
+        return X, y
+    else:
+        return pd.concat([X, y], axis=1)
+
 
 
 if __name__ == '__main__':
