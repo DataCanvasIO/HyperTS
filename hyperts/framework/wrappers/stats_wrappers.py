@@ -12,7 +12,7 @@ from sktime.classification.interval_based import TimeSeriesForestClassifier
 from hypernets.utils import logging
 from hypernets.core.search_space import ModuleSpace
 
-from hyperts.utils import consts
+from hyperts.utils import consts, suppress_stdout_stderr
 from hyperts.utils.transformers import LogXplus1Transformer, IdentityTransformer
 
 from sklearn.preprocessing import MinMaxScaler, MaxAbsScaler
@@ -102,7 +102,8 @@ class ProphetWrapper(EstimatorWrapper, WrapperMixin):
         if self.timestamp != 'ds':
             df_train.rename(columns={self.timestamp: 'ds'}, inplace=True)
         df_train['y'] = y
-        self.model.fit(df_train)
+        with suppress_stdout_stderr():
+            self.model.fit(df_train)
 
     def predict(self, X, **kwargs):
         df_test = X[[self.timestamp]]
