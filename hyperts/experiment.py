@@ -211,7 +211,7 @@ def make_experiment(train_data,
 
     if search_callbacks is None:
         search_callbacks = default_search_callbacks()
-    # search_callbacks = append_early_stopping_callbacks(search_callbacks)
+    search_callbacks = append_early_stopping_callbacks(search_callbacks)
 
     if callbacks is None:
         callbacks = default_experiment_callbacks()
