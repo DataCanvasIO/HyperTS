@@ -227,7 +227,6 @@ def make_experiment(train_data,
                          eval_size=kwargs.get('eval_size'), target=target, task=task))
         id = f'{hyper_ts_cls.__name__}_{id}'
 
-    # if searcher == None:
     if hyper_model_options is None:
         hyper_model_options = {}
     hyper_model = hyper_ts_cls(searcher, reward_metric=reward_metric, task=task, callbacks=search_callbacks,
