@@ -39,6 +39,57 @@ class ProphetForecastEstimator(HyperEstimator):
     """Time Series Forecast Estimator based on Hypernets.
     Estimator: Prophet.
     Suitable for: Unvariate Forecast Task.
+
+    Parameters
+    ----------
+    growth: String 'linear' or 'logistic' to specify a linear or logistic
+        trend.
+    changepoints: List of dates at which to include potential changepoints. If
+        not specified, potential changepoints are selected automatically.
+    n_changepoints: Number of potential changepoints to include. Not used
+        if input `changepoints` is supplied. If `changepoints` is not supplied,
+        then n_changepoints potential changepoints are selected uniformly from
+        the first `changepoint_range` proportion of the history.
+    changepoint_range: Proportion of history in which trend changepoints will
+        be estimated. Defaults to 0.8 for the first 80%. Not used if
+        `changepoints` is specified.
+    yearly_seasonality: Fit yearly seasonality.
+        Can be 'auto', True, False, or a number of Fourier terms to generate.
+    weekly_seasonality: Fit weekly seasonality.
+        Can be 'auto', True, False, or a number of Fourier terms to generate.
+    daily_seasonality: Fit daily seasonality.
+        Can be 'auto', True, False, or a number of Fourier terms to generate.
+    holidays: pd.DataFrame with columns holiday (string) and ds (date type)
+        and optionally columns lower_window and upper_window which specify a
+        range of days around the date to be included as holidays.
+        lower_window=-2 will include 2 days prior to the date as holidays. Also
+        optionally can have a column prior_scale specifying the prior scale for
+        that holiday.
+    seasonality_mode: 'additive' (default) or 'multiplicative'.
+    seasonality_prior_scale: Parameter modulating the strength of the
+        seasonality model. Larger values allow the model to fit larger seasonal
+        fluctuations, smaller values dampen the seasonality. Can be specified
+        for individual seasonalities using add_seasonality.
+    holidays_prior_scale: Parameter modulating the strength of the holiday
+        components model, unless overridden in the holidays input.
+    changepoint_prior_scale: Parameter modulating the flexibility of the
+        automatic changepoint selection. Large values will allow many
+        changepoints, small values will allow few changepoints.
+    mcmc_samples: Integer, if greater than 0, will do full Bayesian inference
+        with the specified number of MCMC samples. If 0, will do MAP
+        estimation.
+    interval_width: Float, width of the uncertainty intervals provided
+        for the forecast. If mcmc_samples=0, this will be only the uncertainty
+        in the trend using the MAP estimate of the extrapolated generative
+        model. If mcmc.samples>0, this will be integrated over all model
+        parameters, which will include uncertainty in seasonality.
+    uncertainty_samples: Number of simulated draws used to estimate
+        uncertainty intervals. Settings this value to 0 or False will disable
+        uncertainty estimation and speed up the calculation.
+
+    Notes
+    ----------
+    Parameter Description Reference: https://github.com/facebook/prophet/blob/main/python/prophet/forecaster.py
     """
 
     def __init__(self, fit_kwargs=None, growth='linear', changepoints=None,
@@ -66,7 +117,7 @@ class ProphetForecastEstimator(HyperEstimator):
         if holidays is not None:
             kwargs['holidays'] = holidays
         if seasonality_mode is not None and seasonality_mode != 'additive':
-            kwargs['seasonality_mode'] = 'additive'
+            kwargs['seasonality_mode'] = seasonality_mode
         if seasonality_prior_scale is not None and seasonality_prior_scale != 10.0:
             kwargs['seasonality_prior_scale'] = seasonality_prior_scale
         if holidays_prior_scale is not None and holidays_prior_scale != 10.0:
@@ -94,6 +145,37 @@ class ARIMAForecastEstimator(HyperEstimator):
     """Time Series Forecast Estimator based on Hypernets.
     Estimator: Autoregressive Integrated Moving Average (ARIMA).
     Suitable for: Univariate Forecast Task.
+
+    Parameters
+    ----------
+    p: autoregressive order.
+    q: moving average order.
+    d: differences order.
+    seasonal_order : tuple, optional
+        The (P,D,Q,s) order of the seasonal component of the model for the
+        AR parameters, differences, MA parameters, and periodicity. Default
+        is (0, 0, 0, 0). D and s are always integers, while P and Q
+        may either be integers or lists of positive integers.
+    trend : str{'n','c','t','ct'} or iterable, optional
+        Parameter controlling the deterministic trend. Can be specified as a
+        string where 'c' indicates a constant term, 't' indicates a
+        linear trend in time, and 'ct' includes both. Can also be specified as
+        an iterable defining a polynomial, as in `numpy.poly1d`, where
+        `[1,1,0,1]` would denote :math:`a + bt + ct^3`. Default is 'c' for
+        models without integration, and no trend for models with integration.
+
+    Notes
+    ----------
+    Parameter Description Reference: https://github.com/statsmodels/statsmodels/blob/main/statsmodels/tsa/arima/model.py
+
+    The (p,d,q) order of the model for the autoregressive, differences, and
+    moving average components. d is always an integer, while p and q may
+    either be integers or lists of integers.
+
+    - autoregressive models: AR(p)
+    - moving average models: MA(q)
+    - mixed autoregressive moving average models: ARMA(p, q)
+    - integration models: ARIMA(p, d, q)
     """
 
     def __init__(self, fit_kwargs=None,
@@ -125,6 +207,30 @@ class VARForecastEstimator(HyperEstimator):
     """Time Series Forecast Estimator based on Hypernets.
     Estimator: Vector Autoregression (VAR).
     Suitable for: Multivariate Forecast Task.
+
+    Parameters
+    ----------
+    maxlags : {int, None}, default None
+        Maximum number of lags to check for order selection, defaults to
+        12 * (nobs/100.)**(1./4), see select_order function
+    method : {'ols'}
+        Estimation method to use
+    ic : {'aic', 'fpe', 'hqic', 'bic', None}
+        Information criterion to use for VAR order selection.
+        aic : Akaike
+        fpe : Final prediction error
+        hqic : Hannan-Quinn
+        bic : Bayesian a.k.a. Schwarz
+    trend : str {"c", "ct", "ctt", "nc", "n"}
+        "c" - add constant
+        "ct" - constant and trend
+        "ctt" - constant, linear and quadratic trend
+        "n", "nc" - co constant, no trend
+        Note that these are prepended to the columns of the dataset.
+
+    Notes
+    ----------
+    Parameter Description Reference: https://github.com/statsmodels/statsmodels/blob/main/statsmodels/tsa/vector_ar/var_model.py
     """
 
     def __init__(self, fit_kwargs=None, maxlags=None,
@@ -154,6 +260,18 @@ class TSFClassificationEstimator(HyperEstimator):
     """Time Series Classfication Estimator based on Hypernets.
     Estimator: Time Series Forest (TSF).
     Suitable for: Classfication Task.
+
+    Parameters
+    ----------
+    n_estimators : int, ensemble size, optional (default = 200)
+    min_interval : int, minimum width of an interval, optional (default to 3)
+    n_jobs : int, optional (default=1) The number of jobs to run in parallel for
+        both `fit` and `predict`.  ``-1`` means using all processors.
+    random_state : int, seed for random, optional (default = none)
+
+    Notes
+    ----------
+    Parameter Description Reference: https://github.com/alan-turing-institute/sktime/blob/main/sktime/classification/interval_based/_tsf.py
     """
 
     def __init__(self, fit_kwargs=None, min_interval=3,
