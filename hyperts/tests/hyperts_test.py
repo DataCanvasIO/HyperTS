@@ -22,7 +22,7 @@ class Test_HyperTS():
 
     def test_hyperts(self):
 
-        X, y = load_random_univariate_forecast_dataset()
+        X, y = load_random_univariate_forecast_dataset(return_X_y=True)
         X_train, X_test, y_train, y_test = dp.temporal_train_test_split(X, y, test_horizion=24)
 
         task = consts.Task_UNIVARIABLE_FORECAST

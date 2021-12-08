@@ -8,14 +8,13 @@ from hyperts.hyper_ts import HyperTS
 from hyperts.micro_search_space import search_space_univariate_forecast_generator, search_space_multivariate_forecast_generator, \
     space_classification_classification
 
-from sktime.datasets import load_arrow_head
-from hyperts.datasets import load_random_univariate_forecast_dataset, load_random_multivariate_forecast_dataset
+from hyperts.datasets import load_random_univariate_forecast_dataset, load_random_multivariate_forecast_dataset, load_arrow_head
 from hyperts.utils.toolbox import random_train_test_split, temporal_train_test_split
 
 class Test_Task():
 
     def test_univariate_forecast(self):
-        X, y = load_random_univariate_forecast_dataset()
+        X, y = load_random_univariate_forecast_dataset(return_X_y=True)
         X_train, X_test, y_train, y_test = temporal_train_test_split(X, y, test_horizion=16)
 
         rs = RandomSearcher(search_space_univariate_forecast_generator(covariate=['id'], timestamp='ds'), optimize_direction=OptimizeDirection.Minimize)
@@ -29,7 +28,7 @@ class Test_Task():
 
     def test_multivariate_forecast(self):
 
-        X, y = load_random_multivariate_forecast_dataset()
+        X, y = load_random_multivariate_forecast_dataset(return_X_y=True)
         X_train, X_test, y_train, y_test = temporal_train_test_split(X, y, test_horizion=16)
 
         rs = RandomSearcher(search_space_multivariate_forecast_generator(timestamp='ds'), optimize_direction=OptimizeDirection.Minimize)
@@ -44,6 +43,7 @@ class Test_Task():
 
     def test_univariate_classification(self):
         X, y = load_arrow_head(return_X_y=True)
+
         X_train, X_test, y_train, y_test = random_train_test_split(X, y, test_size=0.2)
 
         rs = RandomSearcher(space_classification_classification, optimize_direction=OptimizeDirection.Maximize)

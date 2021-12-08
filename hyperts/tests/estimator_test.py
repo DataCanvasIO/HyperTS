@@ -9,7 +9,7 @@ from hyperts.datasets import load_random_univariate_forecast_dataset, load_rando
 class Test_Estimator():
 
     def test_Prophet_wrapper(self):
-        X, y = load_random_univariate_forecast_dataset()
+        X, y = load_random_univariate_forecast_dataset(return_X_y=True)
         X_train, X_test, y_train, y_test, = dp.temporal_train_test_split(X, y, test_size=0.2)
         fit_kwargs = {'timestamp': 'ds'}
         model = ProphetWrapper(fit_kwargs)
@@ -19,7 +19,7 @@ class Test_Estimator():
         assert y_pred.shape[0] == y_test.shape[0]
 
     def test_ARIMA_wrapper(self):
-        X, y = load_random_univariate_forecast_dataset()
+        X, y = load_random_univariate_forecast_dataset(return_X_y=True)
         X_train, X_test, y_train, y_test, = dp.temporal_train_test_split(X, y, test_size=0.2)
         fit_kwargs = {'timestamp': 'ds'}
         model = ARIMAWrapper(fit_kwargs)
@@ -29,7 +29,7 @@ class Test_Estimator():
         assert y_pred.shape[0] == y_test.shape[0]
 
     def test_VAR_wrapper(self):
-        X, y = load_random_multivariate_forecast_dataset()
+        X, y = load_random_multivariate_forecast_dataset(return_X_y=True)
         X_train, X_test, y_train, y_test, = dp.temporal_train_test_split(X, y, test_size=0.2)
         fit_kwargs = {'timestamp': 'ds'}
         model = VARWrapper(fit_kwargs)

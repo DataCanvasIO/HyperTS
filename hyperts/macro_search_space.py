@@ -28,6 +28,23 @@ from hypernets.utils import logging, get_params
 logger = logging.get_logger(__name__)
 
 
+forecast_task_list = [
+    consts.Task_UNIVARIABLE_FORECAST,
+    consts.Task_MULTIVARIABLE_FORECAST,
+    consts.Task_FORECAST
+]
+
+classfication_task_list = [
+    consts.Task_BINARY_CLASSIFICATION,
+    consts.Task_MULTICLASS_CLASSIFICATION,
+    consts.Task_CLASSIFICATION
+]
+
+regression_task_list = [
+    consts.Task_REGRESSION
+]
+
+
 ##################################### Define Data Proprecessing Pipeline #####################################
 class WithinColumnSelector:
 
@@ -110,9 +127,9 @@ class _HyperEstimatorCreator:
 
 class BaseSearchSpaceGenerator:
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, task, **kwargs) -> None:
         super().__init__()
-
+        self.task = task
         self.options = kwargs
 
     @property
@@ -175,7 +192,10 @@ class BaseSearchSpaceGenerator:
         space = HyperSpace()
         with space.as_default():
             hyper_input = HyperInput(name='input1')
-            self.create_estimators(self.create_preprocessor(hyper_input, options), options)
+            if self.task in classfication_task_list + regression_task_list:
+                self.create_estimators(hyper_input, options)
+            elif self.task in forecast_task_list:
+                self.create_estimators(self.create_preprocessor(hyper_input, options), options)
             space.set_inputs(hyper_input)
 
         return space
@@ -206,7 +226,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
         kwargs['timestamp'] = timestamp
         logger.info("Tip: If other parameters exist, set them directly. For example, covariables=['is_holiday'].")
 
-        super(StatsForecastSearchSpace, self).__init__(**kwargs)
+        super(StatsForecastSearchSpace, self).__init__(task, **kwargs)
 
         self.task = task
         self.timestamp = timestamp
@@ -217,9 +237,13 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
     @property
     def default_prophet_init_kwargs(self):
         return {
+            # 'seasonality_prior_scale': Choice([True, False]),
+            # 'yearly_seasonality': Choice([True, False]),
+            # 'weekly_seasonality': Choice([True, False]),
+            # 'daily_seasonality': Choice([True, False]),
+            'seasonality_mode': Choice(['additive', 'multiplicative']),
             'n_changepoints': Choice([25, 35, 45]),
-            'interval_width': Choice([0.6, 0.7, 0.8]),
-            'seasonality_mode': Choice(['additive', 'multiplicative'])
+            'interval_width': Choice([0.6, 0.7, 0.8])
         }
 
     @property
@@ -295,7 +319,7 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
             kwargs.pop('covariables', None)
         logger.info("Tip: If other parameters exist, set them directly. For example, n_estimators=200.")
 
-        super(StatsClassificationSearchSpace, self).__init__(**kwargs)
+        super(StatsClassificationSearchSpace, self).__init__(task, **kwargs)
 
         self.task = task
         self.timestamp = timestamp
@@ -304,7 +328,7 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
     @property
     def default_tsf_init_kwargs(self):  # Time Series Forest
         return {
-            'min_interval': Choice([1, 3, 5, 7]),
+            'min_interval': Choice([3, 5, 7]),
             'n_estimators': Choice([50, 100, 200, 300]),
         }
 

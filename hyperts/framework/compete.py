@@ -236,7 +236,7 @@ class TSCompeteExperiment(SteppedExperiment):
         # search step
         steps.append(TSSpaceSearchStep(self, consts.StepName_SPACE_SEARCHING))
 
-        # ensemble step,
+        # ensemble step
         # steps.append(TSEnsembleStep(self, StepNames.FINAL_ENSEMBLE, scorer=scorer, ensemble_size=ensemble_size))
 
         steps.append(FinalTrainStep(self, consts.StepName_FINAL_TRAINING, retrain_on_wholedata=False))

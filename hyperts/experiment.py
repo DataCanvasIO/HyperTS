@@ -11,7 +11,7 @@ from hypernets.tabular.metrics import metric_to_scoring
 from hypernets.experiment.cfg import ExperimentCfg as cfg
 from hypernets.utils import load_data, logging, isnotebook, load_module
 
-from hyperts.utils import consts, toolbox
+from hyperts.utils import consts, toolbox as dp
 from hyperts.hyper_ts import HyperTS as hyper_ts_cls
 from hyperts.framework.compete import TSCompeteExperiment
 from hyperts.macro_search_space import stats_forecast_search_space, stats_classification_search_space
@@ -168,16 +168,24 @@ def make_experiment(train_data,
     if hasattr(tb, 'is_dask_dataframe'):
         train_data, eval_data = [tb.reset_index(x) if tb.is_dask_dataframe(x) else x for x in (train_data, eval_data)]
 
-    if target is None and task in classfication_task_list:
-        target = find_target(train_data)
-    else:
-        target = toolbox.list_diff(train_data.columns.tolist(), [timestamp] + covariables)
-
-    X_train, y_train = train_data[[timestamp] + covariables], train_data[target]
-    if eval_data is not None:
-        X_eval, y_eval = eval_data[[timestamp] + covariables], eval_data[target]
-    else:
-        X_eval, y_eval = None, None
+    X_train, y_train, X_eval, y_eval = None, None, None, None
+    if task in classfication_task_list + regression_task_list:
+        if target is None:
+            target = find_target(train_data)
+        X_train, y_train = train_data.drop(columns=[target]), train_data.pop(target)
+        if eval_data is not None:
+            X_eval, y_eval = eval_data.drop(columns=[target]), eval_data.pop(target)
+        else:
+            X_train, X_eval, y_train, y_eval = \
+                dp.random_train_test_split(X_train, y_train, test_size=0.1)
+    elif task in forecast_task_list:
+        if target is None:
+            target = dp.list_diff(train_data.columns.tolist(), [timestamp] + covariables)
+        X_train, y_train = train_data[[timestamp] + covariables], train_data[target]
+        if eval_data is not None:
+            X_eval, y_eval = eval_data[[timestamp] + covariables], eval_data[target]
+        else:
+            X_eval, y_eval = None, None
 
     if task == consts.Task_FORECAST and len(y_train.columns) == 1:
         task = consts.Task_UNIVARIABLE_FORECAST
@@ -241,13 +249,13 @@ def make_experiment(train_data,
 
 def process_test_data(test_df, timestamp, covariables, freq=None, impute=False):
     if freq is None:
-        freq = toolbox.infer_ts_freq(test_df[[timestamp]])
-    target_varibales = toolbox.list_diff(test_df.columns.tolist(), [timestamp] + covariables)
-    test_df = toolbox.drop_duplicated_ts_rows(test_df, ts_name=timestamp)
-    test_df = toolbox.smooth_missed_ts_rows(test_df, ts_name=timestamp, freq=freq)
+        freq = dp.infer_ts_freq(test_df[[timestamp]])
+    target_varibales = dp.list_diff(test_df.columns.tolist(), [timestamp] + covariables)
+    test_df = dp.drop_duplicated_ts_rows(test_df, ts_name=timestamp)
+    test_df = dp.smooth_missed_ts_rows(test_df, ts_name=timestamp, freq=freq)
 
     if impute is not False:
-        test_df[target_varibales] = toolbox.multi_period_loop_imputer(test_df[target_varibales], freq=freq)
+        test_df[target_varibales] = dp.multi_period_loop_imputer(test_df[target_varibales], freq=freq)
 
     X_test, y_test = test_df[[timestamp] + covariables], test_df[target_varibales]
     return X_test, y_test
