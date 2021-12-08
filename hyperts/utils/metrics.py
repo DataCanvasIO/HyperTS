@@ -2,11 +2,15 @@ import numpy as np
 from sklearn.metrics import *
 
 def check_is_array(y_true, y_pred):
+    """Check whether the value is array-like.
+    If not, convert the value to array-like.
+    """
     if not isinstance(y_true, np.ndarray):
         y_true = np.array(y_true)
     if not isinstance(y_pred, np.ndarray):
         y_pred = np.array(y_pred)
     return y_true, y_pred
+
 
 def mse(y_true, y_pred, axis=None):
     """Mean squared error.
