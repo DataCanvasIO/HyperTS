@@ -6,6 +6,42 @@ import chinese_calendar
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.model_selection import train_test_split as sklearn_tts
 
+_tool_boxes = []
+
+def register_tstoolbox(tb, pos): # TODO
+    if pos is None:
+        _tool_boxes.append(tb)
+    else:
+        _tool_boxes.insert(pos, tb)
+
+def get_tool_box(*data):
+    for tb in _tool_boxes:
+        if tb.accept(*data):
+            return tb
+
+    raise ValueError(f'No toolbox found for your data with types: {[type(x) for x in data]}. '
+                     f'Registered tabular toolboxes are {[t.__name__ for t in _tool_boxes]}.')
+
+class TSToolBox(): # TODO
+    acceptable_types = (pd.DataFrame, pd.Series)
+
+    @classmethod
+    def accept(cls, *args):
+        def is_acceptable(x):
+            if x is None:
+                return True
+            if isinstance(x, type) and x in cls.acceptable_types:
+                return True
+            if type(x) in cls.acceptable_types:
+                return True
+
+            return False
+
+        return all(map(is_acceptable, args))
+
+
+
+
 class offsets_pool:
     neighbor  = [-1, 1]
     second    = [-1, 1, -60*4,-60*3,-60*2,-60*1, 60*1,60*2,60*3,60*4]
