@@ -73,8 +73,7 @@ class Test_Experiment():
 
         model = exp.run(max_trials=3)
 
-        X_test = test_df
-        y_test = X_test.pop(target)
+        X_test, y_test = process_test_data(test_df, target=target)
 
         y_pred = model.predict(X_test)
 

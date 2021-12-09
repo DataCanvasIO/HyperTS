@@ -241,21 +241,40 @@ def make_experiment(train_data,
                                discriminator=discriminator, **hyper_model_options)
 
     experiment = TSCompeteExperiment(hyper_model, X_train=X_train, y_train=y_train, X_eval=X_eval, y_eval=y_eval,
-                                     timestamp_col=timestamp, covariate_cols=covariables,
+                                     timestamp_col=timestamp, covariate_cols=covariables, log_level=log_level,
                                      task=task, id=id, callbacks=callbacks, scorer=scorer, **kwargs)
 
     return experiment
 
 
-def process_test_data(test_df, timestamp, covariables, freq=None, impute=False):
-    if freq is None:
-        freq = dp.infer_ts_freq(test_df[[timestamp]])
-    target_varibales = dp.list_diff(test_df.columns.tolist(), [timestamp] + covariables)
-    test_df = dp.drop_duplicated_ts_rows(test_df, ts_name=timestamp)
-    test_df = dp.smooth_missed_ts_rows(test_df, ts_name=timestamp, freq=freq)
+def process_test_data(test_df, timestamp=None, target=None, covariables=None, freq=None, impute=False):
+    """
+    Notes: timestamp is required for prediction tasks,
+           target is required for classification and regression task.
 
-    if impute is not False:
-        test_df[target_varibales] = dp.multi_period_loop_imputer(test_df[target_varibales], freq=freq)
+    Parameters
+    ----------
 
-    X_test, y_test = test_df[[timestamp] + covariables], test_df[target_varibales]
-    return X_test, y_test
+
+    Returns
+    -------
+          X_test, y_test.
+    """
+
+    if timestamp is not None:
+        if freq is None:
+            freq = dp.infer_ts_freq(test_df[[timestamp]])
+        if target is None:
+            target = dp.list_diff(test_df.columns.tolist(), [timestamp] + covariables)
+        test_df = dp.drop_duplicated_ts_rows(test_df, ts_name=timestamp)
+        test_df = dp.smooth_missed_ts_rows(test_df, ts_name=timestamp, freq=freq)
+
+        if impute is not False:
+            test_df[target] = dp.multi_period_loop_imputer(test_df[target], freq=freq)
+
+        X_test, y_test = test_df[[timestamp] + covariables], test_df[target]
+        return X_test, y_test
+    else:
+        X_test = test_df
+        y_test = X_test.pop(target)
+        return X_test, y_test
