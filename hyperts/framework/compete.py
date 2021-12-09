@@ -194,13 +194,14 @@ class TSEnsembleStep(EnsembleStep):
 class TSCompeteExperiment(SteppedExperiment):
 
     def __init__(self, hyper_model, X_train, y_train, X_eval=None, y_eval=None, X_test=None,
-                 eval_size=0.2,
+                 eval_size=DEFAULT_EVAL_SIZE,
                  freq=None,
                  timestamp_col=None,
                  covariate_cols=None,
                  covariate_data_clean_args=None,
                  cv=True, num_folds=3,
                  task=None,
+                 id=None,
                  callbacks=None,
                  log_level=None,
                  random_state=None,

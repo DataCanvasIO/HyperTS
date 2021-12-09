@@ -335,6 +335,7 @@ def from_3d_array_to_nested_df(data: np.ndarray,
                                cells_as_array: bool = True):
     """Convert Numpy ndarray with shape (nb_samples, series_length, nb_variables)
     into nested pandas DataFrame (with time series as numpy array or pandas Series in cells)
+
     Parameters
     ----------
     X : np.ndarray
@@ -344,9 +345,11 @@ def from_3d_array_to_nested_df(data: np.ndarray,
     cells_as_numpy : bool, default = False
         If True, then nested cells contain Numpy array
         If False, then nested cells contain pandas Series
+
     Returns
     ----------
     df : pd.DataFrame
+
     References
     ----------
     sktime_data_processing: https://github.com/Riyabelle25/sktime/blob/main/sktime/utils/data_processing.py
@@ -369,14 +372,17 @@ def from_3d_array_to_nested_df(data: np.ndarray,
 def from_nested_df_to_3d_array(data: pd.DataFrame):
     """Convert nested pandas DataFrame (with time series as numpy array or pandas Series in cells)
     into Numpy ndarray with shape (nb_samples, series_length, nb_variables).
+
     Parameters
     ----------
     X : pd.DataFrame
         Nested pandas DataFrame
+
     Returns
     -------
     X_3d : np.arrray
         3-dimensional NumPy array
+
     References
     ----------from_nested_to_3d_numpy
     sktime_data_processing: https://github.com/Riyabelle25/sktime/blob/main/sktime/utils/data_processing.py
