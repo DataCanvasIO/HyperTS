@@ -23,9 +23,9 @@ class Test_Experiment():
                               reward_metric=reward_metric,
                               optimize_direction=optimize_direction)
 
-        model = exp.run(max_trials=3)
+        model = exp.run(max_trials=1)
 
-        X_test, y_test = process_test_data(test_df, timestamp, covariables, impute=True)
+        X_test, y_test = process_test_data(test_df, timestamp=timestamp, covariables=covariables, impute=True)
 
         y_pred = model.predict(X_test)
         assert y_pred.shape == y_test.shape
@@ -50,7 +50,7 @@ class Test_Experiment():
 
         model = exp.run(max_trials=3)
 
-        X_test, y_test = process_test_data(test_df, timestamp, covariables, impute=True)
+        X_test, y_test = process_test_data(test_df, timestamp=timestamp, covariables=covariables, impute=True)
 
         y_pred = model.predict(X_test)
         assert y_pred.shape == y_test.shape
