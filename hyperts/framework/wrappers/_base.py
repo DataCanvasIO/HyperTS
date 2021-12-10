@@ -82,7 +82,10 @@ class WrapperMixin:
         return transform_X
 
     def inverse_transform(self, X):
-        inverse_X = self.trans._inverse_transform(X)
+        try:
+            inverse_X = self.trans._inverse_transform(X)
+        except:
+            inverse_X = self.trans.inverse_transform(X)
         return inverse_X
 
 
