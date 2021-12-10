@@ -15,7 +15,6 @@ from hyperts.utils import toolbox as dp, consts
 
 logger = logging.get_logger(__name__)
 
-DEFAULT_EVAL_SIZE = 0.2
 
 def _set_log_level(log_level):
     logging.set_level(log_level)
@@ -194,7 +193,7 @@ class TSEnsembleStep(EnsembleStep):
 class TSCompeteExperiment(SteppedExperiment):
 
     def __init__(self, hyper_model, X_train, y_train, X_eval=None, y_eval=None, X_test=None,
-                 eval_size=DEFAULT_EVAL_SIZE,
+                 eval_size=consts.DEFAULT_EVAL_SIZE,
                  freq=None,
                  timestamp_col=None,
                  covariate_cols=None,
@@ -227,7 +226,7 @@ class TSCompeteExperiment(SteppedExperiment):
         steps = []
 
         # data clean
-        if task in [consts.Task_FORECAST, consts.Task_UNIVARIABLE_FORECAST, consts.Task_MULTIVARIABLE_FORECAST]:
+        if task in consts.TASK_LIST_FORECAST:
             steps.append(TSDataPreprocessStep(self, consts.StepName_DATA_PREPROCESSING,
                                              freq=freq,
                                              timestamp_col=timestamp_col,
