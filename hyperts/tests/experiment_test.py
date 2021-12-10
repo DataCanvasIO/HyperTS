@@ -11,7 +11,7 @@ class Test_Experiment():
 
         timestamp = 'TimeStamp'
         covariables = ['HourSin', 'WeekCos', 'CBWD']
-        task = consts.Task_UNIVARIABLE_FORECAST
+        task = consts.Task_FORECAST
         reward_metric = consts.Metric_RMSE
         optimize_direction = consts.OptimizeDirection_MINIMIZE
 
@@ -23,7 +23,7 @@ class Test_Experiment():
                               reward_metric=reward_metric,
                               optimize_direction=optimize_direction)
 
-        model = exp.run(max_trials=1)
+        model = exp.run(max_trials=3)
 
         X_test, y_test = process_test_data(test_df, timestamp=timestamp, covariables=covariables, impute=True)
 
@@ -60,7 +60,7 @@ class Test_Experiment():
         train_df, test_df = dp.random_train_test_split(df, test_size=0.2)
 
         target = 'target'
-        task = consts.Task_MULTICLASS_CLASSIFICATION
+        task = consts.Task_CLASSIFICATION
         reward_metric = consts.Metric_ACCURACY
         optimize_direction = consts.OptimizeDirection_MAXIMIZE
 

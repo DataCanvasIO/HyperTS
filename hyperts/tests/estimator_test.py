@@ -1,9 +1,8 @@
-from sktime.datasets import load_arrow_head
 
 import hyperts.utils.toolbox as dp
 from hyperts.utils.metrics import accuracy_score
-from hyperts.framework.wrappers.stats_wrappers import ProphetWrapper, ARIMAWrapper, VARWrapper, TSFClassifierWrapper
-from hyperts.datasets import load_random_univariate_forecast_dataset, load_random_multivariate_forecast_dataset
+from hyperts.framework.wrappers.stats_wrappers import ProphetWrapper, ARIMAWrapper, VARWrapper, TSFWrapper, KNeighborsWrapper
+from hyperts.datasets import load_random_univariate_forecast_dataset, load_random_multivariate_forecast_dataset, load_arrow_head
 
 
 class Test_Estimator():
@@ -41,9 +40,19 @@ class Test_Estimator():
     def test_TSF_wrapper(self):
         X, y = load_arrow_head(return_X_y=True)
         X_train, X_test, y_train, y_test = dp.random_train_test_split(X, y)
-        classifier = TSFClassifierWrapper(fit_kwargs=None, n_estimators=200)
+        model = TSFWrapper(fit_kwargs=None, n_estimators=200)
 
-        classifier.fit(X_train, y_train)
-        y_pred = classifier.predict(X_test)
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        score = accuracy_score(y_test, y_pred)
+        assert score > 0
+
+    def test_KNeighbors_wrapper(self):
+        X, y = load_arrow_head(return_X_y=True)
+        X_train, X_test, y_train, y_test = dp.random_train_test_split(X, y)
+        model = KNeighborsWrapper(fit_kwargs=None, n_neighbors=3)
+
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
         score = accuracy_score(y_test, y_pred)
         assert score > 0

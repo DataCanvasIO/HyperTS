@@ -18,22 +18,6 @@ from hyperts.macro_search_space import stats_forecast_search_space, stats_classi
 
 logger = logging.get_logger(__name__)
 
-forecast_task_list = [
-    consts.Task_UNIVARIABLE_FORECAST,
-    consts.Task_MULTIVARIABLE_FORECAST,
-    consts.Task_FORECAST
-]
-
-classfication_task_list = [
-    consts.Task_BINARY_CLASSIFICATION,
-    consts.Task_MULTICLASS_CLASSIFICATION,
-    consts.Task_CLASSIFICATION
-]
-
-regression_task_list = [
-    consts.Task_REGRESSION
-]
-
 
 def make_experiment(train_data,
                     task,
@@ -90,24 +74,26 @@ def make_experiment(train_data,
 
         return searcher
 
-    def default_search_space(mode, task, timestamp=None, covariables=None):
-        if mode == consts.Mode_STATS and task in forecast_task_list:
+    def default_search_space(mode, task, search_pace=None, timestamp=None, covariables=None):
+        if search_pace is not None:
+            return search_pace
+        if mode == consts.Mode_STATS and task in consts.TASK_LIST_FORECAST:
             search_pace = stats_forecast_search_space(task=task, timestamp=timestamp, covariables=covariables)
-        elif mode == consts.Mode_STATS and task in classfication_task_list:
+        elif mode == consts.Mode_STATS and task in consts.TASK_LIST_CLASSIFICATION:
             search_pace = stats_classification_search_space(task=task, timestamp=timestamp)
-        elif mode == consts.Mode_STATS and task in regression_task_list:
+        elif mode == consts.Mode_STATS and task in consts.TASK_LIST_REGRESSION:
             search_pace = None
-        elif mode == consts.Mode_DL and task in forecast_task_list:
+        elif mode == consts.Mode_DL and task in consts.TASK_LIST_FORECAST:
             search_pace = None
-        elif mode == consts.Mode_DL and task in classfication_task_list:
+        elif mode == consts.Mode_DL and task in consts.TASK_LIST_CLASSIFICATION:
             search_pace = None
-        elif mode == consts.Mode_DL and task in regression_task_list:
+        elif mode == consts.Mode_DL and task in consts.TASK_LIST_REGRESSION:
             search_pace = None
-        elif mode == consts.Mode_NAS and task in forecast_task_list:
+        elif mode == consts.Mode_NAS and task in consts.TASK_LIST_FORECAST:
             search_pace = None
-        elif mode == consts.Mode_NAS and task in classfication_task_list:
+        elif mode == consts.Mode_NAS and task in consts.TASK_LIST_CLASSIFICATION:
             search_pace = None
-        elif mode == consts.Mode_NAS and task in regression_task_list:
+        elif mode == consts.Mode_NAS and task in consts.TASK_LIST_REGRESSION:
             search_pace = None
 
         return search_pace
@@ -149,11 +135,11 @@ def make_experiment(train_data,
     # Parameters checking
     assert train_data is not None, 'train data is required.'
     assert task is not None, 'task is required. Task naming paradigm:' \
-                             f'{forecast_task_list + classfication_task_list + regression_task_list}'
+                             f'{consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION}'
 
-    if task not in [forecast_task_list + classfication_task_list + regression_task_list]:
+    if task not in [consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION]:
         ValueError(f'Task naming paradigm:' 
-                   f'{forecast_task_list + classfication_task_list + regression_task_list}')
+                   f'{consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION}')
 
     kwargs = kwargs.copy()
 
@@ -161,7 +147,7 @@ def make_experiment(train_data,
         log_level = logging.WARN
     logging.set_level(log_level)
 
-    # Data checking
+    # Data Checking
     train_data, eval_data = [load_data(data) if data is not None else None for data in (train_data, eval_data)]
 
     tb = get_tool_box(train_data, eval_data)
@@ -169,7 +155,7 @@ def make_experiment(train_data,
         train_data, eval_data = [tb.reset_index(x) if tb.is_dask_dataframe(x) else x for x in (train_data, eval_data)]
 
     X_train, y_train, X_eval, y_eval = None, None, None, None
-    if task in classfication_task_list + regression_task_list:
+    if task in consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION:
         if target is None:
             target = find_target(train_data)
         X_train, y_train = train_data.drop(columns=[target]), train_data.pop(target)
@@ -177,27 +163,42 @@ def make_experiment(train_data,
             X_eval, y_eval = eval_data.drop(columns=[target]), eval_data.pop(target)
         else:
             X_train, X_eval, y_train, y_eval = \
-                dp.random_train_test_split(X_train, y_train, test_size=0.1)
-    elif task in forecast_task_list:
+                dp.random_train_test_split(X_train, y_train, test_size=0.2)
+    elif task in consts.TASK_LIST_FORECAST:
         if target is None:
             target = dp.list_diff(train_data.columns.tolist(), [timestamp] + covariables)
         X_train, y_train = train_data[[timestamp] + covariables], train_data[target]
         if eval_data is not None:
             X_eval, y_eval = eval_data[[timestamp] + covariables], eval_data[target]
         else:
-            X_eval, y_eval = None, None
+            X_train, X_eval, y_train, y_eval = \
+                dp.temporal_train_test_split(X_train, y_train, test_size=0.2)
 
+    # Infer Task Type
     if task == consts.Task_FORECAST and len(y_train.columns) == 1:
         task = consts.Task_UNIVARIABLE_FORECAST
-    if task == consts.Task_CLASSIFICATION and y_train.nunique() == 2:
-        task = consts.Task_BINARY_CLASSIFICATION
+    elif task == consts.Task_FORECAST and len(y_train.columns) > 1:
+        task = consts.Task_MULTIVARIABLE_FORECAST
+
+    if task == consts.Task_CLASSIFICATION:
+        if y_train.nunique() == 2:
+            if len(X_train.columns) == 1:
+                task = consts.Task_UNIVARIABLE_BINARYCLASS
+            else:
+                task = consts.Task_MULTIVARIABLE_BINARYCLASS
+        else:
+            if len(X_train.columns) == 1:
+                task = consts.Task_UNIVARIABLE_MULTICALSS
+            else:
+                task = consts.Task_MULTIVARIABLE_MULTICALSS
+    logger.info(f'Inference could be type [{task}] task.')
 
     if reward_metric is None:
-        if task in forecast_task_list:
+        if task in consts.TASK_LIST_FORECAST:
             reward_metric = 'mae'
-        if task in classfication_task_list:
+        if task in consts.TASK_LIST_CLASSIFICATION:
             reward_metric = 'accuracy'
-        if task in regression_task_list:
+        if task in consts.TASK_LIST_REGRESSION:
             reward_metric = 'rmse'
         logger.info(f'no reward metric specified, use "{reward_metric}" for {task} task by default.')
 
@@ -213,7 +214,7 @@ def make_experiment(train_data,
         optimize_direction = 'max' if scorer._sign > 0 else 'min'
 
     if (searcher is None or isinstance(searcher, str)) and search_space is None:
-        search_space = default_search_space(mode, task, timestamp=timestamp, covariables=covariables)
+        search_space = default_search_space(mode, task, search_space, timestamp=timestamp, covariables=covariables)
 
     searcher = to_search_object(searcher, search_space)
 

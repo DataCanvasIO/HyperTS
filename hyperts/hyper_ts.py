@@ -106,10 +106,9 @@ class HyperTSEstimator(Estimator):
         else:
             X_transformed = X
         if metrics is None:
-            if self.task in [consts.Task_FORECAST, consts.Task_UNIVARIABLE_FORECAST,
-                                consts.Task_MULTIVARIABLE_FORECAST, consts.Task_REGRESSION]:
+            if self.task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_REGRESSION:
                 metrics = ['rmse']
-            elif self.task in [consts.Task_BINARY_CLASSIFICATION, consts.Task_MULTICLASS_CLASSIFICATION]:
+            elif self.task in consts.TASK_LIST_CLASSIFICATION:
                 metrics = ['accuracy']
 
         y_pred = self.model.predict(X_transformed)

@@ -2,14 +2,29 @@
 
 
 TIMESTAMP                          = 'timestamp'
+DEFAULT_EVAL_SIZE                  = 0.2
 
 Task_UNIVARIABLE_FORECAST          = 'univariable-forecast'
 Task_MULTIVARIABLE_FORECAST        = 'multivariable-forecast'
-Task_BINARY_CLASSIFICATION         = 'binary-classification'
-Task_MULTICLASS_CLASSIFICATION     = 'multiclass-classification'
-Task_REGRESSION                    = 'regression'
+Task_UNIVARIABLE_BINARYCLASS       = 'univariable-binaryclass'
+Task_MULTIVARIABLE_BINARYCLASS     = 'multivariable-binaryclass'
+Task_UNIVARIABLE_MULTICALSS        = 'univariable-multiclass'
+Task_MULTIVARIABLE_MULTICALSS      = 'multivariable-multiclass'
 Task_FORECAST                      = 'forecast'
 Task_CLASSIFICATION                = 'classification'
+Task_REGRESSION                    = 'regression'
+
+TASK_LIST_FORECAST                 = ['forecast',
+'univariable-forecast', 'multivariable-forecast'
+]
+
+TASK_LIST_CLASSIFICATION           = ['classification',
+'univariable-binaryclass', 'multivariable-binaryclass',
+'univariable-multiclass', 'multivariable-multiclass'
+]
+
+TASK_LIST_REGRESSION               = ['regression'
+]
 
 Mode_STATS                         = 'stats'
 Mode_DL                            = 'dl'
