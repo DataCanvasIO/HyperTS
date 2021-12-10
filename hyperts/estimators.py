@@ -9,7 +9,7 @@ from hyperts.utils import consts
 from hyperts.framework.wrappers.stats_wrappers import (ProphetWrapper,
                                                        VARWrapper,
                                                        ARIMAWrapper,
-                                                       TSFClassifierWrapper)
+                                                       TSFWrapper)
 
 logger = logging.get_logger(__name__)
 
@@ -290,8 +290,8 @@ class TSFClassificationEstimator(HyperEstimator):
         HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
 
     def _build_estimator(self, task, fit_kwargs, kwargs):
-        if task in [consts.Task_BINARY_CLASSIFICATION, consts.Task_MULTICLASS_CLASSIFICATION]:
-            tsf = TSFClassifierWrapper(fit_kwargs, **kwargs)
+        if task in [consts.Task_UNIVARIABLE_BINARYCLASS, consts.Task_UNIVARIABLE_MULTICALSS]:
+            tsf = TSFWrapper(fit_kwargs, **kwargs)
         else:
-            raise ValueError('TSF model supports only classification task.')
+            raise ValueError('TSF model supports only univariable classification task.')
         return tsf

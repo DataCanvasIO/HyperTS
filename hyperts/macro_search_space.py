@@ -28,23 +28,6 @@ from hypernets.utils import logging, get_params
 logger = logging.get_logger(__name__)
 
 
-forecast_task_list = [
-    consts.Task_UNIVARIABLE_FORECAST,
-    consts.Task_MULTIVARIABLE_FORECAST,
-    consts.Task_FORECAST
-]
-
-classfication_task_list = [
-    consts.Task_BINARY_CLASSIFICATION,
-    consts.Task_MULTICLASS_CLASSIFICATION,
-    consts.Task_CLASSIFICATION
-]
-
-regression_task_list = [
-    consts.Task_REGRESSION
-]
-
-
 ##################################### Define Data Proprecessing Pipeline #####################################
 class WithinColumnSelector:
 
@@ -192,9 +175,9 @@ class BaseSearchSpaceGenerator:
         space = HyperSpace()
         with space.as_default():
             hyper_input = HyperInput(name='input1')
-            if self.task in classfication_task_list + regression_task_list:
+            if self.task in consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION:
                 self.create_estimators(hyper_input, options)
-            elif self.task in forecast_task_list:
+            elif self.task in consts.TASK_LIST_FORECAST:
                 self.create_estimators(self.create_preprocessor(hyper_input, options), options)
             space.set_inputs(hyper_input)
 
@@ -340,12 +323,20 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
 
     @property
     def estimators(self):
-        containers = {}
+        univar_containers = {}
+        multivar_containers = {}
 
         if self.enable_tsf:
-            containers['tsf'] = (TSFClassificationEstimator, self.default_tsf_init_kwargs, self.default_tsf_fit_kwargs)
+            univar_containers['tsf'] = (TSFClassificationEstimator, self.default_tsf_init_kwargs, self.default_tsf_fit_kwargs)
 
-        return containers
+        if self.task in [consts.Task_UNIVARIABLE_BINARYCLASS, consts.Task_UNIVARIABLE_MULTICALSS]:
+            return univar_containers
+        elif self.task in [consts.Task_MULTIVARIABLE_BINARYCLASS, consts.Task_MULTIVARIABLE_MULTICALSS]:
+            return multivar_containers
+        else:
+            raise ValueError(f'Incorrect task name, default {consts.Task_UNIVARIABLE_BINARYCLASS}'
+                             f', {consts.Task_UNIVARIABLE_MULTICALSS}, {consts.Task_MULTIVARIABLE_BINARYCLASS}'
+                             f', or {consts.Task_MULTIVARIABLE_MULTICALSS}.')
 
 
 stats_forecast_search_space = StatsForecastSearchSpace

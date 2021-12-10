@@ -8,7 +8,7 @@ except:
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.vector_ar.var_model import VAR
 from sktime.classification.interval_based import TimeSeriesForestClassifier
-
+from sktime.classification.distance_based import KNeighborsTimeSeriesClassifier
 from hypernets.utils import logging
 from hypernets.core.search_space import ModuleSpace
 
@@ -43,8 +43,8 @@ class WrapperMixin:
     def __init__(self, fit_kwargs, **kwargs):
         self.timestamp = fit_kwargs.get('timestamp', consts.TIMESTAMP)
         self.init_kwargs = kwargs if kwargs is not None else {}
-        self.y_scale = kwargs.pop('y_scale', None)
-        self.y_log = kwargs.pop('y_log', None)
+        self.scale = kwargs.pop('y_scale', None)
+        self.log = kwargs.pop('y_log', None)
 
         self.trans = None
         self.sc = None
@@ -64,14 +64,14 @@ class WrapperMixin:
         }
 
     def fit_transform(self, y):
-        self.sc = self.scaler.get(self.y_scale, None)
-        self.log = self.logx.get(self.y_log, None)
+        self.sc = self.scaler.get(self.scale, None)
+        self.log = self.logx.get(self.log, None)
 
         pipelines = []
         if self.log is not None:
-            pipelines.append((f'{self.y_log}', self.log))
+            pipelines.append((f'{self.log}', self.log))
         if self.sc is not None:
-            pipelines.append((f'{self.y_scale}', self.sc))
+            pipelines.append((f'{self.scale}', self.sc))
         pipelines.append(('identity', IdentityTransformer()))
         self.trans = Pipeline(pipelines)
 
@@ -90,8 +90,11 @@ class WrapperMixin:
         return inverse_y
 
 
+##################################### Define Time Series Forecast Wrapper #####################################
 class ProphetWrapper(EstimatorWrapper, WrapperMixin):
-
+    """
+    Adapt: univariable forecast.
+    """
     def __init__(self, fit_kwargs, **kwargs):
         super(ProphetWrapper, self).__init__(fit_kwargs, **kwargs)
         self.model = Prophet(**kwargs)
@@ -115,7 +118,9 @@ class ProphetWrapper(EstimatorWrapper, WrapperMixin):
 
 
 class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
-
+    """
+    Adapt: univariable forecast.
+    """
     def __init__(self, fit_kwargs, **kwargs):
         super(ARIMAWrapper, self).__init__(fit_kwargs, **kwargs)
         # fitted
@@ -157,7 +162,9 @@ class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
 
 
 class VARWrapper(EstimatorWrapper, WrapperMixin):
-
+    """
+    Adapt: multivariable forecast.
+    """
     def __init__(self, fit_kwargs, **kwargs):
         super(VARWrapper, self).__init__(fit_kwargs, **kwargs)
         # fitted
@@ -191,8 +198,11 @@ class VARWrapper(EstimatorWrapper, WrapperMixin):
         return preds
 
 
-class TSFClassifierWrapper(EstimatorWrapper):
-
+##################################### Define Time Series Classification Wrapper #####################################
+class TSFWrapper(EstimatorWrapper):
+    """
+    Adapt: univariable classification.
+    """
     def __init__(self, fit_kwargs=None, **kwargs):
         self.model = TimeSeriesForestClassifier(**kwargs)
 
@@ -201,10 +211,31 @@ class TSFClassifierWrapper(EstimatorWrapper):
         self.model.fit(X, y)
 
     def predict(self, X, **kwargs):
-        predict_result = self.model.predict(X)
-        return predict_result
+        return self.model.predict(X)
+
+    def predict_proba(self, X, **kwargs):
+        return self.model.predict_proba(X)
 
 
+class KNeighborsWrapper(EstimatorWrapper):
+    """
+    Adapt: univariable/multivariable classification.
+    """
+    def __init__(self, fit_kwargs, **kwargs):
+        self.model = KNeighborsTimeSeriesClassifier(**kwargs)
+
+    def fit(self, X, y=None, **kwargs):
+        # adapt for prophet
+        self.model.fit(X, y)
+
+    def predict(self, X, **kwargs):
+        return self.model.predict(X)
+
+    def predict_proba(self, X, **kwargs):
+        return self.model.predict_proba(X)
+
+
+##################################### Define Simple Time Series Estimator #####################################
 class SimpleTSEstimator(ModuleSpace):
     def __init__(self, wrapper_cls, fit_kwargs=None, space=None, name=None, **hyperparams):
         ModuleSpace.__init__(self, space, name, **hyperparams)

@@ -9,7 +9,7 @@ from hypernets.core.ops import HyperInput
 from hypernets.core.search_space import HyperSpace, Choice
 from hypernets.tabular import column_selector
 
-from hyperts.framework.wrappers.stats_wrappers import SimpleTSEstimator, ProphetWrapper, VARWrapper, TSFClassifierWrapper
+from hyperts.framework.wrappers.stats_wrappers import SimpleTSEstimator, ProphetWrapper, VARWrapper, TSFWrapper
 from hyperts.utils.transformers import TimeSeriesHyperTransformer
 
 
@@ -95,7 +95,7 @@ def space_classification_classification():
     space = HyperSpace()
     with space.as_default():
         input = HyperInput(name='input1')
-        SimpleTSEstimator(TSFClassifierWrapper, fit_kwargs=None, n_estimators=Choice([50, 100, 150]))(input)
+        SimpleTSEstimator(TSFWrapper, fit_kwargs=None, n_estimators=Choice([50, 100, 150]))(input)
         space.set_inputs(input)
     return space
 
