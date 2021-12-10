@@ -10,7 +10,8 @@ from hyperts.utils.transformers import TimeSeriesHyperTransformer
 from hyperts.estimators import (ProphetForecastEstimator,
                                 ARIMAForecastEstimator,
                                 VARForecastEstimator,
-                                TSFClassificationEstimator)
+                                TSFClassificationEstimator,
+                                KNNClassificationEstimator)
 
 from hypernets.tabular import column_selector as tcs
 from hypernets.core.ops import HyperInput, ModuleChoice, Optional
@@ -243,7 +244,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
             'q': Choice([0, 1, 2, 3, 4, 5]),
             'trend': Choice(['n', 'c', 't', 'ct']),
             'seasonal_order': Choice([(0, 0, 0, 0), (1, 0, 1, 7), (1, 0, 2, 7),
-                                      (2, 0, 1, 7), (2, 0, 2, 7), (1, 1, 1, 7), (0, 1, 1, 7)]),
+                                      (2, 0, 1, 7), (2, 0, 2, 7), (0, 1, 1, 7)]),
             'y_scale': Choice(['min_max', 'max_abs', 'identity']),
             'y_log': Choice(['logx', 'identity'])
         }
@@ -297,6 +298,7 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
 
     def __init__(self, task, timestamp=None,
                  enable_tsf=True,
+                 enable_knn=True,
                  **kwargs):
         if hasattr(kwargs, 'covariables'):
             kwargs.pop('covariables', None)
@@ -307,9 +309,10 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
         self.task = task
         self.timestamp = timestamp
         self.enable_tsf = enable_tsf
+        self.enable_knn = enable_knn
 
     @property
-    def default_tsf_init_kwargs(self):  # Time Series Forest
+    def default_tsf_init_kwargs(self):
         return {
             'min_interval': Choice([3, 5, 7]),
             'n_estimators': Choice([50, 100, 200, 300]),
@@ -322,12 +325,32 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
         }
 
     @property
+    def default_knn_init_kwargs(self):
+        return {
+            'n_neighbors': Choice([1, 3, 5, 7, 9]),
+            'weights': Choice(['uniform', 'distance']),
+            'distance': Choice(['dtw', 'ddtw', 'lcss', 'msm'])
+        }
+
+    @property
+    def default_knn_fit_kwargs(self):
+        return {
+            'timestamp': self.timestamp
+        }
+
+    @property
     def estimators(self):
         univar_containers = {}
         multivar_containers = {}
 
         if self.enable_tsf:
-            univar_containers['tsf'] = (TSFClassificationEstimator, self.default_tsf_init_kwargs, self.default_tsf_fit_kwargs)
+            univar_containers['tsf'] = (
+            TSFClassificationEstimator, self.default_tsf_init_kwargs, self.default_tsf_fit_kwargs)
+        if self.enable_knn:
+            univar_containers['knn'] = (
+            KNNClassificationEstimator, self.default_knn_init_kwargs, self.default_knn_fit_kwargs)
+            multivar_containers['knn'] = (
+            KNNClassificationEstimator, self.default_knn_init_kwargs, self.default_knn_fit_kwargs)
 
         if self.task in [consts.Task_UNIVARIABLE_BINARYCLASS, consts.Task_UNIVARIABLE_MULTICALSS]:
             return univar_containers

@@ -6,7 +6,7 @@ from hypernets.searchers.random_searcher import RandomSearcher
 from hyperts.framework.compete import TSCompeteExperiment
 from hyperts.hyper_ts import HyperTS
 from hyperts.micro_search_space import search_space_univariate_forecast_generator, search_space_multivariate_forecast_generator, \
-    space_classification_classification
+    search_space_multivariate_classification
 
 from hyperts.datasets import load_random_univariate_forecast_dataset, load_random_multivariate_forecast_dataset, load_arrow_head
 from hyperts.utils.toolbox import random_train_test_split, temporal_train_test_split
@@ -46,8 +46,8 @@ class Test_Task():
 
         X_train, X_test, y_train, y_test = random_train_test_split(X, y, test_size=0.2)
 
-        rs = RandomSearcher(space_classification_classification, optimize_direction=OptimizeDirection.Maximize)
-        hyper_model = HyperTS(rs, task='multiclass-classification', reward_metric='accuracy', callbacks=[SummaryCallback()])
+        rs = RandomSearcher(search_space_multivariate_classification, optimize_direction=OptimizeDirection.Maximize)
+        hyper_model = HyperTS(rs, task='univariable-multiclass', reward_metric='accuracy', callbacks=[SummaryCallback()])
 
         exp = TSCompeteExperiment(hyper_model, X_train, y_train, X_eval=X_test, y_eval=y_test)
         pipeline_model = exp.run(max_trials=3)

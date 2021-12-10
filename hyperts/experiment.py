@@ -74,7 +74,7 @@ def make_experiment(train_data,
 
         return searcher
 
-    def default_search_space(mode, task, search_pace=None, timestamp=None, covariables=None):
+    def default_search_space(mode, task, search_pace, timestamp=None, covariables=None):
         if search_pace is not None:
             return search_pace
         if mode == consts.Mode_STATS and task in consts.TASK_LIST_FORECAST:
@@ -132,12 +132,12 @@ def make_experiment(train_data,
                                    expected_reward=early_stopping_reward)
         return [es] + cbs
 
-    # Parameters checking
+    # Parameters Checking
     assert train_data is not None, 'train data is required.'
     assert task is not None, 'task is required. Task naming paradigm:' \
-                             f'{consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION}'
+                    f'{consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION}'
 
-    if task not in [consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION]:
+    if task not in consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION:
         ValueError(f'Task naming paradigm:' 
                    f'{consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION}')
 
@@ -163,7 +163,7 @@ def make_experiment(train_data,
             X_eval, y_eval = eval_data.drop(columns=[target]), eval_data.pop(target)
         else:
             X_train, X_eval, y_train, y_eval = \
-                dp.random_train_test_split(X_train, y_train, test_size=0.2)
+                dp.random_train_test_split(X_train, y_train, test_size=consts.DEFAULT_EVAL_SIZE)
     elif task in consts.TASK_LIST_FORECAST:
         if target is None:
             target = dp.list_diff(train_data.columns.tolist(), [timestamp] + covariables)
@@ -172,9 +172,9 @@ def make_experiment(train_data,
             X_eval, y_eval = eval_data[[timestamp] + covariables], eval_data[target]
         else:
             X_train, X_eval, y_train, y_eval = \
-                dp.temporal_train_test_split(X_train, y_train, test_size=0.2)
+                dp.temporal_train_test_split(X_train, y_train, test_size=consts.DEFAULT_EVAL_SIZE)
 
-    # Infer Task Type
+    # Task Type Infering
     if task == consts.Task_FORECAST and len(y_train.columns) == 1:
         task = consts.Task_UNIVARIABLE_FORECAST
     elif task == consts.Task_FORECAST and len(y_train.columns) > 1:
@@ -193,6 +193,7 @@ def make_experiment(train_data,
                 task = consts.Task_MULTIVARIABLE_MULTICALSS
     logger.info(f'Inference could be type [{task}] task.')
 
+    # Configuration
     if reward_metric is None:
         if task in consts.TASK_LIST_FORECAST:
             reward_metric = 'mae'
@@ -200,7 +201,7 @@ def make_experiment(train_data,
             reward_metric = 'accuracy'
         if task in consts.TASK_LIST_REGRESSION:
             reward_metric = 'rmse'
-        logger.info(f'no reward metric specified, use "{reward_metric}" for {task} task by default.')
+        logger.info(f'No reward metric specified, use "{reward_metric}" for {task} task by default.')
 
     if kwargs.get('scorer') is None:
         scorer = metric_to_scoring(reward_metric, task=task, pos_label=kwargs.get('pos_label'))

@@ -9,7 +9,8 @@ from hyperts.utils import consts
 from hyperts.framework.wrappers.stats_wrappers import (ProphetWrapper,
                                                        VARWrapper,
                                                        ARIMAWrapper,
-                                                       TSFWrapper)
+                                                       TSForestWrapper,
+                                                       KNeighborsWrapper)
 
 logger = logging.get_logger(__name__)
 
@@ -291,7 +292,51 @@ class TSFClassificationEstimator(HyperEstimator):
 
     def _build_estimator(self, task, fit_kwargs, kwargs):
         if task in [consts.Task_UNIVARIABLE_BINARYCLASS, consts.Task_UNIVARIABLE_MULTICALSS]:
-            tsf = TSFWrapper(fit_kwargs, **kwargs)
+            tsf = TSForestWrapper(fit_kwargs, **kwargs)
         else:
             raise ValueError('TSF model supports only univariable classification task.')
         return tsf
+
+
+class KNNClassificationEstimator(HyperEstimator):
+    """Time Series Classfication Estimator based on Hypernets.
+    Estimator: K Nearest Neighbors (KNN).
+    Suitable for: Classfication Task.
+
+    Parameters
+    ----------
+    n_neighbors     : int, set k for knn (default =1)
+    weights         : string or callable function, optional, default =='uniform'
+                      mechanism for weighting a vote, one of: 'uniform', 'distance'
+                      or a callable function
+    algorithm       : search method for neighbours {'auto', 'ball_tree',
+                      'kd_tree', 'brute'}: default = 'brute'
+    distance        : distance measure for time series: {'dtw','ddtw',
+                      'wdtw','lcss','erp','msm','twe'}: default ='dtw'
+
+    Notes
+    ----------
+    Parameter Description Reference: https://github.com/alan-turing-institute/sktime/blob/main/sktime/classification/distance_based/_time_series_neighbors.py
+    """
+
+    def __init__(self, fit_kwargs=None, n_neighbors=1,
+                 weights='uniform', algorithm='brute', distance='dtw',
+                 space=None, name=None, **kwargs):
+
+        if n_neighbors is not None and n_neighbors != 1:
+            kwargs['n_neighbors'] = n_neighbors
+        if weights is not None and weights != 'uniform':
+            kwargs['weights'] = weights
+        if algorithm is not None and algorithm != 'brute':
+            kwargs['algorithm'] = algorithm
+        if distance is not None and distance != 'dtw':
+            kwargs['distance'] = distance
+
+        HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
+
+    def _build_estimator(self, task, fit_kwargs, kwargs):
+        if task in consts.TASK_LIST_CLASSIFICATION:
+            knn = KNeighborsWrapper(fit_kwargs, **kwargs)
+        else:
+            raise ValueError('KNN model supports only classification task.')
+        return knn

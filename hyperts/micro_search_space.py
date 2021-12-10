@@ -91,7 +91,7 @@ def search_space_multivariate_forecast_generator(covariate=(), timestamp=None):
     return search_space
 
 
-def space_classification_classification():
+def search_space_multivariate_classification():
     space = HyperSpace()
     with space.as_default():
         input = HyperInput(name='input1')

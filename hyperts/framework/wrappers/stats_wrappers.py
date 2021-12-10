@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 try:
     from prophet import Prophet
@@ -9,85 +8,13 @@ from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.vector_ar.var_model import VAR
 from sktime.classification.interval_based import TimeSeriesForestClassifier
 from sktime.classification.distance_based import KNeighborsTimeSeriesClassifier
+
 from hypernets.utils import logging
 from hypernets.core.search_space import ModuleSpace
 
-from hyperts.utils import consts, suppress_stdout_stderr
-from hyperts.utils.transformers import LogXplus1Transformer, IdentityTransformer
-
-from sklearn.preprocessing import MinMaxScaler, MaxAbsScaler
-from sklearn.pipeline import Pipeline
+from ._base import EstimatorWrapper, WrapperMixin, suppress_stdout_stderr
 
 logger = logging.get_logger(__name__)
-
-
-class EstimatorWrapper:
-
-    def fit(self, X, y=None, **kwargs):
-        raise NotImplementedError
-
-    def predict(self, X, **kwargs):
-        """
-        X:  For classification and regeression tasks, X are the time series
-            variable features. For forecast task, X is the timestamps and
-            other covariables.
-        """
-        raise NotImplementedError
-
-    def predict_proba(self, X, **kwargs):
-        raise NotImplementedError
-
-
-class WrapperMixin:
-
-    def __init__(self, fit_kwargs, **kwargs):
-        self.timestamp = fit_kwargs.get('timestamp', consts.TIMESTAMP)
-        self.init_kwargs = kwargs if kwargs is not None else {}
-        self.scale = kwargs.pop('y_scale', None)
-        self.log = kwargs.pop('y_log', None)
-
-        self.trans = None
-        self.sc = None
-        self.log = None
-
-    @property
-    def scaler(self):
-        return {
-            'min_max': MinMaxScaler(),
-            'max_abs': MaxAbsScaler()
-        }
-
-    @property
-    def logx(self):
-        return {
-            'logx': LogXplus1Transformer()
-        }
-
-    def fit_transform(self, y):
-        self.sc = self.scaler.get(self.scale, None)
-        self.log = self.logx.get(self.log, None)
-
-        pipelines = []
-        if self.log is not None:
-            pipelines.append((f'{self.log}', self.log))
-        if self.sc is not None:
-            pipelines.append((f'{self.scale}', self.sc))
-        pipelines.append(('identity', IdentityTransformer()))
-        self.trans = Pipeline(pipelines)
-
-        cols = y.columns.tolist() if isinstance(y, pd.DataFrame) else None
-        transform_y = self.trans.fit_transform(y)
-        if isinstance(transform_y, np.ndarray):
-            transform_y = pd.DataFrame(transform_y, columns=cols)
-
-        return transform_y
-
-    def inverse_transform(self, y):
-        try:
-            inverse_y = self.trans._inverse_transform(y)
-        except:
-            inverse_y = self.trans.inverse_transform(y)
-        return inverse_y
 
 
 ##################################### Define Time Series Forecast Wrapper #####################################
@@ -97,7 +24,7 @@ class ProphetWrapper(EstimatorWrapper, WrapperMixin):
     """
     def __init__(self, fit_kwargs, **kwargs):
         super(ProphetWrapper, self).__init__(fit_kwargs, **kwargs)
-        self.model = Prophet(**kwargs)
+        self.model = Prophet(**self.init_kwargs)
 
     def fit(self, X, y=None, **kwargs):
         # adapt for prophet
@@ -199,12 +126,13 @@ class VARWrapper(EstimatorWrapper, WrapperMixin):
 
 
 ##################################### Define Time Series Classification Wrapper #####################################
-class TSFWrapper(EstimatorWrapper):
+class TSForestWrapper(EstimatorWrapper, WrapperMixin):
     """
     Adapt: univariable classification.
     """
     def __init__(self, fit_kwargs=None, **kwargs):
-        self.model = TimeSeriesForestClassifier(**kwargs)
+        super(TSForestWrapper, self).__init__(fit_kwargs, **kwargs)
+        self.model = TimeSeriesForestClassifier(**self.init_kwargs)
 
     def fit(self, X, y=None, **kwargs):
         # adapt for prophet
@@ -217,12 +145,13 @@ class TSFWrapper(EstimatorWrapper):
         return self.model.predict_proba(X)
 
 
-class KNeighborsWrapper(EstimatorWrapper):
+class KNeighborsWrapper(EstimatorWrapper, WrapperMixin):
     """
     Adapt: univariable/multivariable classification.
     """
     def __init__(self, fit_kwargs, **kwargs):
-        self.model = KNeighborsTimeSeriesClassifier(**kwargs)
+        super(KNeighborsWrapper, self).__init__(fit_kwargs, **kwargs)
+        self.model = KNeighborsTimeSeriesClassifier(**self.init_kwargs)
 
     def fit(self, X, y=None, **kwargs):
         # adapt for prophet
