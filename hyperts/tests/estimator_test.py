@@ -1,7 +1,7 @@
-
+import numpy as np
 import hyperts.utils.toolbox as dp
 from hyperts.utils.metrics import accuracy_score
-from hyperts.framework.wrappers.stats_wrappers import ProphetWrapper, ARIMAWrapper, VARWrapper, TSFWrapper, KNeighborsWrapper
+from hyperts.framework.wrappers.stats_wrappers import ProphetWrapper, ARIMAWrapper, VARWrapper, TSForestWrapper, KNeighborsWrapper
 from hyperts.datasets import load_random_univariate_forecast_dataset, load_random_multivariate_forecast_dataset, load_arrow_head
 
 
@@ -11,7 +11,10 @@ class Test_Estimator():
         X, y = load_random_univariate_forecast_dataset(return_X_y=True)
         X_train, X_test, y_train, y_test, = dp.temporal_train_test_split(X, y, test_size=0.2)
         fit_kwargs = {'timestamp': 'ds'}
-        model = ProphetWrapper(fit_kwargs)
+        init_kwargs = {
+            'seasonality_mode': 'multiplicative'
+        }
+        model = ProphetWrapper(fit_kwargs, **init_kwargs)
         model.fit(X_train, y_train)
 
         y_pred = model.predict(X_test)
@@ -21,7 +24,15 @@ class Test_Estimator():
         X, y = load_random_univariate_forecast_dataset(return_X_y=True)
         X_train, X_test, y_train, y_test, = dp.temporal_train_test_split(X, y, test_size=0.2)
         fit_kwargs = {'timestamp': 'ds'}
-        model = ARIMAWrapper(fit_kwargs)
+        init_kwargs = {
+            'p': 1,
+            'd': 1,
+            'q': 2,
+            'trend': 'c',
+            'y_scale': np.random.choice(['min_max', 'max_abs', 'identity'], size=1)[0]
+
+        }
+        model = ARIMAWrapper(fit_kwargs, **init_kwargs)
         model.fit(X_train, y_train)
 
         y_pred = model.predict(X_test)
@@ -31,7 +42,11 @@ class Test_Estimator():
         X, y = load_random_multivariate_forecast_dataset(return_X_y=True)
         X_train, X_test, y_train, y_test, = dp.temporal_train_test_split(X, y, test_size=0.2)
         fit_kwargs = {'timestamp': 'ds'}
-        model = VARWrapper(fit_kwargs)
+        init_kwargs = {
+            'trend': 'c',
+            'y_scale': np.random.choice(['min_max', 'max_abs', 'identity'], size=1)[0]
+        }
+        model = VARWrapper(fit_kwargs, **init_kwargs)
         model.fit(X_train, y_train)
 
         y_pred = model.predict(X_test)
@@ -40,7 +55,12 @@ class Test_Estimator():
     def test_TSF_wrapper(self):
         X, y = load_arrow_head(return_X_y=True)
         X_train, X_test, y_train, y_test = dp.random_train_test_split(X, y)
-        model = TSFWrapper(fit_kwargs=None, n_estimators=200)
+        fit_kwargs = {}
+        init_kwargs = {
+            'min_interval': 3,
+            'n_estimators': 50,
+        }
+        model = TSForestWrapper(fit_kwargs=fit_kwargs, **init_kwargs)
 
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
@@ -50,7 +70,12 @@ class Test_Estimator():
     def test_KNeighbors_wrapper(self):
         X, y = load_arrow_head(return_X_y=True)
         X_train, X_test, y_train, y_test = dp.random_train_test_split(X, y)
-        model = KNeighborsWrapper(fit_kwargs=None, n_neighbors=3)
+        fit_kwargs = {}
+        init_kwargs = {
+            'n_neighbors': 3,
+            'distance': 'ddtw'
+        }
+        model = KNeighborsWrapper(fit_kwargs=fit_kwargs, **init_kwargs)
 
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)

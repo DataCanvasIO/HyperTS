@@ -29,8 +29,15 @@ class EstimatorWrapper:
 class WrapperMixin:
 
     def __init__(self, fit_kwargs, **kwargs):
+        self.trans = None
+        self.log = None
+        self.scale = None
+        self.sc = None
+        self.lg = None
+
         self.timestamp = fit_kwargs.get('timestamp', consts.TIMESTAMP)
         self.init_kwargs = kwargs if kwargs is not None else {}
+
         if kwargs.get('x_scale') is not None:
             self.scale = kwargs.pop('x_scale', None)
         elif kwargs.get('y_scale') is not None:
@@ -39,10 +46,6 @@ class WrapperMixin:
             self.log = kwargs.pop('x_log', None)
         elif kwargs.get('y_log') is not None:
             self.log = kwargs.pop('y_log', None)
-
-        self.trans = None
-        self.sc = None
-        self.log = None
 
     @property
     def logx(self):
@@ -58,8 +61,10 @@ class WrapperMixin:
         }
 
     def fit_transform(self, X):
-        self.lg = self.logx.get(self.log, None)
-        self.sc = self.scaler.get(self.scale, None)
+        if self.log is not None:
+            self.lg = self.logx.get(self.log, None)
+        if self.scale is not None:
+            self.sc = self.scaler.get(self.scale, None)
 
         pipelines = []
         if self.log is not None:
