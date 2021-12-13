@@ -5,8 +5,13 @@ from random import random
 from os.path import join, dirname
 
 def load_network_traffic(return_X_y=False, univariate=False):
-    """Network Traffic Forecast
+    """ Network Traffic Forecast.
 
+    Notes
+    ----------
+    timestamp name: 'TimeStamp'.
+    target names: ['Var_1', 'Var_2', 'Var_3', 'Var_4', 'Var_5', 'Var_6'].
+    covariable names: ['HourSin', 'WeekCos', 'CBWD'].
     """
     module_path = dirname(__file__)
     data_file_name = join(module_path, 'network_traffic_forecast.csv')
@@ -24,12 +29,39 @@ def load_network_traffic(return_X_y=False, univariate=False):
 
 
 def load_arrow_head(return_X_y=False):
+    """ Arrow Head Univariable Classification.
+
+    Notes
+    ----------
+    classes: 3 - ['0', '1', '2'].
+    variable names: ['Var_1'].
+    target name: 'target'.
+    """
     module_path = dirname(__file__)
     data_file_name = join(module_path, 'arrow_head.pkl')
     df = pd.read_pickle(data_file_name)
 
     if return_X_y:
         return df[['Var_1']], df['target']
+    else:
+        return df
+
+
+def load_basic_motions(return_X_y=False):
+    """ Basic Motions Multivariable Classification.
+
+    Notes
+    ----------
+    classes: 4 - ['standing', 'running', 'walking', 'badminton'].
+    variable names: ['Var_1', 'Var_2', 'Var_3', 'Var_4', 'Var_5', 'Var_6'].
+    target name: 'target'.
+    """
+    module_path = dirname(__file__)
+    data_file_name = join(module_path, 'basic_motions.pkl')
+    df = pd.read_pickle(data_file_name)
+
+    if return_X_y:
+        return df[['Var_1', 'Var_2', 'Var_3', 'Var_4', 'Var_5', 'Var_6']], df['target']
     else:
         return df
 
