@@ -155,12 +155,15 @@ class KNeighborsWrapper(EstimatorWrapper, WrapperMixin):
 
     def fit(self, X, y=None, **kwargs):
         # adapt for prophet
+        X = self.fit_transform(X)
         self.model.fit(X, y)
 
     def predict(self, X, **kwargs):
+        X = self.transform(X)
         return self.model.predict(X)
 
     def predict_proba(self, X, **kwargs):
+        X = self.transform(X)
         return self.model.predict_proba(X)
 
 

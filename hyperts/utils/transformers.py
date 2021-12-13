@@ -1,9 +1,10 @@
+import copy
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
-
 from hypernets.pipeline.base import HyperTransformer
 
 
+##################################### Define sklearn Transformer #####################################
 class TimeSeriesTransformer:
 
     def __init__(self, time_series_col=None):
@@ -27,15 +28,20 @@ class LogXplus1Transformer(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X, y=None, **kwargs):
+        if not isinstance(X, np.ndarray):
+            X = np.array(X)
         X = np.log(X + 1)
         return X
 
     def inverse_transform(self, X, y=None, **kwargs):
+        if not isinstance(X, np.ndarray):
+            X = np.array(X)
         X = np.exp(X) - 1
         return X
 
 
 class IdentityTransformer(BaseEstimator, TransformerMixin):
+
     def __init__(self):
         super(IdentityTransformer, self).__init__()
 
@@ -49,11 +55,130 @@ class IdentityTransformer(BaseEstimator, TransformerMixin):
         return X
 
 
+class StandardTransformer(BaseEstimator, TransformerMixin):
 
+    def __init__(self, eps=1e-8, copy=True):
+        super(StandardTransformer, self).__init__()
+        self.eps = eps
+        self.copy = copy
+        self.mean = None
+        self.var = None
+
+    def fit(self, X, y=None, **kwargs):
+        if self.copy:
+            X = copy.deepcopy(X)
+        if not isinstance(X, np.ndarray):
+            X = np.array(X)
+        if len(X.shape) == 2:
+            self.mean = X.mean(axis=0)
+            self.var = ((X - self.mean) ** 2).mean(axis=0)
+        else:
+            self.mean = X.mean(axis=0, keepdims=True).mean(axis=1, keepdims=True)
+            self.var = ((X - self.mean) ** 2).mean(axis=0, keepdims=True).mean(axis=1, keepdims=True)
+
+        return self
+
+    def transform(self, X, y=None, **kwargs):
+        if self.copy:
+            X = copy.deepcopy(X)
+        if not isinstance(X, np.ndarray):
+            X = np.array(X)
+        transform_X = (X - self.mean) / np.sqrt(self.var + self.eps)
+        return transform_X
+
+    def inverse_transform(self, X, y=None, **kwargs):
+        if self.copy:
+            X = copy.deepcopy(X)
+        if not isinstance(X, np.ndarray):
+            X = np.array(X)
+        inverse_X = X * np.sqrt(self.var + self.eps) + self.mean
+        return inverse_X
+
+
+class MinMaxTransformer(BaseEstimator, TransformerMixin):
+
+    def __init__(self, eps=1e-8, copy=True):
+        super(MinMaxTransformer, self).__init__()
+        self.eps = eps
+        self.copy = copy
+        self.min = None
+        self.max = None
+
+    def fit(self, X, y=None, **kwargs):
+        if self.copy:
+            X = copy.deepcopy(X)
+        if not isinstance(X, np.ndarray):
+            X = np.array(X)
+        if len(X.shape) == 2:
+            self.min = X.min(axis=0, initial=None)
+            self.max = X.max(axis=0, initial=None)
+        else:
+            self.min = X.min(axis=0, keepdims=True, initial=None).min(axis=1, keepdims=True)
+            self.max = X.max(axis=0, keepdims=True, initial=None).max(axis=1, keepdims=True)
+
+        return self
+
+    def transform(self, X, y=None, **kwargs):
+        if self.copy:
+            X = copy.deepcopy(X)
+        if not isinstance(X, np.ndarray):
+            X = np.array(X)
+        transform_X = (X - self.min) / (self.max - self.min + self.eps)
+        return transform_X
+
+    def inverse_transform(self, X, y=None, **kwargs):
+        if self.copy:
+            X = copy.deepcopy(X)
+        if not isinstance(X, np.ndarray):
+            X = np.array(X)
+        inverse_X = X * (self.max - self.min + self.eps) + self.min
+        return inverse_X
+
+
+class MaxAbsTransformer(BaseEstimator, TransformerMixin):
+
+    def __init__(self, eps=1e-8, copy=True):
+        super(MaxAbsTransformer, self).__init__()
+        self.eps = eps
+        self.copy = copy
+        self.max_abs = None
+
+    def fit(self, X, y=None, **kwargs):
+        if self.copy:
+            X = copy.deepcopy(X)
+        if not isinstance(X, np.ndarray):
+            X = np.array(X)
+        if len(X.shape) == 2:
+            self.max_abs = np.nanmax(np.abs(X), axis=0)
+        else:
+            X = np.abs(X)
+            self.max_abs = X.max(axis=0, keepdims=True).max(axis=1, keepdims=True)
+
+        return self
+
+    def transform(self, X, y=None, **kwargs):
+        if self.copy:
+            X = copy.deepcopy(X)
+        if not isinstance(X, np.ndarray):
+            X = np.array(X)
+        transform_X = X / (self.max_abs + self.eps)
+        return transform_X
+
+    def inverse_transform(self, X, y=None, **kwargs):
+        if self.copy:
+            X = copy.deepcopy(X)
+        if not isinstance(X, np.ndarray):
+            X = np.array(X)
+        inverse_X = X * (self.max_abs + self.eps)
+        return inverse_X
+
+##################################### Define Hyper Transformer #####################################
 class TimeSeriesHyperTransformer(HyperTransformer):
+
     def __init__(self, space=None, name=None, **kwargs):
         HyperTransformer.__init__(self, TimeSeriesTransformer, space, name, **kwargs)
 
 class LogXplus1HyperTransformer(HyperTransformer):
+
     def __init__(self, space=None, name=None, **kwargs):
         HyperTransformer.__init__(self, LogXplus1Transformer, space, name, **kwargs)
