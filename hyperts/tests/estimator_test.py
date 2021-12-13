@@ -29,7 +29,7 @@ class Test_Estimator():
             'd': 1,
             'q': 2,
             'trend': 'c',
-            'y_scale': np.random.choice(['min_max', 'max_abs', 'identity'], size=1)[0]
+            'y_scale': np.random.choice(['min_max', 'max_abs', 'none'], size=1)[0]
 
         }
         model = ARIMAWrapper(fit_kwargs, **init_kwargs)
@@ -44,7 +44,7 @@ class Test_Estimator():
         fit_kwargs = {'timestamp': 'ds'}
         init_kwargs = {
             'trend': 'c',
-            'y_scale': np.random.choice(['min_max', 'max_abs', 'identity'], size=1)[0]
+            'y_scale': np.random.choice(['min_max', 'max_abs', 'none'], size=1)[0]
         }
         model = VARWrapper(fit_kwargs, **init_kwargs)
         model.fit(X_train, y_train)
@@ -73,7 +73,8 @@ class Test_Estimator():
         fit_kwargs = {}
         init_kwargs = {
             'n_neighbors': 3,
-            'distance': 'ddtw'
+            'distance': 'ddtw',
+            'x_scale': np.random.choice(['min_max', 'z_score'], size=1)[0]
         }
         model = KNeighborsWrapper(fit_kwargs=fit_kwargs, **init_kwargs)
 
