@@ -331,7 +331,7 @@ def infer_forecast_interval(train, forecast, n: int = 5, prediction_interval: fl
 
 
 def from_3d_array_to_nested_df(data: np.ndarray,
-                               columns_names: str = None,
+                               columns: str = None,
                                cells_as_array: bool = True):
     """Convert Numpy ndarray with shape (nb_samples, series_length, nb_variables)
     into nested pandas DataFrame (with time series as numpy array or pandas Series in cells)
@@ -358,13 +358,13 @@ def from_3d_array_to_nested_df(data: np.ndarray,
     df = pd.DataFrame()
     nb_samples, series_length, nb_variables = data.shape
     cell = np.array if cells_as_array else pd.Series
-    if columns_names is None:
-        columns_names = [f'Var_{i}' for i in range(nb_variables)]
+    if columns is None:
+        columns = [f'Var_{i}' for i in range(nb_variables)]
     else:
-        if len(columns_names) != nb_variables:
-            raise ValueError(f'The number of column names supplied [{len(columns_names)}] \
+        if len(columns) != nb_variables:
+            raise ValueError(f'The number of column names supplied [{len(columns)}] \
                                does not match the number of data variables [{nb_variables}].')
-    for i, columns_name in enumerate(columns_names):
+    for i, columns_name in enumerate(columns):
         df[columns_name] = [cell(data[j, :, i]) for j in range(nb_samples)]
     return df
 
@@ -396,6 +396,18 @@ def from_nested_df_to_3d_array(data: pd.DataFrame):
     else:
         raise ValueError
     return res.transpose(0, 2, 1)
+
+
+def is_nested_dataframe(data: pd.DataFrame):
+    """Determines whether data is a nested Dataframe.
+
+    Returns
+    -------
+    bool : True or False.
+    """
+    is_dataframe = isinstance(data, pd.DataFrame)
+    is_nested = isinstance(data.iloc[0, 0], (np.ndarray, pd.Series))
+    return is_dataframe and is_nested
 
 
 def random_train_test_split(*arrays,
