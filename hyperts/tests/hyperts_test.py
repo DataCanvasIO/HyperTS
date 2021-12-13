@@ -32,7 +32,7 @@ class Test_HyperTS():
         rs = RandomSearcher(lambda : self.search_space_one_trial(timestamp='ds'), optimize_direction=optimize_direction)
         ht = HyperTS(rs, reward_metric=reward_metric, task=task, callbacks=[SummaryCallback()])
 
-        ht.search(X_train, y_train, X_test, y_test, max_trials=1)
+        ht.search(X_train, y_train, X_test, y_test, max_trials=3)
         best_trial = ht.get_best_trial()
 
         estimator = ht.final_train(best_trial.space_sample, X_train, y_train)
