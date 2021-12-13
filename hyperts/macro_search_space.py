@@ -245,7 +245,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
             'trend': Choice(['n', 'c', 't', 'ct']),
             'seasonal_order': Choice([(0, 0, 0, 0), (1, 0, 1, 7), (1, 0, 2, 7),
                                       (2, 0, 1, 7), (2, 0, 2, 7), (0, 1, 1, 7)]),
-            'y_scale': Choice(['min_max', 'max_abs', 'identity']),
+            'y_scale': Choice(['min_max', 'max_abs', 'none']),
             'y_log': Choice(['logx', 'identity'])
         }
 
@@ -260,7 +260,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
         return {
             'ic': Choice(['aic', 'fpe', 'hqic', 'bic']),
             'trend': Choice(['c', 'ct', 'ctt', 'nc', 'n']),
-            'y_scale': Choice(['min_max', 'max_abs', 'identity']),
+            'y_scale': Choice(['min_max', 'max_abs', 'none']),
             'y_log': Choice(['logx', 'none'])
         }
 
@@ -329,7 +329,8 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
         return {
             'n_neighbors': Choice([1, 3, 5, 7, 9]),
             'weights': Choice(['uniform', 'distance']),
-            'distance': Choice(['dtw', 'ddtw', 'lcss', 'msm'])
+            'distance': Choice(['dtw', 'ddtw', 'lcss', 'msm']),
+            'x_scale': Choice(['z_score', 'none'])
         }
 
     @property
