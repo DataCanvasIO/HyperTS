@@ -2,11 +2,13 @@ import os
 import numpy as np
 import pandas as pd
 
-from hyperts.utils import consts
-from hyperts.utils.transformers import LogXplus1Transformer, IdentityTransformer
-
-from sklearn.preprocessing import MinMaxScaler, MaxAbsScaler
 from sklearn.pipeline import Pipeline
+from hyperts.utils import consts, toolbox as dp
+from hyperts.utils.transformers import (LogXplus1Transformer,
+                                        IdentityTransformer,
+                                        StandardTransformer,
+                                        MinMaxTransformer,
+                                        MaxAbsTransformer)
 
 
 class EstimatorWrapper:
@@ -29,23 +31,25 @@ class EstimatorWrapper:
 class WrapperMixin:
 
     def __init__(self, fit_kwargs, **kwargs):
-        self.trans = None
-        self.log = None
-        self.scale = None
-        self.sc = None
-        self.lg = None
-
         self.timestamp = fit_kwargs.get('timestamp', consts.TIMESTAMP)
         self.init_kwargs = kwargs if kwargs is not None else {}
-
         if kwargs.get('x_scale') is not None:
-            self.scale = kwargs.pop('x_scale', None)
+            self.is_scale = kwargs.pop('x_scale', None)
         elif kwargs.get('y_scale') is not None:
-            self.scale = kwargs.pop('y_scale', None)
+            self.is_scale = kwargs.pop('y_scale', None)
+        else:
+            self.is_scale = None
         if kwargs.get('x_log') is not None:
-            self.log = kwargs.pop('x_log', None)
+            self.is_log = kwargs.pop('x_log', None)
         elif kwargs.get('y_log') is not None:
-            self.log = kwargs.pop('y_log', None)
+            self.is_log = kwargs.pop('y_log', None)
+        else:
+            self.is_log = None
+
+        # fitted
+        self.transformers = None
+        self.sc = None
+        self.lg = None
 
     @property
     def logx(self):
@@ -56,36 +60,62 @@ class WrapperMixin:
     @property
     def scaler(self):
         return {
-            'min_max': MinMaxScaler(),
-            'max_abs': MaxAbsScaler()
+            'z_scale': StandardTransformer(),
+            'min_max': MinMaxTransformer(),
+            'max_abs': MaxAbsTransformer()
         }
 
     def fit_transform(self, X):
-        if self.log is not None:
-            self.lg = self.logx.get(self.log, None)
-        if self.scale is not None:
-            self.sc = self.scaler.get(self.scale, None)
+        if self.is_log is not None:
+            self.lg = self.logx.get(self.is_log, None)
+        if self.is_scale is not None:
+            self.sc = self.scaler.get(self.is_scale, None)
 
         pipelines = []
-        if self.log is not None:
-            pipelines.append((f'{self.log}', self.lg))
-        if self.sc is not None:
-            pipelines.append((f'{self.scale}', self.sc))
+        if self.is_log is not None:
+            pipelines.append((f'{self.is_log}', self.lg))
+        if self.is_scale is not None:
+            pipelines.append((f'{self.is_scale}', self.sc))
         pipelines.append(('identity', IdentityTransformer()))
-        self.trans = Pipeline(pipelines)
+        self.transformers = Pipeline(pipelines)
 
         cols = X.columns.tolist() if isinstance(X, pd.DataFrame) else None
-        transform_X = self.trans.fit_transform(X)
+        if dp.is_nested_dataframe(X):
+            X = dp.from_nested_df_to_3d_array(X)
+
+        transform_X = self.transformers.fit_transform(X)
+
         if isinstance(transform_X, np.ndarray):
-            transform_X = pd.DataFrame(transform_X, columns=cols)
+            if len(transform_X.shape) == 2:
+                transform_X = pd.DataFrame(transform_X, columns=cols)
+            else:
+                transform_X = dp.from_3d_array_to_nested_df(transform_X, columns=cols)
+
+        return transform_X
+
+    def transform(self, X):
+        cols = X.columns.tolist() if isinstance(X, pd.DataFrame) else None
+        if dp.is_nested_dataframe(X):
+            X = dp.from_nested_df_to_3d_array(X)
+
+        try:
+            transform_X = self.transformers.transform(X)
+        except:
+            transform_X = self.transformers._transform(X)
+
+        if isinstance(transform_X, np.ndarray):
+            if len(transform_X.shape) == 2:
+                transform_X = pd.DataFrame(transform_X, columns=cols)
+            else:
+                transform_X = dp.from_3d_array_to_nested_df(transform_X, columns=cols)
 
         return transform_X
 
     def inverse_transform(self, X):
         try:
-            inverse_X = self.trans._inverse_transform(X)
+            inverse_X = self.transformers.inverse_transform(X)
         except:
-            inverse_X = self.trans.inverse_transform(X)
+            inverse_X = self.transformers._inverse_transform(X)
         return inverse_X
 
 
