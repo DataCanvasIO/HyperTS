@@ -246,7 +246,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
             'seasonal_order': Choice([(0, 0, 0, 0), (1, 0, 1, 7), (1, 0, 2, 7),
                                       (2, 0, 1, 7), (2, 0, 2, 7), (0, 1, 1, 7)]),
             'y_scale': Choice(['min_max', 'max_abs', 'none']),
-            'y_log': Choice(['logx', 'identity'])
+            'y_log': Choice(['logx', 'none'])
         }
 
     @property
