@@ -3,6 +3,7 @@
 
 """
 
+import time
 import pickle
 
 import numpy as np
@@ -87,39 +88,89 @@ class HyperTSEstimator(Estimator):
         return None
 
     def fit(self, X, y, pos_label=None, verbose=0, **kwargs):
+        starttime = time.time()
+        if verbose is None:
+            verbose = 0
+        if verbose > 0:
+            logger.info('estimator is transforming the train set')
+
         if self.data_pipeline is not None:
             X_transformed = self.data_pipeline.fit_transform(X)
         else:
             X_transformed = X
-        self.model.fit(X_transformed, y)
+        self.model.fit(X_transformed, y, **kwargs)
+
+        if verbose > 0:
+            logger.info(f'taken {time.time() - starttime}s')
 
     def predict(self, X, verbose=0, **kwargs):
+        starttime = time.time()
+        if verbose is None:
+            verbose = 0
+        if verbose > 0:
+            logger.info('estimator is predicting the data')
+
         if self.data_pipeline is not None:
             X_transformed = self.data_pipeline.transform(X)
         else:
             X_transformed = X
-        preds = self.model.predict(X_transformed)
+
+        if self.cv_models_ is not None:
+            preds = None
+            NotImplementedError('The current version does not support CV.')
+        else:
+            preds = self.model.predict(X_transformed, **kwargs)
+
+        if verbose > 0:
+            logger.info(f'taken {time.time() - starttime}s')
+
         return preds
 
     def predict_proba(self, X, verbose=0, **kwargs):
-        return None
+        starttime = time.time()
+        if verbose is None:
+            verbose = 0
+        if verbose > 0:
+            logger.info('estimator is predicting the data')
 
-    def evaluate(self, X, y, metrics=None, verbose=0, **kwargs):
-        y = np.array(y) if not isinstance(y, np.ndarray) else y
         if self.data_pipeline is not None:
             X_transformed = self.data_pipeline.transform(X)
         else:
             X_transformed = X
+
+        if hasattr(self.model, 'predict_proba'):
+            method = 'predict_proba'
+        else:
+            method = 'predict'
+
+        if self.cv_models_ is not None:
+            proba = None
+            NotImplementedError('The current version does not support CV.')
+        else:
+            proba = getattr(self.model, method)(X_transformed, **kwargs)
+
+        if verbose > 0:
+            logger.info(f'taken {time.time() - starttime}s')
+
+        return proba
+
+    def evaluate(self, X, y, metrics=None, verbose=0, **kwargs):
+        y = np.array(y) if not isinstance(y, np.ndarray) else y
+
         if metrics is None:
             if self.task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_REGRESSION:
                 metrics = ['rmse']
             elif self.task in consts.TASK_LIST_CLASSIFICATION:
                 metrics = ['accuracy']
 
-        y_pred = self.model.predict(X_transformed)
-        scores = calc_score(y, y_pred, metrics=metrics, task=self.task,
-            pos_label=self.pos_label, classes=self.classes_)
+        if self.task in consts.TASK_LIST_CLASSIFICATION:
+            y_proba = self.predict_proba(X, verbose=verbose)
+        else:
+            y_proba = None
 
+        y_pred = self.predict(X, verbose=verbose)
+        scores = calc_score(y, y_pred, y_proba, metrics=metrics, task=self.task,
+                            pos_label=self.pos_label, classes=self.classes_)
         return scores
 
     def save(self, model_file):
