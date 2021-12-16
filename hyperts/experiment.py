@@ -165,11 +165,12 @@ def make_experiment(train_data,
             X_train, X_eval, y_train, y_eval = \
                 dp.random_train_test_split(X_train, y_train, test_size=consts.DEFAULT_EVAL_SIZE)
     elif task in consts.TASK_LIST_FORECAST:
+        excluded_variables = [timestamp] + covariables if covariables is not None else [timestamp]
         if target is None:
-            target = dp.list_diff(train_data.columns.tolist(), [timestamp] + covariables)
-        X_train, y_train = train_data[[timestamp] + covariables], train_data[target]
+            target = dp.list_diff(train_data.columns.tolist(), excluded_variables)
+        X_train, y_train = train_data[excluded_variables], train_data[target]
         if eval_data is not None:
-            X_eval, y_eval = eval_data[[timestamp] + covariables], eval_data[target]
+            X_eval, y_eval = eval_data[excluded_variables], eval_data[target]
         else:
             X_train, X_eval, y_train, y_eval = \
                 dp.temporal_train_test_split(X_train, y_train, test_size=consts.DEFAULT_EVAL_SIZE)
@@ -264,17 +265,18 @@ def process_test_data(test_df, timestamp=None, target=None, covariables=None, fr
     """
 
     if timestamp is not None:
+        excluded_variables = [timestamp] + covariables if covariables is not None else [timestamp]
         if freq is None:
-            freq = dp.infer_ts_freq(test_df[[timestamp]])
+            freq = dp.infer_ts_freq(test_df[[timestamp]], ts_name=timestamp)
         if target is None:
-            target = dp.list_diff(test_df.columns.tolist(), [timestamp] + covariables)
+            target = dp.list_diff(test_df.columns.tolist(), excluded_variables)
         test_df = dp.drop_duplicated_ts_rows(test_df, ts_name=timestamp)
         test_df = dp.smooth_missed_ts_rows(test_df, ts_name=timestamp, freq=freq)
 
         if impute is not False:
             test_df[target] = dp.multi_period_loop_imputer(test_df[target], freq=freq)
 
-        X_test, y_test = test_df[[timestamp] + covariables], test_df[target]
+        X_test, y_test = test_df[excluded_variables], test_df[target]
         return X_test, y_test
     else:
         X_test = test_df
