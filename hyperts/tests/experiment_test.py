@@ -92,7 +92,7 @@ class Test_Experiment():
 
         target = 'target'
         task = consts.Task_CLASSIFICATION
-        reward_metric = consts.Metric_ACCURACY
+        reward_metric = consts.Metric_F1
         optimize_direction = consts.OptimizeDirection_MAXIMIZE
 
         exp = make_experiment(train_df.copy(),

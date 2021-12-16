@@ -163,14 +163,19 @@ class HyperTSEstimator(Estimator):
             elif self.task in consts.TASK_LIST_CLASSIFICATION:
                 metrics = ['accuracy']
 
+        y_pred = self.predict(X, verbose=verbose)
+
         if self.task in consts.TASK_LIST_CLASSIFICATION:
             y_proba = self.predict_proba(X, verbose=verbose)
+            if 'binaryclass' in self.task:
+                classification_type = 'binary'
+            else:
+                classification_type = 'multiclass'
+            scores = calc_score(y, y_pred, y_proba, metrics=metrics, task=classification_type,
+                                pos_label=self.pos_label, classes=self.classes_)
         else:
-            y_proba = None
+            scores = calc_score(y, y_pred, metrics=metrics, task=self.task)
 
-        y_pred = self.predict(X, verbose=verbose)
-        scores = calc_score(y, y_pred, y_proba, metrics=metrics, task=self.task,
-                            pos_label=self.pos_label, classes=self.classes_)
         return scores
 
     def save(self, model_file):
