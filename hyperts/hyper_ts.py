@@ -93,6 +93,7 @@ class HyperTSEstimator(Estimator):
             verbose = 0
         if verbose > 0:
             logger.info('estimator is transforming the train set')
+        self.pos_label = pos_label
 
         if self.data_pipeline is not None:
             X_transformed = self.data_pipeline.fit_transform(X)
