@@ -105,6 +105,25 @@ def load_random_multivariate_forecast_dataset(return_X_y=False):
         return pd.concat([X, y], axis=1)
 
 
+def load_fixed_univariate_forecast_dataset(return_X_y=False):
+    """ Fixed data for univariate Forecast.
+
+    Notes
+    ----------
+    variable names: ['ds'].
+    target name: 'y'.
+    """
+    module_path = dirname(__file__)
+    data_file_name = join(module_path, 'example_wp_log_peyton_manning.csv')
+    df = pd.read_csv(data_file_name)
+    if return_X_y:
+        return df[['s']], df['y']
+    else:
+        return df
+
+
+
+
 
 if __name__ == '__main__':
     df = load_network_traffic()
