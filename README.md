@@ -1,2 +1,2 @@
 # HyperTS
-A AutoML&AutoDL Toolkit about Time Series. 
+An AutoML&AutoDL Toolkit about Time Series. 
