@@ -426,7 +426,7 @@ def random_train_test_split(*arrays,
                 shuffle=shuffle,
                 stratify=stratify)
 
-    return [pd.DataFrame(item) if isinstance(item, pd.Series) else item for item in results]
+    return results
 
 
 def temporal_train_test_split(*arrays,
