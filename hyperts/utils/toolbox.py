@@ -419,18 +419,20 @@ def random_train_test_split(*arrays,
     """Split arrays or matrices into random train and test subsets. This
     is a wrapper of scikit-learn's ``train_test_split`` that has shuffle.
     """
-    return sklearn_tts(*arrays,
+    results =  sklearn_tts(*arrays,
                 test_size=test_size,
                 train_size=train_size,
                 random_state=random_state,
                 shuffle=shuffle,
                 stratify=stratify)
 
+    return [pd.DataFrame(item) if isinstance(item, pd.Series) else item for item in results]
+
 
 def temporal_train_test_split(*arrays,
                      test_size=None,
                      train_size=None,
-                     test_horizion=None):
+                     test_horizon=None):
     """Split arrays or matrices into sequential train and test subsets.This
     is a wrapper of scikit-learn's ``train_test_split`` that does not shuffle.
 
@@ -449,22 +451,25 @@ def temporal_train_test_split(*arrays,
         proportion of the dataset to include in the train split. If
         int, represents the absolute number of train samples. If None,
         the value is automatically set to the complement of the test size.
-    test_horizion: int or None, (default=None)
+    test_horizon: int or None, (default=None)
         If int, represents the forecast horizon length.
     Returns
     -------
     splitting : list, length=2 * len(arrays)
         List containing train-test split of inputs.
     """
-    test_size = test_horizion if test_horizion != None else test_size
-    if test_horizion != None and test_horizion > arrays[0].shape[0]:
-        raise ValueError(f'{test_horizion} is greater than data shape {arrays[0].shape[0]}.')
-    return sklearn_tts(
+    test_size = test_horizon if test_horizon != None else test_size
+    if test_horizon != None and test_horizon > arrays[0].shape[0]:
+        raise ValueError(f'{test_horizon} is greater than data shape {arrays[0].shape[0]}.')
+
+    results =  sklearn_tts(
         *arrays,
         test_size=test_size,
         train_size=train_size,
         shuffle=False,
         stratify=None)
+
+    return [pd.DataFrame(item) if isinstance(item, pd.Series) else item for item in results]
 
 def list_diff(p: list, q: list):
     """Gets the difference set of two lists.

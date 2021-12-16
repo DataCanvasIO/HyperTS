@@ -15,7 +15,7 @@ class Test_Task():
 
     def test_univariate_forecast(self):
         X, y = load_random_univariate_forecast_dataset(return_X_y=True)
-        X_train, X_test, y_train, y_test = temporal_train_test_split(X, y, test_horizion=16)
+        X_train, X_test, y_train, y_test = temporal_train_test_split(X, y, test_horizon=16)
 
         rs = RandomSearcher(search_space_univariate_forecast_generator(covariate=['id'], timestamp='ds'), optimize_direction=OptimizeDirection.Minimize)
         hyper_model = HyperTS(rs, task='univariable-forecast', reward_metric='rmse', callbacks=[SummaryCallback()])
@@ -29,7 +29,7 @@ class Test_Task():
     def test_multivariate_forecast(self):
 
         X, y = load_random_multivariate_forecast_dataset(return_X_y=True)
-        X_train, X_test, y_train, y_test = temporal_train_test_split(X, y, test_horizion=16)
+        X_train, X_test, y_train, y_test = temporal_train_test_split(X, y, test_horizon=16)
 
         rs = RandomSearcher(search_space_multivariate_forecast_generator(timestamp='ds'), optimize_direction=OptimizeDirection.Minimize)
         hyper_model = HyperTS(rs, task='multivariable-forecast', reward_metric='rmse', callbacks=[SummaryCallback()])
