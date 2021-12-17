@@ -11,7 +11,6 @@ from sklearn import pipeline as sk_pipeline
 
 from hypernets.utils import fs, logging
 from hypernets.tabular import get_tool_box
-from hypernets.tabular.metrics import calc_score
 from hypernets.model.estimator import Estimator
 from hypernets.model.hyper_model import HyperModel
 from hypernets.core.meta_learner import MetaLearner
@@ -19,6 +18,7 @@ from hypernets.pipeline.base import ComposeTransformer
 from hypernets.dispatchers.in_process_dispatcher import InProcessDispatcher
 
 from hyperts.utils import consts
+from hyperts.utils.metrics import calc_score
 
 logger = logging.get_logger(__name__)
 

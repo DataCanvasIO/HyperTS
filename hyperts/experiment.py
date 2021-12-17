@@ -2,7 +2,7 @@
 """
 
 """
-from sklearn.metrics import get_scorer
+from sklearn.metrics import get_scorer, make_scorer
 
 from hypernets.tabular import get_tool_box
 from hypernets.searchers import make_searcher
@@ -12,6 +12,7 @@ from hypernets.experiment.cfg import ExperimentCfg as cfg
 from hypernets.utils import load_data, logging, isnotebook, load_module
 
 from hyperts.utils import consts, toolbox as dp
+from hyperts.utils.metrics import metric_to_scorer
 from hyperts.hyper_ts import HyperTS as hyper_ts_cls
 from hyperts.framework.compete import TSCompeteExperiment
 from hyperts.macro_search_space import stats_forecast_search_space, stats_classification_search_space
@@ -192,7 +193,7 @@ def make_experiment(train_data,
                 task = consts.Task_UNIVARIABLE_MULTICALSS
             else:
                 task = consts.Task_MULTIVARIABLE_MULTICALSS
-    logger.info(f'Inference could be type [{task}] task.')
+    logger.info(f'Inference task type could be [{task}].')
 
     # Configuration
     if reward_metric is None:
@@ -203,22 +204,28 @@ def make_experiment(train_data,
         if task in consts.TASK_LIST_REGRESSION:
             reward_metric = 'rmse'
         logger.info(f'No reward metric specified, use "{reward_metric}" for {task} task by default.')
+    if isinstance(reward_metric, str):
+        logger.info(f'Reward_metric is [{reward_metric}].')
+    else:
+        logger.info(f'Reward_metric is [{reward_metric.__name__}].')
 
     if kwargs.get('scorer') is None:
-        scorer = metric_to_scoring(reward_metric, task=task, pos_label=kwargs.get('pos_label'))
+        greater_is_better = kwargs.pop('greater_is_better', None)
+        scorer = metric_to_scorer(reward_metric, task=task, pos_label=kwargs.get('pos_label'),greater_is_better=greater_is_better)
     else:
         scorer = kwargs.pop('scorer')
-
-    if isinstance(scorer, str):
-        scorer = get_scorer(scorer)
+        if isinstance(scorer, str):
+            raise ValueError('scorer should be a [make_scorer(metric, greater_is_better)] type.')
 
     if optimize_direction is None or len(optimize_direction) == 0:
         optimize_direction = 'max' if scorer._sign > 0 else 'min'
+    logger.info(f'Optimize direction is [{optimize_direction}].')
 
     if (searcher is None or isinstance(searcher, str)) and search_space is None:
         search_space = default_search_space(mode, task, search_space, timestamp=timestamp, covariables=covariables)
 
     searcher = to_search_object(searcher, search_space)
+    logger.info(f'Searcher is [{searcher.__class__.__name__}].')
 
     if search_callbacks is None:
         search_callbacks = default_search_callbacks()

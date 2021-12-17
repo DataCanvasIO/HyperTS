@@ -12,7 +12,7 @@ class Test_Experiment():
         timestamp = 'TimeStamp'
         covariables = ['HourSin', 'WeekCos', 'CBWD']
         task = consts.Task_FORECAST
-        reward_metric = consts.Metric_RMSE
+        reward_metric = metrics.smape
         optimize_direction = consts.OptimizeDirection_MINIMIZE
 
         exp = make_experiment(train_df,
@@ -92,7 +92,7 @@ class Test_Experiment():
 
         target = 'target'
         task = consts.Task_CLASSIFICATION
-        reward_metric = consts.Metric_F1
+        reward_metric = metrics.f1_score
         optimize_direction = consts.OptimizeDirection_MAXIMIZE
 
         exp = make_experiment(train_df.copy(),

@@ -15,13 +15,10 @@ class Test_Univariable_Forecast_Metrics():
         _test_univariable_forecast_metric(consts.Metric_MAE)
 
     def test_univariable_forecast_metrics_mape(self):
-        _test_univariable_forecast_metric(consts.Metric_MAPE)  # todo not supported
+        _test_univariable_forecast_metric(consts.Metric_MAPE)
 
     def test_univariable_forecast_metrics_smape(self):
-        _test_univariable_forecast_metric(consts.Metric_SMAPE)  # todo not supported
-
-    def test_univariable_forecast_metrics_rmse(self):
-        _test_univariable_forecast_metric(consts.Metric_RMSE)
+        _test_univariable_forecast_metric(consts.Metric_SMAPE)
 
     def test_univariable_forecast_metrics_r2(self):
         _test_univariable_forecast_metric(consts.Metric_R2)
