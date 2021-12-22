@@ -1,6 +1,8 @@
 import copy
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+
 from hypernets.pipeline.base import HyperTransformer
 
 
@@ -170,6 +172,49 @@ class MaxAbsTransformer(BaseEstimator, TransformerMixin):
         if not isinstance(X, np.ndarray):
             X = np.array(X)
         inverse_X = X * (self.max_abs + self.eps)
+        return inverse_X
+
+
+class CategoricalTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self, label_encoder=None, onehot_encoder=None, copy=True):
+        super(CategoricalTransformer, self).__init__()
+        self.copy = copy
+        if label_encoder is None:
+            self.label_encoder = LabelEncoder()
+        else:
+            self.label_encoder = label_encoder
+        if onehot_encoder is None:
+            self.onehot_encoder = OneHotEncoder(sparse=False, categories="auto")
+        else:
+            self.onehot_encoder = onehot_encoder
+
+        self.classes_ = None
+        self.nb_classes_ = None
+
+    def fit(self, X, y=None, **kwargs):
+        if self.copy:
+            X = copy.deepcopy(X)
+        self.label_encoder.fit(X)
+        self.classes_ = self.label_encoder.classes_
+        self.nb_classes_ = len(self.classes_)
+        X = self.label_encoder.transform(X)
+        self.onehot_encoder.fit(X.reshape(len(X), 1))
+        return self
+
+    def transform(self, X, y=None,**kwargs):
+        if self.copy:
+            X = copy.deepcopy(X)
+        transform_X = self.label_encoder.transform(X)
+        if self.nb_classes_ > 2: # multiclass
+            transform_X = self.onehot_encoder.transform(transform_X.reshape(len(X), 1))
+        return transform_X
+
+    def inverse_transform(self, X, y=None, **kwargs):
+        if self.copy:
+            X = copy.deepcopy(X)
+        if self.nb_classes_ > 2: # multiclass
+            X = self.onehot_encoder.inverse_transform(X)
+        inverse_X = self.label_encoder.inverse_transform(X)
         return inverse_X
 
 ##################################### Define Hyper Transformer #####################################
