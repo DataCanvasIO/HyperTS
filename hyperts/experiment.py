@@ -2,12 +2,9 @@
 """
 
 """
-from sklearn.metrics import get_scorer, make_scorer
-
 from hypernets.tabular import get_tool_box
 from hypernets.searchers import make_searcher
 from hypernets.discriminators import make_discriminator
-from hypernets.tabular.metrics import metric_to_scoring
 from hypernets.experiment.cfg import ExperimentCfg as cfg
 from hypernets.utils import load_data, logging, isnotebook, load_module
 
@@ -139,7 +136,7 @@ def make_experiment(train_data,
                     f'{consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION}'
 
     if task not in consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION:
-        ValueError(f'Task naming paradigm:' 
+        raise ValueError(f'Task naming paradigm:' 
                    f'{consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION}')
 
     kwargs = kwargs.copy()
