@@ -1,7 +1,9 @@
-from hyperts.datasets import load_arrow_head, load_fixed_univariate_forecast_dataset
-from hyperts.utils import consts
+from hyperts.datasets import load_arrow_head, load_fixed_univariate_forecast_dataset, load_network_traffic
+# from hyperts.utils import consts TODO
+from hyperts.utils import consts, metrics
 from hyperts.utils import toolbox as dp
 from hyperts.experiment import make_experiment, process_test_data
+import numpy as np
 
 
 class Test_Univariable_Forecast_Metrics():
@@ -76,6 +78,32 @@ class Test_Univariable_MultiClass_Metrics():
         _test_univariable_multiclass_metric(None)
 
 
+class Test_Multivariable_Forecast_Metrics():
+    def test_multivariable_forecast_metrics_mse(self):
+        _test_multivariable_forecast(consts.Metric_MSE)
+
+    def test_multivariable_forecast_metrics_rmse(self):
+        _test_multivariable_forecast(consts.Metric_RMSE)
+
+    def test_multivariable_forecast_metrics_mae(self):
+        _test_multivariable_forecast(consts.Metric_MAE)
+
+    def test_multivariable_forecast_metrics_mape(self):
+        _test_multivariable_forecast(consts.Metric_MAPE)
+
+    def test_multivariable_forecast_metrics_smape(self):
+        _test_multivariable_forecast(consts.Metric_SMAPE)
+
+    def test_multivariable_forecast_metrics_r2(self):
+        _test_multivariable_forecast(consts.Metric_R2)
+
+    def test_multivariable_forecast_metrics_msle(self):
+        _test_multivariable_forecast(consts.Metric_MSLE)
+
+    def test_multivariable_forecast_metrics_None(self):
+        _test_multivariable_forecast(None)
+
+
 def _test_univariable_forecast_metric(metric):
     def get_params_test_task():
         return "example_wp_log_peyton_manning.csv", {'timestamp': 'ds',
@@ -144,3 +172,32 @@ def _test_univariable_multiclass_metric(metric):
     y_pred = model.predict(X_test)
 
     assert y_pred.shape == y_test.shape
+
+
+def _test_multivariable_forecast(metric):
+    df = load_network_traffic()
+    df.drop(['CBWD'], axis=1, inplace=True)
+    df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    df.dropna(inplace=True)
+    train_df, test_df = dp.temporal_train_test_split(df, test_size=0.1)
+
+    timestamp = 'TimeStamp'
+
+    task = consts.Task_MULTIVARIABLE_FORECAST
+    reward_metric = consts.Metric_RMSE
+    optimize_direction = consts.OptimizeDirection_MINIMIZE
+
+    exp = make_experiment(train_df,
+                          timestamp=timestamp,
+                          task=task,
+                          callbacks=None,
+                          reward_metric=reward_metric,
+                          optimize_direction=optimize_direction)
+
+    model = exp.run(max_trials=1)
+
+    X_test, y_test = process_test_data(test_df, timestamp=timestamp, impute=True)
+    y_pred = model.predict(X_test)
+    assert y_pred.shape == y_test.shape
+    score = metrics.mape(y_test, y_pred)
+    print('multivariable_forecast mape: ', score)

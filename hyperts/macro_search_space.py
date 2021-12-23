@@ -260,8 +260,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
         return {
             'ic': Choice(['aic', 'fpe', 'hqic', 'bic']),
             'trend': Choice(['c', 'ct', 'ctt', 'nc', 'n']),
-            'y_scale': Choice(['min_max', 'max_abs', 'scale-none']),
-            'y_log': Choice(['logx', 'log-none'])
+            'y_scale': Choice(['min_max', 'max_abs', 'scale-none'])
         }
 
     @property
