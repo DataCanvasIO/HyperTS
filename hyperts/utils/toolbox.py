@@ -490,6 +490,7 @@ def list_diff(p: list, q: list):
         >> [1, 2, 3, 4, 5]
     """
     if q is not None and len(q)>0:
-        return list(set(p).difference(set(q)))
+        # return list(set(p).difference(set(q)))
+        return list(filter(lambda x: x in q, p))
     else:
         return p
