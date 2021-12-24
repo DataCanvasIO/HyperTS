@@ -4,7 +4,8 @@ from hyperts.utils.transformers import (LogXplus1Transformer,
                                         IdentityTransformer,
                                         StandardTransformer,
                                         MinMaxTransformer,
-                                        MaxAbsTransformer)
+                                        MaxAbsTransformer,
+                                        CategoricalTransformer)
 
 
 class Test_Transformers():
@@ -53,3 +54,11 @@ class Test_Transformers():
     def test_maxabs(self):
         sc = MaxAbsTransformer()
         assert self.scale_tester(sc)
+
+    def test_ctegorical(self):
+        x = np.array(["a", "b", "a", "b", "b"])
+
+        sc = CategoricalTransformer()
+        x1 = sc.fit_transform(x)
+        x2 = sc.inverse_transform(x1)
+        assert x.tolist() == x2.tolist()
