@@ -32,8 +32,9 @@ class LogXplus1Transformer(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None, **kwargs):
         if not isinstance(X, np.ndarray):
             X = np.array(X)
-        X = np.log(X + 1)
-        return X
+        transform_X = np.log(X + 1)
+        transform_X = np.clip(transform_X, 1e-6, abs(transform_X))
+        return transform_X
 
     def inverse_transform(self, X, y=None, **kwargs):
         if not isinstance(X, np.ndarray):
