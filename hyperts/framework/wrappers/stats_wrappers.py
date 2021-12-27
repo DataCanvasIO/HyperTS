@@ -10,7 +10,6 @@ from sktime.classification.interval_based import TimeSeriesForestClassifier
 from sktime.classification.distance_based import KNeighborsTimeSeriesClassifier
 
 from hypernets.utils import logging
-from hypernets.core.search_space import ModuleSpace
 
 from ._base import EstimatorWrapper, WrapperMixin, suppress_stdout_stderr
 
@@ -41,6 +40,7 @@ class ProphetWrapper(EstimatorWrapper, WrapperMixin):
             df_test.rename(columns={self.timestamp: 'ds'}, inplace=True)
         df_preds = self.model.predict(df_test)
         preds = df_preds['yhat'].values.reshape((-1, 1))
+        preds = np.clip(preds, a_min=1e-6, a_max=abs(preds)) if self.is_scale is not None else preds
         return preds
 
 
@@ -84,7 +84,7 @@ class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
 
         preds = np.array(X[self.timestamp].map(calc_index).to_list()).reshape(-1, 1)
         preds = self.inverse_transform(preds)
-
+        preds = np.clip(preds, a_min=1e-6, a_max=abs(preds)) if self.is_scale is not None else preds
         return preds
 
 
@@ -121,7 +121,7 @@ class VARWrapper(EstimatorWrapper, WrapperMixin):
 
         preds = np.array(X[self.timestamp].map(calc_index).to_list())
         preds = self.inverse_transform(preds)
-
+        preds = np.clip(preds, a_min=1e-6, a_max=abs(preds)) if self.is_scale is not None else preds
         return preds
 
 
@@ -165,23 +165,3 @@ class KNeighborsWrapper(EstimatorWrapper, WrapperMixin):
     def predict_proba(self, X, **kwargs):
         X = self.transform(X)
         return self.model.predict_proba(X)
-
-
-##################################### Define Simple Time Series Estimator #####################################
-class SimpleTSEstimator(ModuleSpace):
-    def __init__(self, wrapper_cls, fit_kwargs=None, space=None, name=None, **hyperparams):
-        ModuleSpace.__init__(self, space, name, **hyperparams)
-        self.fit_kwargs = fit_kwargs if fit_kwargs is not None else {}
-        self.wrapper_cls = wrapper_cls
-        self.estimator = None
-
-    def build_estimator(self, task=None):
-        pv = self.param_values
-        self.estimator = self.wrapper_cls(self.fit_kwargs, **pv)
-        return self.estimator
-
-    def _forward(self, inputs):
-        return self.estimator
-
-    def _compile(self):
-        pass

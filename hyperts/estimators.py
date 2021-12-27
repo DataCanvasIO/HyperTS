@@ -6,11 +6,11 @@ from hypernets.utils import logging
 from hypernets.core.search_space import ModuleSpace
 
 from hyperts.utils import consts
-from hyperts.framework.wrappers.stats_wrappers import (ProphetWrapper,
-                                                       VARWrapper,
-                                                       ARIMAWrapper,
-                                                       TSForestWrapper,
-                                                       KNeighborsWrapper)
+from hyperts.framework.wrappers import (ProphetWrapper,
+                                        VARWrapper,
+                                        ARIMAWrapper,
+                                        TSForestWrapper,
+                                        KNeighborsWrapper)
 
 logger = logging.get_logger(__name__)
 
