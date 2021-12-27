@@ -5,7 +5,7 @@ from hyperts.framework.wrappers import ProphetWrapper, ARIMAWrapper, VARWrapper,
 from hyperts.datasets import load_random_univariate_forecast_dataset, load_random_multivariate_forecast_dataset, load_arrow_head
 
 
-class Test_Estimator():
+class Test_Stats_Wrappers():
 
     def test_Prophet_wrapper(self):
         X, y = load_random_univariate_forecast_dataset(return_X_y=True)
