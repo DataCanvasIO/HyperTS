@@ -4,7 +4,8 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 import numpy as np
 from hyperts.datasets import *
 from hyperts.utils.metrics import rmse, mape
-from hyperts.utils import toolbox as tstb, consts
+from hyperts.utils import consts
+from hyperts.utils._base import get_tool_box
 from hyperts.framework.wrappers import DeepARWrapper, HybirdRNNWrapper
 
 
@@ -13,8 +14,9 @@ class Test_DL_Wrappers():
 
     def test_univariate_forecast_deepar(self):
         X, y = load_random_univariate_forecast_dataset(return_X_y=True)
-        X = tstb.simple_numerical_imputer(X, mode='mode')
-        X_train, X_test, y_train, y_test = tstb.temporal_train_test_split(X, y, test_size=0.2)
+        tb = get_tool_box(X)
+        X = tb.simple_numerical_imputer(X, mode='mode')
+        X_train, X_test, y_train, y_test = tb.temporal_train_test_split(X, y, test_size=0.2)
         task = consts.Task_UNIVARIABLE_FORECAST
         timestamp = 'ds'
 
@@ -49,8 +51,9 @@ class Test_DL_Wrappers():
 
     def test_univariate_forecast_rnn(self):
         X, y = load_random_univariate_forecast_dataset(return_X_y=True)
-        X = tstb.simple_numerical_imputer(X, mode='mode')
-        X_train, X_test, y_train, y_test = tstb.temporal_train_test_split(X, y, test_size=0.2)
+        tb = get_tool_box(X)
+        X = tb.simple_numerical_imputer(X, mode='mode')
+        X_train, X_test, y_train, y_test = tb.temporal_train_test_split(X, y, test_size=0.2)
         task = consts.Task_UNIVARIABLE_FORECAST
         timestamp = 'ds'
 
@@ -87,8 +90,9 @@ class Test_DL_Wrappers():
 
     def test_multivariate_forecast_with_covariables_rnn(self):
         X, y = load_network_traffic(return_X_y=True)
-        y = tstb.simple_numerical_imputer(y)
-        X_train, X_test, y_train, y_test = tstb.temporal_train_test_split(X, y, test_size=0.2)
+        tb = get_tool_box(X)
+        y = tb.simple_numerical_imputer(y)
+        X_train, X_test, y_train, y_test = tb.temporal_train_test_split(X, y, test_size=0.2)
         task = consts.Task_MULTIVARIABLE_FORECAST
         timestamp = 'TimeStamp'
 
@@ -125,9 +129,10 @@ class Test_DL_Wrappers():
 
     def test_multivariate_forecast_no_covariables_rnn(self):
         X, y = load_network_traffic(return_X_y=True)
-        y = tstb.simple_numerical_imputer(y)
+        tb = get_tool_box(X)
+        y = tb.simple_numerical_imputer(y)
         X = X[['TimeStamp']]
-        X_train, X_test, y_train, y_test = tstb.temporal_train_test_split(X, y, test_size=0.2)
+        X_train, X_test, y_train, y_test = tb.temporal_train_test_split(X, y, test_size=0.2)
         task = consts.Task_MULTIVARIABLE_FORECAST
         timestamp = 'TimeStamp'
 
