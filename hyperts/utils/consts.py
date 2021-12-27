@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-
+from hypernets.utils.const import *
 
 TIMESTAMP                          = 'timestamp'
 DEFAULT_EVAL_SIZE                  = 0.2
@@ -25,6 +25,10 @@ TASK_LIST_CLASSIFICATION           = ['classification',
 
 TASK_LIST_REGRESSION               = ['regression'
 ]
+
+TASK_LIST_BINARYCLASS              = ['univariable-binaryclass', 'multivariable-binaryclass']
+
+TASK_LIST_MULTICLASS               = ['univariable-multiclass', 'multivariable-multiclass']
 
 Mode_STATS                         = 'stats'
 Mode_DL                            = 'dl'
@@ -54,3 +58,6 @@ Metric_RECALL                      = 'recall'
 Metric_AUC                         = 'auc'
 Metric_F1                          = 'f1'
 Metric_LOGLOSS                     = 'logloss'
+
+OptimizerSGD                       = 'sgd'
+OptimizerADAM                      = 'adam'
