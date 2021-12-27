@@ -6,7 +6,7 @@ from hypernets.searchers.random_searcher import RandomSearcher
 from hyperts.hyper_ts import HyperTS
 from hyperts.utils import consts, toolbox as dp
 from hyperts.datasets import load_random_univariate_forecast_dataset
-from hyperts.framework.wrappers.stats_wrappers import SimpleTSEstimator, ProphetWrapper
+from hyperts.framework.wrappers import SimpleTSEstimator, ProphetWrapper
 
 class Test_HyperTS():
 

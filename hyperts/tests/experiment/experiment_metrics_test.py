@@ -183,7 +183,7 @@ def _test_multivariable_forecast(metric):
     timestamp = 'TimeStamp'
 
     task = consts.Task_MULTIVARIABLE_FORECAST
-    reward_metric = consts.Metric_RMSE
+    reward_metric = metric
     optimize_direction = consts.OptimizeDirection_MINIMIZE
 
     exp = make_experiment(train_df,
