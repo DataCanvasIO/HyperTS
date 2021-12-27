@@ -5,7 +5,8 @@ import pandas as pd
 from sklearn.pipeline import Pipeline
 from hypernets.core.search_space import ModuleSpace
 
-from hyperts.utils import consts, toolbox as dp
+from hyperts.utils import consts
+from hyperts.utils._base import get_tool_box
 from hyperts.utils.transformers import (LogXplus1Transformer,
                                         IdentityTransformer,
                                         StandardTransformer,
@@ -76,6 +77,7 @@ class WrapperMixin:
         }
 
     def fit_transform(self, X):
+        tb = get_tool_box(X)
         if self.is_log is not None:
             self.lg = self.logx.get(self.is_log, None)
         if self.is_scale is not None:
@@ -90,8 +92,8 @@ class WrapperMixin:
         self.transformers = Pipeline(pipelines)
 
         cols = X.columns.tolist() if isinstance(X, pd.DataFrame) else None
-        if dp.is_nested_dataframe(X):
-            X = dp.from_nested_df_to_3d_array(X)
+        if tb.is_nested_dataframe(X):
+            X = tb.from_nested_df_to_3d_array(X)
 
         transform_X = self.transformers.fit_transform(X)
 
@@ -99,14 +101,15 @@ class WrapperMixin:
             if len(transform_X.shape) == 2:
                 transform_X = pd.DataFrame(transform_X, columns=cols)
             else:
-                transform_X = dp.from_3d_array_to_nested_df(transform_X, columns=cols)
+                transform_X = tb.from_3d_array_to_nested_df(transform_X, columns=cols)
 
         return transform_X
 
     def transform(self, X):
+        tb = get_tool_box(X)
         cols = X.columns.tolist() if isinstance(X, pd.DataFrame) else None
-        if dp.is_nested_dataframe(X):
-            X = dp.from_nested_df_to_3d_array(X)
+        if tb.is_nested_dataframe(X):
+            X = tb.from_nested_df_to_3d_array(X)
 
         try:
             transform_X = self.transformers.transform(X)
@@ -117,7 +120,7 @@ class WrapperMixin:
             if len(transform_X.shape) == 2:
                 transform_X = pd.DataFrame(transform_X, columns=cols)
             else:
-                transform_X = dp.from_3d_array_to_nested_df(transform_X, columns=cols)
+                transform_X = tb.from_3d_array_to_nested_df(transform_X, columns=cols)
 
         return transform_X
 

@@ -1,6 +1,6 @@
 import numpy as np
 from hyperts.utils import consts, metrics
-from hyperts.utils import toolbox as dp
+from hyperts.utils._base import get_tool_box
 from hyperts.experiment import make_experiment, process_test_data
 from hyperts.datasets import load_arrow_head, load_fixed_univariate_forecast_dataset, load_network_traffic
 
@@ -113,7 +113,8 @@ def _test_univariable_forecast_metric(metric):
     task = consts.Task_FORECAST
     params = get_params_test_task()
     df = load_fixed_univariate_forecast_dataset()
-    train_df, test_df = dp.temporal_train_test_split(df, test_size=0.1)
+    tb = get_tool_box(df)
+    train_df, test_df = tb.temporal_train_test_split(df, test_size=0.1)
     timestamp = 'ds'
     exp = make_experiment(train_df, task=task, reward_metric=reward_metric, **params[1])
     model = exp.run(max_trials=1)
@@ -125,7 +126,8 @@ def _test_univariable_forecast_metric(metric):
 def _test_univariable_binaryclass_metric(metric):
     df = load_arrow_head()
     df = df[df.target.isin(['0', '1'])]
-    train_df, test_df = dp.random_train_test_split(df, test_size=0.2)
+    tb = get_tool_box(df)
+    train_df, test_df = tb.random_train_test_split(df, test_size=0.2)
 
     target = 'target'
     task = consts.Task_CLASSIFICATION
@@ -151,7 +153,8 @@ def _test_univariable_binaryclass_metric(metric):
 
 def _test_univariable_multiclass_metric(metric):
     df = load_arrow_head()
-    train_df, test_df = dp.random_train_test_split(df, test_size=0.2)
+    tb = get_tool_box(df)
+    train_df, test_df = tb.random_train_test_split(df, test_size=0.2)
 
     target = 'target'
     task = consts.Task_CLASSIFICATION
@@ -178,7 +181,8 @@ def _test_multivariable_forecast(metric):
     df.drop(['CBWD'], axis=1, inplace=True)
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
     df.dropna(inplace=True)
-    train_df, test_df = dp.temporal_train_test_split(df, test_size=0.1)
+    tb = get_tool_box(df)
+    train_df, test_df = tb.temporal_train_test_split(df, test_size=0.1)
 
     timestamp = 'TimeStamp'
 

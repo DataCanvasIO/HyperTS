@@ -1,13 +1,14 @@
 from hyperts.datasets import load_network_traffic, load_arrow_head, load_basic_motions
 from hyperts.utils import consts, metrics
-from hyperts.utils import toolbox as dp
+from hyperts.utils._base import get_tool_box
 from hyperts.experiment import make_experiment, process_test_data
 
 class Test_Experiment():
 
     def test_univariable_forecast(self):
         df = load_network_traffic(univariate=True)
-        train_df, test_df = dp.temporal_train_test_split(df, test_size=0.1)
+        tb = get_tool_box(df)
+        train_df, test_df = tb.temporal_train_test_split(df, test_size=0.1)
 
         timestamp = 'TimeStamp'
         covariables = ['HourSin', 'WeekCos', 'CBWD']
@@ -34,7 +35,8 @@ class Test_Experiment():
 
     def test_multivariable_forecast(self):
         df = load_network_traffic()
-        train_df, test_df = dp.temporal_train_test_split(df, test_size=0.1)
+        tb = get_tool_box(df)
+        train_df, test_df = tb.temporal_train_test_split(df, test_size=0.1)
 
         timestamp = 'TimeStamp'
         covariables = ['HourSin', 'WeekCos', 'CBWD']
@@ -61,7 +63,8 @@ class Test_Experiment():
 
     def test_univariate_classification(self):
         df = load_arrow_head()
-        train_df, test_df = dp.random_train_test_split(df, test_size=0.2)
+        tb = get_tool_box(df)
+        train_df, test_df = tb.random_train_test_split(df, test_size=0.2)
 
         target = 'target'
         task = consts.Task_CLASSIFICATION
@@ -88,7 +91,8 @@ class Test_Experiment():
 
     def test_multivariate_classification(self):
         df = load_basic_motions()
-        train_df, test_df = dp.random_train_test_split(df, test_size=0.2)
+        tb = get_tool_box(df)
+        train_df, test_df = tb.random_train_test_split(df, test_size=0.2)
 
         target = 'target'
         task = consts.Task_CLASSIFICATION

@@ -2,17 +2,17 @@
 """
 
 """
-from hypernets.tabular import get_tool_box
 from hypernets.searchers import make_searcher
 from hypernets.discriminators import make_discriminator
 from hypernets.experiment.cfg import ExperimentCfg as cfg
 from hypernets.utils import load_data, logging, isnotebook, load_module
 
-from hyperts.utils import consts, toolbox as dp
+from hyperts.utils import consts
 from hyperts.utils.metrics import metric_to_scorer
 from hyperts.hyper_ts import HyperTS as hyper_ts_cls
 from hyperts.framework.compete import TSCompeteExperiment
 from hyperts.macro_search_space import stats_forecast_search_space, stats_classification_search_space
+from hyperts.utils._base import get_tool_box
 
 logger = logging.get_logger(__name__)
 
@@ -161,17 +161,17 @@ def make_experiment(train_data,
             X_eval, y_eval = eval_data.drop(columns=[target]), eval_data.pop(target)
         else:
             X_train, X_eval, y_train, y_eval = \
-                dp.random_train_test_split(X_train, y_train, test_size=consts.DEFAULT_EVAL_SIZE)
+                tb.random_train_test_split(X_train, y_train, test_size=consts.DEFAULT_EVAL_SIZE)
     elif task in consts.TASK_LIST_FORECAST:
         excluded_variables = [timestamp] + covariables if covariables is not None else [timestamp]
         if target is None:
-            target = dp.list_diff(train_data.columns.tolist(), excluded_variables)
+            target = tb.list_diff(train_data.columns.tolist(), excluded_variables)
         X_train, y_train = train_data[excluded_variables], train_data[target]
         if eval_data is not None:
             X_eval, y_eval = eval_data[excluded_variables], eval_data[target]
         else:
             X_train, X_eval, y_train, y_eval = \
-                dp.temporal_train_test_split(X_train, y_train, test_size=consts.DEFAULT_EVAL_SIZE)
+                tb.temporal_train_test_split(X_train, y_train, test_size=consts.DEFAULT_EVAL_SIZE)
 
     # Task Type Infering
     if task == consts.Task_FORECAST and len(y_train.columns) == 1:
@@ -268,17 +268,19 @@ def process_test_data(test_df, timestamp=None, target=None, covariables=None, fr
           X_test, y_test.
     """
 
+    tb = get_tool_box(test_df)
+
     if timestamp is not None:
         excluded_variables = [timestamp] + covariables if covariables is not None else [timestamp]
         if freq is None:
-            freq = dp.infer_ts_freq(test_df[[timestamp]], ts_name=timestamp)
+            freq = tb.infer_ts_freq(test_df[[timestamp]], ts_name=timestamp)
         if target is None:
-            target = dp.list_diff(test_df.columns.tolist(), excluded_variables)
-        test_df = dp.drop_duplicated_ts_rows(test_df, ts_name=timestamp)
-        test_df = dp.smooth_missed_ts_rows(test_df, ts_name=timestamp, freq=freq)
+            target = tb.list_diff(test_df.columns.tolist(), excluded_variables)
+        test_df = tb.drop_duplicated_ts_rows(test_df, ts_name=timestamp)
+        test_df = tb.smooth_missed_ts_rows(test_df, ts_name=timestamp, freq=freq)
 
         if impute is not False:
-            test_df[target] = dp.multi_period_loop_imputer(test_df[target], freq=freq)
+            test_df[target] = tb.multi_period_loop_imputer(test_df[target], freq=freq)
 
         X_test, y_test = test_df[excluded_variables], test_df[target]
         return X_test, y_test

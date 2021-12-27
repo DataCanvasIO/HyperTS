@@ -1,8 +1,9 @@
 from . import consts
-from . import toolbox
+from . import tstoolbox
 from . import metrics
 from . import transformers
-from hyperts.utils.toolbox import register_tstoolbox, TSToolBox
+from .tstoolbox import TSToolBox
+from ._base import register_tstoolbox
 
 register_tstoolbox(TSToolBox, None)
 

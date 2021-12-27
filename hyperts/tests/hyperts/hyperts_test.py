@@ -4,7 +4,8 @@ from hypernets.core.search_space import HyperSpace, Choice
 from hypernets.searchers.random_searcher import RandomSearcher
 
 from hyperts.hyper_ts import HyperTS
-from hyperts.utils import consts, toolbox as dp
+from hyperts.utils import consts
+from hyperts.utils._base import get_tool_box
 from hyperts.datasets import load_random_univariate_forecast_dataset
 from hyperts.framework.wrappers import SimpleTSEstimator, ProphetWrapper
 
@@ -22,7 +23,8 @@ class Test_HyperTS():
 
     def test_hyperts(self):
         X, y = load_random_univariate_forecast_dataset(return_X_y=True)
-        X_train, X_test, y_train, y_test = dp.temporal_train_test_split(X, y, test_horizon=24)
+        tb = get_tool_box(X)
+        X_train, X_test, y_train, y_test = tb.temporal_train_test_split(X, y, test_horizon=24)
 
         task = consts.Task_UNIVARIABLE_FORECAST
         optimize_direction = consts.OptimizeDirection_MINIMIZE

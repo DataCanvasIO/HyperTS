@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.metrics import *
 from hypernets.utils import const
+from sklearn import metrics as sk_metrics
 
 greater_is_better = {
     'mse': False,
@@ -250,6 +251,50 @@ def metric_to_scorer(metric, task, pos_label=None, **options):
         return make_scorer(metric, **options)
     else:
         raise ValueError('Note that greater_is_better(type:Bool) need be provided.')
+
+def metric_to_scoring(metric, task=const.TASK_BINARY, pos_label=None):
+    assert isinstance(metric, str)
+
+    metric2scoring = {
+        'auc': 'roc_auc_ovo',
+        'accuracy': 'accuracy',
+        'recall': 'recall',
+        'precision': 'precision',
+        'f1': 'f1',
+        'mse': 'neg_mean_squared_error',
+        'mae': 'neg_mean_absolute_error',
+        'msle': 'neg_mean_squared_log_error',
+        'rmse': 'neg_root_mean_squared_error',
+        'rootmeansquarederror': 'neg_root_mean_squared_error',
+        'root_mean_squared_error': 'neg_root_mean_squared_error',
+        'r2': 'r2',
+        'logloss': 'neg_log_loss',
+    }
+    metric2fn = {
+        'recall': sk_metrics.recall_score,
+        'precision': sk_metrics.precision_score,
+        'f1': sk_metrics.f1_score,
+    }
+    metric_lower = metric.lower()
+    if metric_lower not in metric2scoring.keys() and metric_lower not in metric2fn.keys():
+        raise ValueError(f'Not found matching scoring for {metric}')
+
+    if metric_lower in metric2fn.keys():
+        options = dict(average=_task_to_average(task))
+        if pos_label is not None:
+            options['pos_label'] = pos_label
+        scoring = sk_metrics.make_scorer(metric2fn[metric_lower], **options)
+    else:
+        scoring = sk_metrics.get_scorer(metric2scoring[metric_lower])
+
+    return scoring
+
+def _task_to_average(task):
+    if task == const.TASK_MULTICLASS:
+        average = 'macro'
+    else:
+        average = 'binary'
+    return average
 
 
 def calc_score(y_true, y_preds, y_proba=None, metrics=('accuracy',), task=const.TASK_BINARY, pos_label=1,

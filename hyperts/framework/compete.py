@@ -5,17 +5,15 @@
 import copy
 
 import numpy as np
-import pandas as pd
 
 from hypernets.core import set_random_state
 from hypernets.experiment.compete import SteppedExperiment, ExperimentStep, \
                                          EnsembleStep, FinalTrainStep
 
 from hypernets.utils import logging
-from hypernets.tabular import get_tool_box
-from hypernets.tabular.data_cleaner import DataCleaner
 
-from hyperts.utils import toolbox as dp, consts
+from hyperts.utils import consts, metrics
+from hyperts.utils._base import get_tool_box
 
 logger = logging.get_logger(__name__)
 
@@ -59,9 +57,9 @@ class TSFDataPreprocessStep(ExperimentStep):
 
         # 2. target plus covariable process
         train_Xy = tb.concat_df([X_train, y_train], axis=1)
-        variable_cols = dp.list_diff(train_Xy.columns, self.timestamp_col)
-        target_cols = dp.list_diff(variable_cols, self.covariate_cols)
-        excluded_cols = dp.list_diff(train_Xy.columns, target_cols)
+        variable_cols = tb.list_diff(train_Xy.columns, self.timestamp_col)
+        target_cols = tb.list_diff(variable_cols, self.covariate_cols)
+        excluded_cols = tb.list_diff(train_Xy.columns, target_cols)
         train_Xy = self.series_transform(train_Xy, target_cols)
         X_train, y_train = train_Xy[excluded_cols], train_Xy[target_cols]
         self.step_progress('fit_transform train set')
@@ -71,7 +69,7 @@ class TSFDataPreprocessStep(ExperimentStep):
             eval_size = self.experiment.eval_size
             if self.task in consts.TASK_LIST_FORECAST:
                 X_train, X_eval, y_train, y_eval = \
-                    dp.temporal_train_test_split(X_train, y_train, test_size=eval_size)
+                    tb.temporal_train_test_split(X_train, y_train, test_size=eval_size)
                 self.step_progress('split into train set and eval set')
         else:
             if self.covariate_cols is not None and len(self.covariate_cols) > 0:
@@ -119,6 +117,7 @@ class TSFDataPreprocessStep(ExperimentStep):
 
     def series_transform(self, X, target_cols=None):
         X = copy.deepcopy(X)
+        tb = get_tool_box(X)
         covar_object_names, covar_float_names = [], []
 
         if self.covariate_cols is not None and len(self.covariate_cols) > 0:
@@ -134,14 +133,14 @@ class TSFDataPreprocessStep(ExperimentStep):
             impute_col_names = covar_float_names
 
         self.freq = self.freq if self.freq is not None else \
-            dp.infer_ts_freq(X[self.timestamp_col], ts_name=self.timestamp_col[0])
-        X = dp.drop_duplicated_ts_rows(X, ts_name=self.timestamp_col[0])
-        X = dp.smooth_missed_ts_rows(X, freq=self.freq, ts_name=self.timestamp_col[0])
+            tb.infer_ts_freq(X[self.timestamp_col], ts_name=self.timestamp_col[0])
+        X = tb.drop_duplicated_ts_rows(X, ts_name=self.timestamp_col[0])
+        X = tb.smooth_missed_ts_rows(X, freq=self.freq, ts_name=self.timestamp_col[0])
 
         if target_cols is not None and len(target_cols) > 0:
-            X[target_cols] = dp.nan_to_outliers(X[target_cols])
+            X[target_cols] = tb.nan_to_outliers(X[target_cols])
         if impute_col_names is not None and len(impute_col_names) > 0:
-            X[impute_col_names] = dp.multi_period_loop_imputer(X[impute_col_names], freq=self.freq)
+            X[impute_col_names] = tb.multi_period_loop_imputer(X[impute_col_names], freq=self.freq)
         if covar_object_names is not None and len(covar_object_names) > 0:
             X[covar_object_names] = X[covar_object_names].fillna(method='ffill').fillna(method='bfill')
 
@@ -338,7 +337,7 @@ class TSCompeteExperiment(SteppedExperiment):
             task = hyper_model.task
 
         if scorer is None:
-            scorer = tb.metrics.metric_to_scoring(hyper_model.reward_metric,
+            scorer = metrics.metric_to_scoring(hyper_model.reward_metric,
                                                   task=task, pos_label=kwargs.get('pos_label'))
 
         steps = []

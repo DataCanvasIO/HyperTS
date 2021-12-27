@@ -10,7 +10,6 @@ import numpy as np
 from sklearn import pipeline as sk_pipeline
 
 from hypernets.utils import fs, logging
-from hypernets.tabular import get_tool_box
 from hypernets.model.estimator import Estimator
 from hypernets.model.hyper_model import HyperModel
 from hypernets.core.meta_learner import MetaLearner

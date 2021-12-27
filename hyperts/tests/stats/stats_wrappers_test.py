@@ -1,5 +1,5 @@
 import numpy as np
-import hyperts.utils.toolbox as dp
+from hyperts.utils._base import get_tool_box
 from hyperts.utils.metrics import accuracy_score
 from hyperts.framework.wrappers import ProphetWrapper, ARIMAWrapper, VARWrapper, TSForestWrapper, KNeighborsWrapper
 from hyperts.datasets import load_random_univariate_forecast_dataset, load_random_multivariate_forecast_dataset, load_arrow_head
@@ -9,7 +9,8 @@ class Test_Stats_Wrappers():
 
     def test_Prophet_wrapper(self):
         X, y = load_random_univariate_forecast_dataset(return_X_y=True)
-        X_train, X_test, y_train, y_test, = dp.temporal_train_test_split(X, y, test_size=0.2)
+        tb = get_tool_box(X)
+        X_train, X_test, y_train, y_test, = tb.temporal_train_test_split(X, y, test_size=0.2)
         fit_kwargs = {'timestamp': 'ds'}
         init_kwargs = {
             'seasonality_mode': 'multiplicative'
@@ -22,7 +23,8 @@ class Test_Stats_Wrappers():
 
     def test_ARIMA_wrapper(self):
         X, y = load_random_univariate_forecast_dataset(return_X_y=True)
-        X_train, X_test, y_train, y_test, = dp.temporal_train_test_split(X, y, test_size=0.2)
+        tb = get_tool_box(X)
+        X_train, X_test, y_train, y_test, = tb.temporal_train_test_split(X, y, test_size=0.2)
         fit_kwargs = {'timestamp': 'ds'}
         init_kwargs = {
             'p': 1,
@@ -40,7 +42,8 @@ class Test_Stats_Wrappers():
 
     def test_VAR_wrapper(self):
         X, y = load_random_multivariate_forecast_dataset(return_X_y=True)
-        X_train, X_test, y_train, y_test, = dp.temporal_train_test_split(X, y, test_size=0.2)
+        tb = get_tool_box(X)
+        X_train, X_test, y_train, y_test, = tb.temporal_train_test_split(X, y, test_size=0.2)
         fit_kwargs = {'timestamp': 'ds'}
         init_kwargs = {
             'trend': 'c',
@@ -54,7 +57,8 @@ class Test_Stats_Wrappers():
 
     def test_TSF_wrapper(self):
         X, y = load_arrow_head(return_X_y=True)
-        X_train, X_test, y_train, y_test = dp.random_train_test_split(X, y)
+        tb = get_tool_box(X)
+        X_train, X_test, y_train, y_test = tb.random_train_test_split(X, y)
         fit_kwargs = {}
         init_kwargs = {
             'min_interval': 3,
@@ -69,7 +73,8 @@ class Test_Stats_Wrappers():
 
     def test_KNeighbors_wrapper(self):
         X, y = load_arrow_head(return_X_y=True)
-        X_train, X_test, y_train, y_test = dp.random_train_test_split(X, y)
+        tb = get_tool_box(X)
+        X_train, X_test, y_train, y_test = tb.random_train_test_split(X, y)
         fit_kwargs = {}
         init_kwargs = {
             'n_neighbors': 3,

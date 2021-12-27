@@ -10,7 +10,7 @@ from sklearn.pipeline import make_pipeline
 from hypernets.utils import logging
 from hypernets.tabular import sklearn_ex
 
-from hyperts.utils import toolbox as tstb
+from hyperts.utils._base import get_tool_box
 from hyperts.utils.transformers import CategoricalTransformer
 
 logger = logging.get_logger(__name__)
@@ -342,12 +342,13 @@ class MetaTSCprocessor(MetaPreprocessor):
             raise ValueError(f"The number of samples of X and y must be the same. X.shape:{X.shape}, y.shape{y.shape}")
 
     def transform_X(self, X, copy_data=False):
+        tb = get_tool_box(X)
         logger.info("Transform [X]...")
         start = time.time()
         if copy_data:
             X = self._copy(X)
-        if tstb.is_nested_dataframe(X):
-            X = tstb.from_nested_df_to_3d_array(X)
+        if tb.is_nested_dataframe(X):
+            X = tb.from_nested_df_to_3d_array(X)
         logger.info(f'transform_X taken {time.time() - start}s')
         return X
 
