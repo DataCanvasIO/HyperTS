@@ -8,6 +8,7 @@ greater_is_better = {
     'rmse': False,
     'mape': False,
     'smape': False,
+    'msle': False,
     'r2_score': True,
     'explained_variance_score': True,
     'max_error': False,
@@ -167,6 +168,34 @@ def smape(y_true, y_pred, axis=None):
     diff = np.nanmean(np.abs(y_pred - y_true) / (np.abs(y_pred) + np.abs(y_true)), axis=axis)
     return 2.0 * diff
 
+def msle(y_true, y_pred, epsihon=1e-06, axis=None):
+    """Mean squared logarithmic error regression loss.
+
+    Note that this implementation can handle NaN and y_pred contains negative values.
+
+    Parameters
+    ----------
+    y_true : pd.DataFrame or array-like of shape (n_samples,) or (n_samples, n_outputs)
+        Ground truth (correct) target values.
+
+    y_pred : pd.DataFrame or array-like of shape (n_samples,) or (n_samples, n_outputs)
+        Estimated target values.
+    Returns
+    -------
+    loss : float or ndarray of floats
+        A non-negative floating point value (the best value is 0.0), or an
+        array of floating point values, one for each individual target.
+    """
+    y_true, y_pred = check_is_array(y_true, y_pred)
+
+    if (y_true < 0).any():
+        y_true = np.clip(y_true, a_min=epsihon, a_max=abs(y_true))
+
+    if (y_pred < 0).any():
+        y_pred = np.clip(y_pred, a_min=epsihon, a_max=abs(y_pred))
+
+    return mse(np.log1p(y_true), np.log1p(y_pred), axis)
+
 
 metric2scoring = {
     'auc': 'roc_auc_ovo',
@@ -184,7 +213,6 @@ metric2scoring = {
     'mae': 'neg_mean_absolute_error',
     'neg_mean_absolute_error': 'neg_mean_absolute_error',
     'mean_absolute_error': 'neg_mean_absolute_error',
-    'msle': 'neg_mean_squared_log_error',
     'neg_mean_squared_log_error': 'neg_mean_squared_log_error',
     'mean_squared_log_error': 'neg_mean_squared_log_error',
     'rmse': 'neg_root_mean_squared_error',
@@ -195,7 +223,8 @@ metric2scoring = {
     'logloss': 'neg_log_loss',
     'log_loss': 'neg_log_loss',
     'mape': mape,
-    'smape': smape
+    'smape': smape,
+    'msle': msle,
     # ...
 }
 
@@ -271,7 +300,10 @@ def calc_score(y_true, y_preds, y_proba=None, metrics=('accuracy',), task=const.
             elif metric_lower in ['mae', 'mean_absolute_error', 'neg_mean_absolute_error']:
                 score[metric] = mae(y_true, y_preds)
             elif metric_lower in ['msle', 'mean_squared_log_error', 'neg_mean_squared_log_error']:
-                score[metric] = mean_squared_log_error(y_true, y_preds)
+                try:
+                    score[metric] = mean_squared_log_error(y_true, y_preds)
+                except:
+                    score[metric] = msle(y_true, y_preds)
             elif metric_lower in ['rmse', 'root_mean_squared_error', 'neg_root_mean_squared_error']:
                 score[metric] = rmse(y_true, y_preds)
             elif metric_lower in ['mape']:
