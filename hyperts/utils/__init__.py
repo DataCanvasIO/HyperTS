@@ -3,7 +3,7 @@ from . import tstoolbox
 from . import metrics
 from . import transformers
 from .tstoolbox import TSToolBox
-from ._base import register_tstoolbox
+from ._base import register_tstoolbox, get_tool_box
 
 register_tstoolbox(TSToolBox, None)
 

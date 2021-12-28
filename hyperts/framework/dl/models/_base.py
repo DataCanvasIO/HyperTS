@@ -12,13 +12,11 @@ from tensorflow.keras.utils import plot_model
 from tensorflow.keras.models import load_model, model_from_json
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
 
-from hyperts.utils import consts
-from hyperts.utils._base import get_tool_box
+from hyperts.utils import consts, get_tool_box
 from hyperts.framework.dl import layers
 from hyperts.framework.dl.timeseries import from_array_to_timeseries
 from hyperts.framework.dl.metainfo import MetaTSFprocessor, MetaTSCprocessor
 
-from hypernets.tabular import sklearn_ex as skex
 from hypernets.utils import logging
 
 logger = logging.get_logger(__name__)
@@ -26,7 +24,8 @@ logger = logging.get_logger(__name__)
 
 class BaseDeepMixin:
 
-    def build_input_head(self, window, continuous_columns, categorical_columns):
+    @staticmethod
+    def build_input_head(window, continuous_columns, categorical_columns):
         """
 
         """
@@ -42,7 +41,8 @@ class BaseDeepMixin:
 
         return continuous_inputs, categorical_inputs
 
-    def build_denses(self, continuous_columns, continuous_inputs, use_batchnormalization=False):
+    @staticmethod
+    def build_denses(continuous_columns, continuous_inputs, use_batchnormalization=False):
         """
 
         """
@@ -57,7 +57,8 @@ class BaseDeepMixin:
 
         return dense_layer
 
-    def build_embeddings(self, categorical_columns, categorical_inputs):
+    @staticmethod
+    def build_embeddings(categorical_columns, categorical_inputs):
         """
 
         """
@@ -71,7 +72,8 @@ class BaseDeepMixin:
 
         return embeddings
 
-    def build_output_tail(self, x, task, nb_outputs, nb_steps=1):
+    @staticmethod
+    def build_output_tail(x, task, nb_outputs, nb_steps=1):
         """
 
         """
@@ -86,7 +88,8 @@ class BaseDeepMixin:
             raise ValueError(f'Unsupported task type {task}.')
         return outputs
 
-    def rnn_forward(self, x, nb_units, nb_layers, rnn_type, name, drop_rate=0., i=0):
+    @staticmethod
+    def rnn_forward(x, nb_units, nb_layers, rnn_type, name, drop_rate=0., i=0):
         """
 
         """
@@ -168,14 +171,15 @@ class BaseDeepEstimator(object):
             use_multiprocessing=False):
         start = time.time()
         X, y = self._preprocessor(X, y)
+        tb = get_tool_box(X)
         if validation_data is not None:
             validation_data = self.mata.transform(*validation_data)
 
         if validation_data is None:
             if self.task in consts.TASK_LIST_FORECAST:
-                X, X_val, y, y_val = skex.train_test_split(X, y, test_size=validation_split, shuffle=False)
+                X, X_val, y, y_val = tb.temporal_train_test_split(X, y, test_size=validation_split)
             else:
-                X, X_val, y, y_val = skex.train_test_split(X, y, test_size=validation_split, shuffle=True)
+                X, X_val, y, y_val = tb.random_train_test_split(X, y, test_size=validation_split)
         else:
             if len(validation_data) != 2:
                 raise ValueError(f'Unexpected validation_data length, expected 2 but {len(validation_data)}.')
@@ -322,7 +326,7 @@ class BaseDeepEstimator(object):
         elif self.optimizer == consts.OptimizerSGD:
             self.optimizer = tf.keras.optimizers.SGD(learning_rate=learning_rate, clipnorm=10.)
         else:
-            print('Unsupport this optimizer: {}, Default: Adam.'.format(self.optimizer))
+            print('The optimizer is not reset, default: Adam.')
             self.optimizer = consts.OptimizerADAM
 
         if reducelr_patience != 0:

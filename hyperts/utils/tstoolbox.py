@@ -5,26 +5,11 @@ import datetime
 import chinese_calendar
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.model_selection import train_test_split as sklearn_tts
-from hypernets.tabular import data_hasher as data_hasher_
-from hypernets.tabular import data_cleaner as data_cleaner_
+from hypernets.tabular.toolbox import ToolBox
 
-class TSToolBox():
-    acceptable_types = (pd.DataFrame, pd.Series)
+class TSToolBox(ToolBox):
 
-    @classmethod
-    def accept(cls, *args):
-        def is_acceptable(x):
-            if x is None:
-                return True
-            if isinstance(x, type) and x in cls.acceptable_types:
-                return True
-            if type(x) in cls.acceptable_types:
-                return True
-
-            return False
-
-        return all(map(is_acceptable, args))
-
+    @staticmethod
     def reduce_memory_usage(df: pd.DataFrame, verbose=True):
         '''Reduce RAM Usage
         '''
@@ -56,9 +41,11 @@ class TSToolBox():
                 start_mem - end_mem) / start_mem))
         return df
 
+    @staticmethod
     def infer_ts_freq(df: pd.DataFrame, ts_name: str = 'TimeStamp'):
         return _infer_ts_freq(df, ts_name)
 
+    @staticmethod
     def multi_period_loop_imputer(df: pd.DataFrame, freq: str, offsets: list = None, max_loops: int = 10):
         """Multiple Period Loop Impute NAN.
         Args:
@@ -72,19 +59,19 @@ class TSToolBox():
                 'Y','A', A-DEC' - year
         """
         if offsets == None and freq == 'S':
-            offsets = offsets_pool.minute
+            offsets = _offsets_pool.minute
         elif offsets == None and freq == 'T':
-            offsets = offsets_pool.minute
+            offsets = _offsets_pool.minute
         elif offsets == None and freq == 'H':
-            offsets = offsets_pool.hour
+            offsets = _offsets_pool.hour
         elif offsets == None and freq == 'D':
-            offsets = offsets_pool.day
+            offsets = _offsets_pool.day
         elif offsets == None and freq == 'M':
-            offsets = offsets_pool.month
+            offsets = _offsets_pool.month
         elif offsets == None and freq == 'Y':
-            offsets = offsets_pool.year
+            offsets = _offsets_pool.year
         elif offsets == None:
-            offsets = offsets_pool.neighbor
+            offsets = _offsets_pool.neighbor
 
         values = df.values.copy()
         loop, missing_rate = 0, 1
@@ -96,10 +83,12 @@ class TSToolBox():
         fill_df = pd.DataFrame(values, columns=df.columns)
         return fill_df
 
+    @staticmethod
     def forward_period_imputer(df: pd.DataFrame, offset: int):
         fill_df = df.fillna(df.rolling(window=offset, min_periods=1).agg(lambda x: x.iloc[0]))
         return fill_df
 
+    @staticmethod
     def simple_numerical_imputer(df: pd.DataFrame, mode='mean'):
         """Fill NaN with mean, mode, 0."""
         if mode == 'mean':
@@ -110,11 +99,13 @@ class TSToolBox():
             df = df.fillna(0)
         return df
 
+    @staticmethod
     def columns_ordinal_encoder(df: pd.DataFrame):
         enc = OrdinalEncoder(dtype=np.int)
         encoder_df = enc.fit_transform(df)
         return encoder_df
 
+    @staticmethod
     def drop_duplicated_ts_rows(df: pd.DataFrame, ts_name: str = 'TimeStamp', keep_data: str = 'last'):
         """Returns without duplicate time series,  the last be keeped by default.
         Example:
@@ -138,6 +129,7 @@ class TSToolBox():
 
         return drop_df
 
+    @staticmethod
     def smooth_missed_ts_rows( df: pd.DataFrame, freq: str = None, ts_name: str = 'TimeStamp'):
         """Returns full time series.
         Example:
@@ -168,6 +160,7 @@ class TSToolBox():
 
         return smooth_df
 
+    @staticmethod
     def clip_to_outliers(df: pd.DataFrame, std_threshold: int = 3):
         """Replace outliers above threshold with that threshold.
         Args:
@@ -183,6 +176,7 @@ class TSToolBox():
 
         return df_outlier
 
+    @staticmethod
     def nan_to_outliers(df: pd.DataFrame, std_threshold: int = 3):
         """Replace outliers above threshold with that threshold.
         Args:
@@ -198,24 +192,8 @@ class TSToolBox():
 
         return df_outlier
 
-    def get_holidays(year=None, include_weekends=True):
-        """
-        :param year: which year
-        :param include_weekends: False for excluding Saturdays and Sundays
-        :return: list
-        """
-        if not year:
-            year = datetime.datetime.now().year
-        else:
-            year = year
-        start = datetime.date(year, 1, 1)
-        end = datetime.date(year, 12, 31)
-        holidays = chinese_calendar.get_holidays(start, end, include_weekends)
-        holidays = pd.DataFrame(holidays, columns=['Date'])
-        holidays['Date'] = holidays['Date'].apply(lambda x: x.strftime('%Y-%m-%d'))
-        return holidays
-
-    def generate_ts_covariables(self, start_date, periods, freq='H'):
+    @staticmethod
+    def generate_ts_covariables(start_date, periods, freq='H'):
         dstime = pd.date_range(start_date, periods=periods, freq=freq)
         fds = pd.DataFrame(dstime, columns={'TimeStamp'})
         fds['Hour'] = fds['TimeStamp'].dt.hour
@@ -236,13 +214,14 @@ class TSToolBox():
         fds['SeasonStart'] = fds['TimeStamp'].apply(lambda x: x.is_quarter_start * 1)
         fds['SeasonEnd'] = fds['TimeStamp'].apply(lambda x: x.is_quarter_end * 1)
         fds['Weekend'] = fds['TimeStamp'].apply(lambda x: 1 if x.dayofweek in [5, 6] else 0)
-        public_holiday_list = self.get_holidays(year=int(start_date[:4]))
+        public_holiday_list = _get_holidays(year=int(start_date[:4]))
         public_holiday_list = public_holiday_list['Date'].to_list()
         fds['Date'] = fds['TimeStamp'].apply(lambda x: x.strftime('%Y%m%d'))
         fds['Holiday'] = fds['Date'].apply(lambda x: 1 if x in public_holiday_list else 0)
         fds.drop(['Date'], axis=1, inplace=True)
         return fds
 
+    @staticmethod
     def infer_forecast_interval(train, forecast, n: int = 5, prediction_interval: float = 0.9):
         """A corruption of Bayes theorem.
         It will be sensitive to the transformations of the data."""
@@ -267,6 +246,7 @@ class TSToolBox():
         upper_forecast.index = forecast.index
         return upper_forecast, lower_forecast
 
+    @staticmethod
     def from_3d_array_to_nested_df(data: np.ndarray,
                                    columns: str = None,
                                    cells_as_array: bool = False):
@@ -305,6 +285,7 @@ class TSToolBox():
             df[columns_name] = [cell(data[j, :, i]) for j in range(nb_samples)]
         return df
 
+    @staticmethod
     def from_nested_df_to_3d_array(data: pd.DataFrame):
         """Convert nested pandas DataFrame (with time series as numpy array or pandas Series in cells)
         into Numpy ndarray with shape (nb_samples, series_length, nb_variables).
@@ -333,6 +314,7 @@ class TSToolBox():
             raise ValueError
         return res.transpose(0, 2, 1)
 
+    @staticmethod
     def is_nested_dataframe(data: pd.DataFrame):
         """Determines whether data is a nested Dataframe.
 
@@ -344,6 +326,7 @@ class TSToolBox():
         is_nested = isinstance(data.iloc[0, 0], (np.ndarray, pd.Series))
         return is_dataframe and is_nested
 
+    @staticmethod
     def random_train_test_split(*arrays,
                                 test_size=None,
                                 train_size=None,
@@ -362,6 +345,7 @@ class TSToolBox():
 
         return results
 
+    @staticmethod
     def temporal_train_test_split(*arrays,
                                   test_size=None,
                                   train_size=None,
@@ -404,6 +388,7 @@ class TSToolBox():
 
         return [pd.DataFrame(item) if isinstance(item, pd.Series) else item for item in results]
 
+    @staticmethod
     def list_diff(p: list, q: list):
         """Gets the difference set of two lists.
         Parameters
@@ -428,54 +413,7 @@ class TSToolBox():
         else:
             return p
 
-    @staticmethod
-    def reset_index(df):
-        return df.reset_index(drop=True)
-
-    _data_hasher_cls = data_hasher_.DataHasher
-    _data_cleaner_cls = data_cleaner_.DataCleaner
-
-    @classmethod
-    def data_hasher(cls, method='md5'):
-        return cls._data_hasher_cls(method=method)
-
-    @staticmethod
-    def concat_df(dfs, axis=0, repartition=False, **kwargs):
-        header = dfs[0]
-        assert isinstance(header, (pd.DataFrame, pd.Series))
-
-        def to_pd_type(t):
-            if isinstance(t, (pd.DataFrame, pd.Series)):
-                return t
-            elif isinstance(header, pd.Series):
-                return pd.Series(t, name=header.name)
-            else:
-                return pd.DataFrame(t, columns=header.columns)
-
-        dfs = [header] + [to_pd_type(df) for df in dfs[1:]]
-        return pd.concat(dfs, axis=axis, **kwargs)
-
-    @staticmethod
-    def get_shape(X, allow_none=False):
-        if allow_none and X is None:
-            return None
-        else:
-            return X.shape
-
-    @classmethod
-    def data_cleaner(cls, nan_chars=None, correct_object_dtype=True, drop_constant_columns=True,
-                     drop_duplicated_columns=False, drop_label_nan_rows=True, drop_idness_columns=True,
-                     replace_inf_values=np.nan, drop_columns=None, reserve_columns=None,
-                     reduce_mem_usage=False, int_convert_to='float'):
-        return cls._data_cleaner_cls(
-            nan_chars=nan_chars, correct_object_dtype=correct_object_dtype,
-            drop_constant_columns=drop_constant_columns, drop_duplicated_columns=drop_duplicated_columns,
-            drop_label_nan_rows=drop_label_nan_rows, drop_idness_columns=drop_idness_columns,
-            replace_inf_values=replace_inf_values, drop_columns=drop_columns,
-            reserve_columns=reserve_columns, reduce_mem_usage=reduce_mem_usage,
-            int_convert_to=int_convert_to)
-
-class offsets_pool:
+class _offsets_pool:
     neighbor = [-1, 1]
     second = [-1, 1, -60 * 4, -60 * 3, -60 * 2, -60 * 1, 60 * 1, 60 * 2, 60 * 3, 60 * 4]
     minute = [-1, 1, -60 * 4, -60 * 3, -60 * 2, -60 * 1, 60 * 1, 60 * 2, 60 * 3, 60 * 4]
@@ -508,3 +446,20 @@ def _inpute(values, offsets):
     else:
         missing_rate = 0.
     return values, missing_rate
+
+def _get_holidays(year=None, include_weekends=True):
+    """
+    :param year: which year
+    :param include_weekends: False for excluding Saturdays and Sundays
+    :return: list
+    """
+    if not year:
+        year = datetime.datetime.now().year
+    else:
+        year = year
+    start = datetime.date(year, 1, 1)
+    end = datetime.date(year, 12, 31)
+    holidays = chinese_calendar.get_holidays(start, end, include_weekends)
+    holidays = pd.DataFrame(holidays, columns=['Date'])
+    holidays['Date'] = holidays['Date'].apply(lambda x: x.strftime('%Y-%m-%d'))
+    return holidays
