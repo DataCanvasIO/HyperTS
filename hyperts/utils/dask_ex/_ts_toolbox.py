@@ -1,4 +1,4 @@
-from ..toolbox import TSToolBox
+from ..tstoolbox import TSToolBox
 import dask
 import dask.dataframe as dd
 import dask.array as da
