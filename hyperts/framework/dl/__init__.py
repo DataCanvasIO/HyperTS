@@ -1,1 +1,1 @@
-from .models import DeepAR, HybirdRNN
+from .models import DeepAR, HybirdRNN, LSTNet
