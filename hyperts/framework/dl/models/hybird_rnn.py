@@ -1,11 +1,16 @@
 # -*- coding:utf-8 -*-
 
+import time
 import tensorflow as tf
 import tensorflow.keras.backend as K
 
 from hyperts.utils import consts
 from hyperts.framework.dl import layers
 from hyperts.framework.dl.models import Model, BaseDeepMixin, BaseDeepEstimator
+
+from hypernets.utils import logging
+logger = logging.get_logger(__name__)
+
 
 class HybirdRNNModel(Model, BaseDeepMixin):
     """
@@ -18,23 +23,29 @@ class HybirdRNNModel(Model, BaseDeepMixin):
 
     def __init__(self,
                  task,
+                 window,
                  rnn_type,
                  continuous_columns,
                  categorical_columns,
-                 nb_units,
-                 nb_layers,
-                 nb_outputs,
+                 rnn_units,
+                 rnn_layers,
+                 drop_rate=0.,
+                 nb_outputs=1,
                  nb_steps=1,
+                 out_activation='linear',
                  summary=False,
                  **kwargs):
 
         super(HybirdRNNModel, self).__init__(**kwargs)
         self.task = task
+        self.window = window
         self.rnn_type = rnn_type
-        self.nb_units = nb_units
-        self.nb_layers = nb_layers
+        self.rnn_units = rnn_units
+        self.rnn_layers = rnn_layers
+        self.drop_rate = drop_rate
         self.nb_outputs = nb_outputs
         self.nb_steps = nb_steps
+        self.activation = out_activation
 
         self.train_loss_tracker = tf.keras.metrics.Mean(name="loss")
         self.val_loss_tracker = tf.keras.metrics.Mean(name="val_loss")
@@ -52,15 +63,21 @@ class HybirdRNNModel(Model, BaseDeepMixin):
 
     def _build(self, continuous_columns, categorical_columns):
         K.clear_session()
-        continuous_inputs, categorical_inputs = self.build_input_head(continuous_columns, categorical_columns)
+        continuous_inputs, categorical_inputs = self.build_input_head(self.window, continuous_columns, categorical_columns)
         denses = self.build_denses(continuous_columns, continuous_inputs)
         embeddings = self.build_embeddings(categorical_columns, categorical_inputs)
         if embeddings is not None:
             x = layers.Concatenate(axis=-1, name='concat_embeddings_dense_inputs')([denses, embeddings])
         else:
             x = denses
-        x = self.rnn_forward(x, self.nb_units, self.nb_layers)
-        outputs = self.build_output_tail(x)
+
+        # backbone
+        x = self.rnn_forward(x, self.rnn_units, self.rnn_layers, self.rnn_type, name=self.rnn_type, drop_rate=self.drop_rate)
+        outputs = self.build_output_tail(x, self.task, self.nb_outputs, self.nb_steps)
+
+        if self.task in consts.TASK_LIST_FORECAST:
+            outputs = layers.Activation(self.activation, name=f'output_activation_{self.activation}')(outputs)
+
         all_inputs = list(continuous_inputs.values()) + list(categorical_inputs.values())
         model = Model(inputs=all_inputs, outputs=[outputs], name=f'HybirdRNN-{self.rnn_type}')
         return model
@@ -96,22 +113,23 @@ class HybirdRNN(BaseDeepEstimator):
 
     def __init__(self,
                  task,
-                 rnn_type,
-                 nb_units,
-                 nb_layers,
+                 rnn_type='gru',
+                 rnn_units=16,
+                 rnn_layers=1,
+                 drop_rate=0.,
+                 out_activation='linear',
                  timestamp=None,
-                 nb_outputs=1,
-                 window=3,
+                 window=7,
                  horizon=1,
                  forecast_length=1,
-                 summary=True,
-                 metrics=None,
+                 metrics='auto',
                  monitor='val_loss',
-                 optimizer='adam',
+                 optimizer='auto',
                  learning_rate=0.001,
-                 loss='mae',
+                 loss='auto',
                  reducelr_patience=5,
                  earlystop_patience=10,
+                 summary=True,
                  continuous_columns=None,
                  categorical_columns=None,
                  **kwargs):
@@ -119,10 +137,10 @@ class HybirdRNN(BaseDeepEstimator):
             raise ValueError('The forecast task requires [timestamp] name.')
 
         self.rnn_type = rnn_type
-        self.nb_units = nb_units
-        self.nb_layers = nb_layers
-        self.nb_outputs = nb_outputs
-        self.summary = summary
+        self.rnn_units = rnn_units
+        self.rnn_layers = rnn_layers
+        self.drop_rate = drop_rate
+        self.out_activation = out_activation
         self.metrics = metrics
         self.monitor = monitor
         self.optimizer = optimizer
@@ -130,6 +148,7 @@ class HybirdRNN(BaseDeepEstimator):
         self.loss = loss
         self.reducelr_patience = reducelr_patience
         self.earlystop_patience = earlystop_patience
+        self.summary = summary
         self.model_kwargs = kwargs.copy()
 
         super(HybirdRNN, self).__init__(task,
@@ -142,13 +161,16 @@ class HybirdRNN(BaseDeepEstimator):
 
     def _build_estimator(self, **kwargs):
         model = HybirdRNNModel(task=self.task,
+                               window=self.window,
                                rnn_type=self.rnn_type,
                                continuous_columns=self.continuous_columns,
                                categorical_columns=self.categorical_columns,
-                               nb_units=self.nb_units,
-                               nb_layers=self.nb_layers,
-                               nb_outputs=self.mata.labels_,
+                               rnn_units=self.rnn_units,
+                               rnn_layers=self.rnn_layers,
+                               drop_rate=self.drop_rate,
+                               nb_outputs=self.mata.classes_,
                                nb_steps=self.forecast_length,
+                               out_activation=self.out_activation,
                                summary=self.summary,
                                **kwargs)
         return model
@@ -158,7 +180,7 @@ class HybirdRNN(BaseDeepEstimator):
             self.reducelr_patience = 0
             self.earlystop_patience = 0
 
-        self._compile_info(self.monitor, self.reducelr_patience, self.earlystop_patience)
+        self._compile_info(self.monitor, self.reducelr_patience, self.earlystop_patience, self.learning_rate)
 
         self.model = self._build_estimator()
         self.model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.metrics])
@@ -170,9 +192,12 @@ class HybirdRNN(BaseDeepEstimator):
 
         return history
 
-    def predict(self, X):
-        probs = self.predict_proba(X)
-        return self.proba2predict(probs, encode_to_label=True)
+    def predict(self, X, batch_size=128):
+        start = time.time()
+        probs = self.predict_proba(X, batch_size)
+        preds = self.proba2predict(probs, encode_to_label=True)
+        logger.info(f'predict taken {time.time() - start}s')
+        return preds
 
     @tf.function(experimental_relax_shapes=True)
     def _predict(self, X):

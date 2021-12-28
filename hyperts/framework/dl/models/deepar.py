@@ -19,22 +19,29 @@ class DeepARModel(Model, BaseDeepMixin):
     """
 
     def __init__(self,
+                 task,
+                 window,
                  rnn_type,
                  continuous_columns,
                  categorical_columns,
-                 nb_units,
-                 nb_layers,
+                 rnn_units,
+                 rnn_layers,
+                 drop_rate=0.,
                  nb_outputs=1,
                  nb_steps=1,
                  summary=False,
                  **kwargs):
         super(DeepARModel, self).__init__(**kwargs)
+        if task not in consts.TASK_LIST_FORECAST:
+            raise ValueError(f'Unsupported task type {task}.')
         if nb_outputs != 1:
             raise ValueError('DeepAR only support univariable forecast.')
 
+        self.window = window
         self.rnn_type = rnn_type
-        self.nb_units = nb_units
-        self.nb_layers = nb_layers
+        self.rnn_units = rnn_units
+        self.rnn_layers = rnn_layers
+        self.drop_rate = drop_rate
         self.nb_outputs = nb_outputs
         self.nb_steps = nb_steps
 
@@ -54,16 +61,19 @@ class DeepARModel(Model, BaseDeepMixin):
 
     def _build(self, continuous_columns, categorical_columns):
         K.clear_session()
-        continuous_inputs, categorical_inputs = self.build_input_head(continuous_columns, categorical_columns)
+        continuous_inputs, categorical_inputs = self.build_input_head(self.window, continuous_columns, categorical_columns)
         denses = self.build_denses(continuous_columns, continuous_inputs)
         embeddings = self.build_embeddings(categorical_columns, categorical_inputs)
         if embeddings is not None:
             x = layers.Concatenate(axis=-1, name='concat_embeddings_dense_inputs')([denses, embeddings])
         else:
             x = denses
-        x = self.rnn_forward(x, self.nb_units, self.nb_layers)
+
+        # backbone
+        x = self.rnn_forward(x, self.rnn_units, self.rnn_layers, self.rnn_type, name=self.rnn_type, drop_rate=self.drop_rate)
         mu = layers.Dense(self.nb_outputs, activation='linear', name='dense_mu')(x)
         sigma = layers.Dense(self.nb_outputs, activation='softplus', name='dense_sigma')(x)
+
         all_inputs = list(continuous_inputs.values()) + list(categorical_inputs.values())
         model = Model(inputs=all_inputs, outputs=[mu, sigma], name='DeepAR')
         return model
@@ -105,22 +115,22 @@ class DeepAR(BaseDeepEstimator):
 
     def __init__(self,
                  task,
-                 rnn_type,
-                 nb_units,
-                 nb_layers,
                  timestamp,
-                 nb_outputs=1,
-                 window=3,
+                 rnn_type='gru',
+                 rnn_units=16,
+                 rnn_layers=1,
+                 drop_rate=0.,
+                 window=7,
                  horizon=1,
                  forecast_length=1,
-                 summary=True,
-                 metrics=None,
+                 metrics='auto',
                  monitor='val_loss',
-                 optimizer='adam',
+                 optimizer='auto',
                  learning_rate=0.001,
                  loss='log_gaussian_loss',
                  reducelr_patience=5,
                  earlystop_patience=10,
+                 summary=True,
                  continuous_columns=None,
                  categorical_columns=None,
                  **kwargs):
@@ -128,10 +138,9 @@ class DeepAR(BaseDeepEstimator):
             raise ValueError(f'Unsupported task type {task}.')
 
         self.rnn_type = rnn_type
-        self.nb_units = nb_units
-        self.nb_outputs = nb_outputs
-        self.nb_layers = nb_layers
-        self.summary = summary
+        self.rnn_units = rnn_units
+        self.rnn_layers = rnn_layers
+        self.drop_rate = drop_rate
         self.metrics = metrics
         self.monitor = monitor
         self.optimizer = optimizer
@@ -139,9 +148,10 @@ class DeepAR(BaseDeepEstimator):
         self.loss = loss
         self.reducelr_patience = reducelr_patience
         self.earlystop_patience = earlystop_patience
+        self.summary = summary
         self.model_kwargs = kwargs.copy()
 
-        super(DeepAR, self).__init__(task,
+        super(DeepAR, self).__init__(task=task,
                                      timestamp=timestamp,
                                      window=window,
                                      horizon=horizon,
@@ -150,12 +160,15 @@ class DeepAR(BaseDeepEstimator):
                                      categorical_columns=categorical_columns)
 
     def _bulid_estimator(self, **kwargs):
-        model = DeepARModel(rnn_type=self.rnn_type,
+        model = DeepARModel(task=self.task,
+                            window=self.window,
+                            rnn_type=self.rnn_type,
                             continuous_columns=self.continuous_columns,
                             categorical_columns=self.categorical_columns,
-                            nb_units=self.nb_units,
-                            nb_layers=self.nb_layers,
-                            nb_outputs=self.mata.labels,
+                            rnn_units=self.rnn_units,
+                            rnn_layers=self.rnn_layers,
+                            drop_rate=self.drop_rate,
+                            nb_outputs=self.mata.classes_,
                             nb_steps=self.forecast_length,
                             summary=self.summary,
                             **kwargs)
@@ -166,7 +179,7 @@ class DeepAR(BaseDeepEstimator):
             self.reducelr_patience = 0
             self.earlystop_patience = 0
 
-        self._compile_info(self.monitor, self.reducelr_patience, self.earlystop_patience)
+        self._compile_info(self.monitor, self.reducelr_patience, self.earlystop_patience, self.learning_rate)
 
         self.model = self._bulid_estimator()
         self.model.compile(optimizer=self.optimizer, metrics=[self.metrics])

@@ -25,18 +25,18 @@ logger = logging.get_logger(__name__)
 
 class BaseDeepMixin:
 
-    def build_input_head(self, continuous_columns, categorical_columns):
+    def build_input_head(self, window, continuous_columns, categorical_columns):
         """
 
         """
         continuous_inputs = OrderedDict()
         categorical_inputs = OrderedDict()
         for column in continuous_columns:
-            continuous_inputs[column.name] = layers.Input(shape=(None, column.input_dim),
+            continuous_inputs[column.name] = layers.Input(shape=(window, column.input_dim),
                                                           name=column.name, dtype=column.dtype)
 
         if categorical_columns is not None and len(categorical_columns) > 0:
-            categorical_inputs['all_categorical_vars'] = layers.Input(shape=((None, len(categorical_columns))),
+            categorical_inputs['all_categorical_vars'] = layers.Input(shape=((window, len(categorical_columns))),
                                                                       name='input_categorical_vars_all')
 
         return continuous_inputs, categorical_inputs
@@ -70,36 +70,40 @@ class BaseDeepMixin:
 
         return embeddings
 
-    def build_output_tail(self, x):
+    def build_output_tail(self, x, task, nb_outputs, nb_steps=1):
         """
 
         """
-        if self.task in consts.TASK_LIST_REGRESSION + consts.TASK_LIST_BINARYCLASS:
+        if task in consts.TASK_LIST_REGRESSION + consts.TASK_LIST_BINARYCLASS:
             outputs = layers.Dense(units=1, activation='sigmoid', name='dense_out')(x)
-        elif self.task in consts.TASK_LIST_MULTICLASS:
-            outputs = layers.Dense(units=self.nb_outputs, activation='softmax', name='dense_out')(x)
-        elif self.task in consts.TASK_LIST_FORECAST:
-            outputs = layers.Dense(units=self.nb_outputs * self.nb_steps, activation='linear', name='dense_out')(x)
-            outputs = layers.Lambda(lambda k: K.reshape(k, (-1, self.nb_steps, self.nb_outputs)), name='lambda_out')(
-                outputs)
+        elif task in consts.TASK_LIST_MULTICLASS:
+            outputs = layers.Dense(units=nb_outputs, activation='softmax', name='dense_out')(x)
+        elif task in consts.TASK_LIST_FORECAST:
+            outputs = layers.Dense(units=nb_outputs * nb_steps, activation='linear', name='dense_out')(x)
+            outputs = layers.Lambda(lambda k: K.reshape(k, (-1, nb_steps, nb_outputs)), name='lambda_out')(outputs)
+        else:
+            raise ValueError(f'Unsupported task type {task}.')
         return outputs
 
-    def rnn_forward(self, x, nb_units, nb_layers, i=0):
+    def rnn_forward(self, x, nb_units, nb_layers, rnn_type, name, drop_rate=0., i=0):
         """
 
         """
-        if self.rnn_type == 'lstm':
+        if rnn_type == 'lstm':
             for i in range(nb_layers - 1):
-                x = layers.LSTM(units=nb_units, return_sequences=True, name=f'lstm_{i}')(x)
-            x = layers.LSTM(units=nb_units, return_sequences=False, name=f'lstm_{i + 1}')(x)
-        elif self.rnn_type == 'gru':
+                x = layers.LSTM(units=nb_units, return_sequences=True, name=f'{name}_{i}')(x)
+                x = layers.Dropout(rate=drop_rate, name=f'{name}_{i}_dropout')(x)
+            x = layers.LSTM(units=nb_units, return_sequences=False, name=f'{name}_{i + 1}')(x)
+        elif rnn_type == 'gru':
             for i in range(nb_layers - 1):
-                x = layers.GRU(units=nb_units, return_sequences=True, name=f'gru_{i}')(x)
-            x = layers.GRU(units=nb_units, return_sequences=False, name=f'gru_{i + 1}')(x)
-        elif self.rnn_type == 'simple_rnn':
+                x = layers.GRU(units=nb_units, return_sequences=True, name=f'{name}_{i}')(x)
+                x = layers.Dropout(rate=drop_rate, name=f'{name}_{i}_dropout')(x)
+            x = layers.GRU(units=nb_units, return_sequences=False, name=f'{name}_{i + 1}')(x)
+        elif rnn_type == 'simple_rnn':
             for i in range(nb_layers - 1):
-                x = layers.SimpleRNN(units=nb_units, return_sequences=True, name=f'rnn_{i}')(x)
-            x = layers.SimpleRNN(units=nb_units, return_sequences=False, name=f'rnn_{i + 1}')(x)
+                x = layers.SimpleRNN(units=nb_units, return_sequences=True, name=f'{name}_{i}')(x)
+                x = layers.Dropout(rate=drop_rate, name=f'{name}_{i}_dropout')(x)
+            x = layers.SimpleRNN(units=nb_units, return_sequences=False, name=f'{name}_{i + 1}')(x)
         return x
 
 
@@ -245,29 +249,33 @@ class BaseDeepEstimator(object):
                 covariable = np.expand_dims(X[i:i + self.forecast_length], 0)
                 forcast = np.concatenate([pred.numpy(), covariable], axis=-1)
                 if categorical_length > 0:
-                    data[0] = np.append(data[0], forcast[:, :, :continuous_length]).reshape(1, -1, continuous_length)
-                    data[1] = np.append(data[1], forcast[:, :, continuous_length:]).reshape(1, -1, categorical_length)
+                    data[0] = np.append(data[0], forcast[:, :, :continuous_length]).reshape((1, -1, continuous_length))
+                    data[1] = np.append(data[1], forcast[:, :, continuous_length:]).reshape((1, -1, categorical_length))
                     data = [data[0][:, -self.window:, :], data[1][:, -self.window:, :]]
                 else:
-                    data = np.append(data, forcast).reshape(1, -1, continuous_length)
+                    data = np.append(data, forcast).reshape((1, -1, continuous_length))
+                    data = data[:, -self.window:, :]
         else:
             for i in range(math.ceil(steps / self.forecast_length)):
                 pred = self._predict(data)
                 futures.append(pred.numpy())
                 forcast = pred.numpy()
-                data = np.append(data, forcast).reshape(1, -1, self.mata.labels_)
+                data = np.append(data, forcast).reshape((1, -1, self.mata.classes_))
                 data = data[:, -self.window:, :]
 
         logger.info(f'forecast taken {time.time() - start}s')
         return np.array(futures).reshape(steps, -1)
 
-    def predict_proba(self, X, **kwargs):
-        start = time.time()
+    def predict_proba(self, X, batch_size=128):
+        probs = []
         X = self.mata.transform_X(X)
-        probs = self.model.predict(X, **kwargs)
+        sample_size, iters = X.shape[0], X.shape[0] // batch_size + 1
+        for idx in range(iters):
+            proba = self._predict(X[idx*batch_size:min((idx+1)*batch_size, sample_size)])
+            probs.append(proba.numpy())
+        probs = np.concatenate(probs, axis=0)
         if probs.shape[-1] == 1:
             probs = np.hstack([1 - probs, probs])
-        logger.info(f'predict_proba taken {time.time() - start}s')
         return probs
 
     def proba2predict(self, proba, encode_to_label=True):
@@ -277,40 +285,42 @@ class BaseDeepEstimator(object):
             raise ValueError('[proba] can not be none.')
         if len(proba.shape) == 1:
             proba = proba.reshape((-1, 1))
-
         if proba.shape[-1] > 1:
-            predict = proba.argmax(axis=-1)
+            predict = np.zeros(shape=proba.shape)
+            argmax = proba.argmax(axis=-1)
+            predict[np.arange(len(argmax)), argmax] = 1
         else:
-            predict = (proba > 0.5).astype('int32')
+            predict = (proba > 0.5).astype('int32').reshape((-1, 1))
+
         if encode_to_label:
             logger.info('reverse indicators to labels.')
             predict = self.mata.inverse_transform_y(predict)
         return predict
 
-    def _compile_info(self, monitor='val_loss', reducelr_patience=0, earlystop_patience=0):
-        if self.task in consts.TASK_LIST_MULTICLASS:
-            if self.loss == None:
-                self.loss = tf.keras.losses.CategoricalCrossentropy()
-            if self.metrics == None:
-                self.metrics = tf.keras.metrics.Accuracy()
-        elif self.task in consts.TASK_LIST_BINARYCLASS:
-            if self.loss == None:
-                self.loss = tf.keras.losses.BinaryCrossentropy()
-            if self.metrics == None:
-                self.metrics = tf.keras.metrics.AUC()
-        elif self.task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_REGRESSION:
-            if self.loss == None:
+    def _compile_info(self, monitor='val_loss', reducelr_patience=0, earlystop_patience=0, learning_rate=0.001):
+        if self.task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_REGRESSION:
+            if self.loss == 'auto':
                 self.loss = tf.keras.losses.Huber()
-            if self.metrics == None:
-                self.metrics = tf.keras.metrics.RootMeanSquaredError()
+            if self.metrics == 'auto':
+                self.metrics = tf.keras.metrics.RootMeanSquaredError(name='rmse')
+        elif self.task in consts.TASK_LIST_MULTICLASS:
+            if self.loss == 'auto':
+                self.loss = tf.keras.losses.CategoricalCrossentropy()
+            if self.metrics == 'auto':
+                self.metrics = tf.keras.metrics.CategoricalAccuracy(name='acc')
+        elif self.task in consts.TASK_LIST_BINARYCLASS:
+            if self.loss == 'auto':
+                self.loss = tf.keras.losses.BinaryCrossentropy()
+            if self.metrics == 'auto':
+                self.metrics = tf.keras.metrics.AUC(name='auc')
         else:
             print('Unsupport this task: {}, Apart from [multiclass, binary, \
                     forecast, and regression].'.format(self.task))
 
         if self.optimizer == consts.OptimizerADAM:
-            self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate, clipnorm=10.)
+            self.optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, clipnorm=10.)
         elif self.optimizer == consts.OptimizerSGD:
-            self.optimizer = tf.keras.optimizers.SGD(learning_rate=self.learning_rate, clipnorm=10.)
+            self.optimizer = tf.keras.optimizers.SGD(learning_rate=learning_rate, clipnorm=10.)
         else:
             print('Unsupport this optimizer: {}, Default: Adam.'.format(self.optimizer))
             self.optimizer = consts.OptimizerADAM
@@ -374,6 +384,8 @@ class BaseDeepEstimator(object):
                     X_cat_start = self.forecast_start[:, :, continuous_length:]
                     self.forecast_start = [X_cont_start, X_cat_start]
         else:
+            if is_train:
+                self.window = X.shape[1]
             X_data = X
             y_data = y
         return X_data, y_data

@@ -52,7 +52,7 @@ class ContinuousColumn(
 class MetaPreprocessor:
     def __init__(self):
         self.labels_ = None
-        self.task_ = None
+        self.classes_ = None
         self.cont_column_names = None
         self.cat_column_names = None
 
@@ -66,10 +66,6 @@ class MetaPreprocessor:
     @property
     def labels(self):
         return self.labels_
-
-    @property
-    def task(self):
-        return self.task_
 
     @property
     def transformers(self):
@@ -106,7 +102,7 @@ class MetaPreprocessor:
         return obj.shape
 
     def _nunique(self, y):
-        return y.nunique()
+        return len(y.unique())
 
     def _append_categorical_cols(self, cols):
         logger.debug(f'{len(cols)} categorical variables appended.')
@@ -177,7 +173,7 @@ class MetaTSFprocessor(MetaPreprocessor):
         self.covariable_columns = X.columns.tolist()
         self.covariable_columns.remove(self.timestamp)
         self.target_columns = y.columns.tolist()
-        self.labels_ = len(y.columns)
+        self.classes_ = len(y.columns)
         Xy = pd.concat([y, X], axis=1)
         self.time_variables = Xy.pop(self.timestamp)
         return Xy
@@ -357,8 +353,10 @@ class MetaTSCprocessor(MetaPreprocessor):
             self.y_lable_encoder = CategoricalTransformer()
             y = self.y_lable_encoder.fit_transform(y)
             self.labels_ = self.y_lable_encoder.classes_
+            self.classes_ = len(self.labels_)
         else:
             self.labels_ = []
+            self.classes_ = 1
         return y
 
     def transform_y(self, y, copy_data=False):
