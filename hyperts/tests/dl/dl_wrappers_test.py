@@ -16,7 +16,7 @@ class Test_DL_Wrappers():
         tb = get_tool_box(X)
         X = tb.simple_numerical_imputer(X, mode='mode')
         X_train, X_test, y_train, y_test = tb.temporal_train_test_split(X, y, test_size=0.2)
-        task = consts.Task_UNIVARIABLE_FORECAST
+        task = consts.Task_UNIVARIATE_FORECAST
         timestamp = 'ds'
 
         fit_kwargs = {
@@ -53,7 +53,7 @@ class Test_DL_Wrappers():
         tb = get_tool_box(X)
         X = tb.simple_numerical_imputer(X, mode='mode')
         X_train, X_test, y_train, y_test = tb.temporal_train_test_split(X, y, test_size=0.2)
-        task = consts.Task_UNIVARIABLE_FORECAST
+        task = consts.Task_UNIVARIATE_FORECAST
         timestamp = 'ds'
 
         fit_kwargs = {
@@ -92,7 +92,7 @@ class Test_DL_Wrappers():
         tb = get_tool_box(X)
         y = tb.simple_numerical_imputer(y)
         X_train, X_test, y_train, y_test = tb.temporal_train_test_split(X, y, test_size=0.2)
-        task = consts.Task_MULTIVARIABLE_FORECAST
+        task = consts.Task_MULTIVARIATE_FORECAST
         timestamp = 'TimeStamp'
 
         fit_kwargs = {
@@ -133,7 +133,7 @@ class Test_DL_Wrappers():
         y = tb.simple_numerical_imputer(y)
         X = X[['TimeStamp']]
         X_train, X_test, y_train, y_test = tb.temporal_train_test_split(X, y, test_size=0.2)
-        task = consts.Task_MULTIVARIABLE_FORECAST
+        task = consts.Task_MULTIVARIATE_FORECAST
         timestamp = 'TimeStamp'
 
         fit_kwargs = {
@@ -171,7 +171,7 @@ class Test_DL_Wrappers():
         X, y = load_arrow_head(return_X_y=True)
         tb = get_tool_box(X)
         X_train, X_test, y_train, y_test = tb.random_train_test_split(X, y, test_size=0.2)
-        task = consts.Task_UNIVARIABLE_MULTICALSS
+        task = consts.Task_UNIVARIATE_MULTICALSS
 
         fit_kwargs = {
             'epochs': 10,
@@ -205,7 +205,7 @@ class Test_DL_Wrappers():
         X, y = load_basic_motions(return_X_y=True)
         tb = get_tool_box(X)
         X_train, X_test, y_train, y_test = tb.random_train_test_split(X, y, test_size=0.2)
-        task = consts.Task_MULTIVARIABLE_MULTICALSS
+        task = consts.Task_MULTIVARIATE_MULTICALSS
 
         fit_kwargs = {
             'epochs': 10,
@@ -238,7 +238,7 @@ class Test_DL_Wrappers():
         tb = get_tool_box(X)
         X = tb.simple_numerical_imputer(X, mode='mode')
         X_train, X_test, y_train, y_test = tb.temporal_train_test_split(X, y, test_size=0.2)
-        task = consts.Task_UNIVARIABLE_FORECAST
+        task = consts.Task_UNIVARIATE_FORECAST
         timestamp = 'ds'
 
         fit_kwargs = {
@@ -258,7 +258,7 @@ class Test_DL_Wrappers():
             'rnn_layers': 2,
             'skip_rnn_units': 10,
             'skip_rnn_layers': 2,
-            'skip': 3,
+            'skip_period': 3,
             'ar_order': 3,
             'learning_rate': 0.001,
             'loss': 'mae',
@@ -284,7 +284,7 @@ class Test_DL_Wrappers():
         tb = get_tool_box(X)
         y = tb.simple_numerical_imputer(y)
         X_train, X_test, y_train, y_test = tb.temporal_train_test_split(X, y, test_size=0.2)
-        task = consts.Task_MULTIVARIABLE_FORECAST
+        task = consts.Task_MULTIVARIATE_FORECAST
         timestamp = 'TimeStamp'
 
         fit_kwargs = {
@@ -304,7 +304,7 @@ class Test_DL_Wrappers():
             'rnn_layers': 2,
             'skip_rnn_units': 10,
             'skip_rnn_layers': 2,
-            'skip': 3,
+            'skip_period': 3,
             'ar_order': 3,
             'learning_rate': 0.001,
             'loss': 'mae',
@@ -331,7 +331,7 @@ class Test_DL_Wrappers():
         y = tb.simple_numerical_imputer(y)
         X = X[['TimeStamp']]
         X_train, X_test, y_train, y_test = tb.temporal_train_test_split(X, y, test_size=0.2)
-        task = consts.Task_MULTIVARIABLE_FORECAST
+        task = consts.Task_MULTIVARIATE_FORECAST
         timestamp = 'TimeStamp'
 
         fit_kwargs = {
@@ -351,7 +351,7 @@ class Test_DL_Wrappers():
             'rnn_layers': 2,
             'skip_rnn_units': 10,
             'skip_rnn_layers': 2,
-            'skip': 3,
+            'skip_period': 3,
             'ar_order': 3,
             'learning_rate': 0.001,
             'loss': 'mae',
@@ -376,7 +376,7 @@ def test_univariate_classification_lstnet():
     X, y = load_arrow_head(return_X_y=True)
     tb = get_tool_box(X)
     X_train, X_test, y_train, y_test = tb.random_train_test_split(X, y, test_size=0.2)
-    task = consts.Task_UNIVARIABLE_MULTICALSS
+    task = consts.Task_UNIVARIATE_MULTICALSS
 
     fit_kwargs = {
         'epochs': 10,
@@ -394,7 +394,7 @@ def test_univariate_classification_lstnet():
         'rnn_layers': 2,
         'skip_rnn_units': 10,
         'skip_rnn_layers': 2,
-        'skip': 0,
+        'skip_period': 0,
         'ar_order': 0,
         'learning_rate': 0.001,
 
@@ -415,7 +415,7 @@ def test_multivariate_classification_lstnet():
     X, y = load_basic_motions(return_X_y=True)
     tb = get_tool_box(X)
     X_train, X_test, y_train, y_test = tb.random_train_test_split(X, y, test_size=0.2)
-    task = consts.Task_MULTIVARIABLE_MULTICALSS
+    task = consts.Task_MULTIVARIATE_MULTICALSS
 
     fit_kwargs = {
         'epochs': 100,
@@ -433,7 +433,7 @@ def test_multivariate_classification_lstnet():
         'rnn_layers': 2,
         'skip_rnn_units': 10,
         'skip_rnn_layers': 2,
-        'skip': 0,
+        'skip_period': 0,
         'ar_order': 0,
         'learning_rate': 0.001,
 

@@ -34,7 +34,7 @@ class LSTNetModel(Model, BaseDeepMixin):
                  rnn_layers,
                  skip_rnn_units,
                  skip_rnn_layers,
-                 skip,
+                 skip_period,
                  ar_order,
                  drop_rate=0.,
                  nb_outputs=1,
@@ -57,7 +57,7 @@ class LSTNetModel(Model, BaseDeepMixin):
         self.rnn_layers = rnn_layers
         self.skip_rnn_units = skip_rnn_units
         self.skip_rnn_layers = skip_rnn_layers
-        self.skip = skip
+        self.skip_period = skip_period
         self.ar_order = ar_order
         self.drop_rate = drop_rate
         self.nb_outputs = nb_outputs
@@ -96,16 +96,16 @@ class LSTNetModel(Model, BaseDeepMixin):
         r = layers.Lambda(lambda k: K.reshape(k, (-1, self.rnn_units)), name=f'lambda_{self.rnn_type}')(r)
         r = layers.Dropout(rate=self.drop_rate, name=f'lambda_{self.rnn_type}_dropout')(r)
 
-        if self.skip:
-            pt = int((self.window - self.kernel_size + 1) / self.skip)
-            s = layers.Lambda(lambda k: k[:, int(-pt*self.skip):, :], name=f'lambda_skip_{self.rnn_type}_0')(c)
-            s = layers.Lambda(lambda k: K.reshape(k, (-1, pt, self.skip, self.cnn_filters)), name=f'lambda_skip_{self.rnn_type}_1')(s)
+        if self.skip_period:
+            pt = int((self.window - self.kernel_size + 1) / self.skip_period)
+            s = layers.Lambda(lambda k: k[:, int(-pt*self.skip_period):, :], name=f'lambda_skip_{self.rnn_type}_0')(c)
+            s = layers.Lambda(lambda k: K.reshape(k, (-1, pt, self.skip_period, self.cnn_filters)), name=f'lambda_skip_{self.rnn_type}_1')(s)
             s = layers.Lambda(lambda k: K.permute_dimensions(k, (0, 2, 1, 3)), name=f'lambda_skip_{self.rnn_type}_2')(s)
             s = layers.Lambda(lambda k: K.reshape(k, (-1, pt, self.cnn_filters)), name=f'lambda_skip_{self.rnn_type}_3')(s)
 
             s = self.rnn_forward(s, self.skip_rnn_units, self.skip_rnn_layers, self.skip_rnn_type,
                                             name='skip_'+self.rnn_type, drop_rate=self.drop_rate)
-            s = layers.Lambda(lambda k: K.reshape(k, (-1, self.skip*self.skip_rnn_units)),
+            s = layers.Lambda(lambda k: K.reshape(k, (-1, self.skip_period*self.skip_rnn_units)),
                                             name=f'lambda_skip_{self.rnn_type}_4')(s)
             s = layers.Dropout(rate=self.drop_rate, name=f'lambda_skip_{self.rnn_type}_dropout')(s)
             r = layers.Concatenate(name=f'{self.rnn_type}_concat_skip_{self.rnn_type}')([r, s])
@@ -163,7 +163,7 @@ class LSTNet(BaseDeepEstimator):
                  rnn_layers=1,
                  skip_rnn_units=16,
                  skip_rnn_layers=1,
-                 skip=None,
+                 skip_period=None,
                  ar_order=None,
                  drop_rate=0.,
                  out_activation='linear',
@@ -193,7 +193,7 @@ class LSTNet(BaseDeepEstimator):
         self.rnn_layers = rnn_layers
         self.skip_rnn_units = skip_rnn_units
         self.skip_rnn_layers = skip_rnn_layers
-        self.skip = skip
+        self.skip_period = skip_period
         self.ar_order = ar_order
         self.drop_rate = drop_rate
         self.out_activation = out_activation
@@ -228,7 +228,7 @@ class LSTNet(BaseDeepEstimator):
                             rnn_layers=self.rnn_layers,
                             skip_rnn_units=self.skip_rnn_units,
                             skip_rnn_layers=self.skip_rnn_layers,
-                            skip=self.skip,
+                            skip_period=self.skip_period,
                             ar_order=self.ar_order,
                             drop_rate=self.drop_rate,
                             nb_outputs=self.mata.classes_,
