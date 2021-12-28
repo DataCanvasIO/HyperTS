@@ -59,23 +59,6 @@ class TSToolBox():
     def infer_ts_freq(df: pd.DataFrame, ts_name: str = 'TimeStamp'):
         return _infer_ts_freq(df, ts_name)
 
-    def _inpute(values, offsets):
-        indices0, indices1 = np.where(np.isnan(values))
-        if len(indices0) > 0 and len(indices1) > 0:
-            padding = []
-            for offset in offsets:
-                offset_indices0 = indices0 + offset
-                start_bound_limit = np.where(indices0 + offset < 0)
-                end_bound_limit = np.where(indices0 + offset > len(values) - 1)
-                offset_indices0[start_bound_limit] = indices0[start_bound_limit]
-                offset_indices0[end_bound_limit] = indices0[end_bound_limit]
-                padding.append(values[(offset_indices0, indices1)])
-            values[(indices0, indices1)] = np.nanmean(padding, axis=0)
-            missing_rate = np.sum(np.isnan(values)) / values.size
-        else:
-            missing_rate = 0.
-        return values, missing_rate
-
     def multi_period_loop_imputer(df: pd.DataFrame, freq: str, offsets: list = None, max_loops: int = 10):
         """Multiple Period Loop Impute NAN.
         Args:
@@ -286,7 +269,7 @@ class TSToolBox():
 
     def from_3d_array_to_nested_df(data: np.ndarray,
                                    columns: str = None,
-                                   cells_as_array: bool = True):
+                                   cells_as_array: bool = False):
         """Convert Numpy ndarray with shape (nb_samples, series_length, nb_variables)
         into nested pandas DataFrame (with time series as numpy array or pandas Series in cells)
 
