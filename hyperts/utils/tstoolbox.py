@@ -461,8 +461,8 @@ class TSToolBox():
             return None
         else:
             return X.shape
-    @classmethod
 
+    @classmethod
     def data_cleaner(cls, nan_chars=None, correct_object_dtype=True, drop_constant_columns=True,
                      drop_duplicated_columns=False, drop_label_nan_rows=True, drop_idness_columns=True,
                      replace_inf_values=np.nan, drop_columns=None, reserve_columns=None,
@@ -479,11 +479,11 @@ class offsets_pool:
     neighbor = [-1, 1]
     second = [-1, 1, -60 * 4, -60 * 3, -60 * 2, -60 * 1, 60 * 1, 60 * 2, 60 * 3, 60 * 4]
     minute = [-1, 1, -60 * 4, -60 * 3, -60 * 2, -60 * 1, 60 * 1, 60 * 2, 60 * 3, 60 * 4]
-    hour = [-1, 1, -24 * 4, -24 * 3, -24 * 2, -24 * 1, 24 * 1, 24 * 2, 24 * 3, 24 * 4,
-            -168 * 4, -168 * 3, -168 * 2, -168 * 1, 168 * 1, 168 * 2, 168 * 3, 168 * 4]
-    day = [-1, 1, -7 * 4, -7 * 3, -7 * 2, -7 * 1, 7 * 1, 7 * 2, 7 * 3, 7 * 4]
-    month = [-1, 1, -12 * 4, -12 * 3, -12 * 2, -12 * 1, 12 * 1, 12 * 2, 12 * 3, 12 * 4]
-    year = [-1, 1]
+    hour   = [-1, 1, -24 * 4, -24 * 3, -24 * 2, -24 * 1, 24 * 1, 24 * 2, 24 * 3, 24 * 4,
+             -168 * 4, -168 * 3, -168 * 2, -168 * 1, 168 * 1, 168 * 2, 168 * 3, 168 * 4]
+    day    = [-1, 1, -7 * 4, -7 * 3, -7 * 2, -7 * 1, 7 * 1, 7 * 2, 7 * 3, 7 * 4]
+    month  = [-1, 1, -12 * 4, -12 * 3, -12 * 2, -12 * 1, 12 * 1, 12 * 2, 12 * 3, 12 * 4]
+    year   = [-1, 1]
 
 def _infer_ts_freq(df: pd.DataFrame, ts_name: str = 'TimeStamp'):
     dateindex = pd.DatetimeIndex(pd.to_datetime(df[ts_name]))
