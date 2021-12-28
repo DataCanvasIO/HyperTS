@@ -35,7 +35,7 @@ class DeepARModel(Model, BaseDeepMixin):
         if task not in consts.TASK_LIST_FORECAST:
             raise ValueError(f'Unsupported task type {task}.')
         if nb_outputs != 1:
-            raise ValueError('DeepAR only support univariable forecast.')
+            raise ValueError('DeepAR only support univariate forecast.')
 
         self.window = window
         self.rnn_type = rnn_type
