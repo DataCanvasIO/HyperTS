@@ -18,6 +18,7 @@ from hyperts.framework.dl import layers
 from hyperts.framework.dl.timeseries import from_array_to_timeseries
 from hyperts.framework.dl.metainfo import MetaTSFprocessor, MetaTSCprocessor
 
+from hypernets.tabular import sklearn_ex as skex
 from hypernets.utils import logging
 
 logger = logging.get_logger(__name__)
@@ -167,15 +168,14 @@ class BaseDeepEstimator(object):
             use_multiprocessing=False):
         start = time.time()
         X, y = self._preprocessor(X, y)
-        tb = get_tool_box(X)
         if validation_data is not None:
             validation_data = self.mata.transform(*validation_data)
 
         if validation_data is None:
             if self.task in consts.TASK_LIST_FORECAST:
-                X, X_val, y, y_val = tb.temporal_train_test_split(X, y, test_size=validation_split)
+                X, X_val, y, y_val = skex.train_test_split(X, y, test_size=validation_split, shuffle=False)
             else:
-                X, X_val, y, y_val = tb.random_train_test_split(X, y, test_size=validation_split)
+                X, X_val, y, y_val = skex.train_test_split(X, y, test_size=validation_split, shuffle=True)
         else:
             if len(validation_data) != 2:
                 raise ValueError(f'Unexpected validation_data length, expected 2 but {len(validation_data)}.')

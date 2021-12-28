@@ -2,7 +2,6 @@
 """
 
 """
-from collections import namedtuple
 import time
 
 _tool_boxes = []
