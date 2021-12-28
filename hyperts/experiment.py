@@ -175,21 +175,21 @@ def make_experiment(train_data,
 
     # Task Type Infering
     if task == consts.Task_FORECAST and len(y_train.columns) == 1:
-        task = consts.Task_UNIVARIABLE_FORECAST
+        task = consts.Task_UNIVARIATE_FORECAST
     elif task == consts.Task_FORECAST and len(y_train.columns) > 1:
-        task = consts.Task_MULTIVARIABLE_FORECAST
+        task = consts.Task_MULTIVARIATE_FORECAST
 
     if task == consts.Task_CLASSIFICATION:
         if y_train.nunique() == 2:
             if len(X_train.columns) == 1:
-                task = consts.Task_UNIVARIABLE_BINARYCLASS
+                task = consts.Task_UNIVARIATE_BINARYCLASS
             else:
-                task = consts.Task_MULTIVARIABLE_BINARYCLASS
+                task = consts.Task_MULTIVARIATE_BINARYCLASS
         else:
             if len(X_train.columns) == 1:
-                task = consts.Task_UNIVARIABLE_MULTICALSS
+                task = consts.Task_UNIVARIATE_MULTICALSS
             else:
-                task = consts.Task_MULTIVARIABLE_MULTICALSS
+                task = consts.Task_MULTIVARIATE_MULTICALSS
     logger.info(f'Inference task type could be [{task}].')
 
     # Configuration

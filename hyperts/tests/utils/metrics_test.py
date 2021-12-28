@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from hyperts.utils.metrics import mse,rmse,mae,mape,smape
+from hyperts.utils.metrics import mse, rmse, mae, mape, smape
 
 class Test_Metrics():
 

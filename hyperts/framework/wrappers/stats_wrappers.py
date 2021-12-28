@@ -19,7 +19,7 @@ logger = logging.get_logger(__name__)
 ##################################### Define Time Series Forecast Wrapper #####################################
 class ProphetWrapper(EstimatorWrapper, WrapperMixin):
     """
-    Adapt: univariable forecast.
+    Adapt: univariate forecast.
     """
     def __init__(self, fit_kwargs, **kwargs):
         super(ProphetWrapper, self).__init__(fit_kwargs, **kwargs)
@@ -46,7 +46,7 @@ class ProphetWrapper(EstimatorWrapper, WrapperMixin):
 
 class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
     """
-    Adapt: univariable forecast.
+    Adapt: univariate forecast.
     """
     def __init__(self, fit_kwargs, **kwargs):
         super(ARIMAWrapper, self).__init__(fit_kwargs, **kwargs)
@@ -90,7 +90,7 @@ class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
 
 class VARWrapper(EstimatorWrapper, WrapperMixin):
     """
-    Adapt: multivariable forecast.
+    Adapt: multivariate forecast.
     """
     def __init__(self, fit_kwargs, **kwargs):
         super(VARWrapper, self).__init__(fit_kwargs, **kwargs)
@@ -128,7 +128,7 @@ class VARWrapper(EstimatorWrapper, WrapperMixin):
 ##################################### Define Time Series Classification Wrapper #####################################
 class TSForestWrapper(EstimatorWrapper, WrapperMixin):
     """
-    Adapt: univariable classification.
+    Adapt: univariate classification.
     """
     def __init__(self, fit_kwargs=None, **kwargs):
         super(TSForestWrapper, self).__init__(fit_kwargs, **kwargs)
@@ -147,7 +147,7 @@ class TSForestWrapper(EstimatorWrapper, WrapperMixin):
 
 class KNeighborsWrapper(EstimatorWrapper, WrapperMixin):
     """
-    Adapt: univariable/multivariable classification.
+    Adapt: univariate/multivariate classification.
     """
     def __init__(self, fit_kwargs, **kwargs):
         super(KNeighborsWrapper, self).__init__(fit_kwargs, **kwargs)

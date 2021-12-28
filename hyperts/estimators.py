@@ -135,7 +135,7 @@ class ProphetForecastEstimator(HyperEstimator):
         HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
 
     def _build_estimator(self, task, fit_kwargs, kwargs):
-        if task == consts.Task_UNIVARIABLE_FORECAST:
+        if task == consts.Task_UNIVARIATE_FORECAST:
             prophet = ProphetWrapper(fit_kwargs, **kwargs)
         else:
             raise ValueError('Prophet model supports only univariate forecast task.')
@@ -197,7 +197,7 @@ class ARIMAForecastEstimator(HyperEstimator):
         HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
 
     def _build_estimator(self, task, fit_kwargs, kwargs):
-        if task == consts.Task_UNIVARIABLE_FORECAST:
+        if task == consts.Task_UNIVARIATE_FORECAST:
             var = ARIMAWrapper(fit_kwargs, **kwargs)
         else:
             raise ValueError('ARIMA model supports only univariate forecast task.')
@@ -250,7 +250,7 @@ class VARForecastEstimator(HyperEstimator):
         HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
 
     def _build_estimator(self, task, fit_kwargs, kwargs):
-        if task == consts.Task_MULTIVARIABLE_FORECAST:
+        if task == consts.Task_MULTIVARIATE_FORECAST:
             var = VARWrapper(fit_kwargs, **kwargs)
         else:
             raise ValueError('VAR model supports only multivariate forecast task.')
@@ -291,10 +291,10 @@ class TSFClassificationEstimator(HyperEstimator):
         HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
 
     def _build_estimator(self, task, fit_kwargs, kwargs):
-        if task in [consts.Task_UNIVARIABLE_BINARYCLASS, consts.Task_UNIVARIABLE_MULTICALSS]:
+        if task in [consts.Task_UNIVARIATE_BINARYCLASS, consts.Task_UNIVARIATE_MULTICALSS]:
             tsf = TSForestWrapper(fit_kwargs, **kwargs)
         else:
-            raise ValueError('TSF model supports only univariable classification task.')
+            raise ValueError('TSF model supports only univariate classification task.')
         return tsf
 
 

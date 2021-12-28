@@ -4,31 +4,31 @@ from hypernets.utils.const import *
 TIMESTAMP                          = 'timestamp'
 DEFAULT_EVAL_SIZE                  = 0.2
 
-Task_UNIVARIABLE_FORECAST          = 'univariable-forecast'
-Task_MULTIVARIABLE_FORECAST        = 'multivariable-forecast'
-Task_UNIVARIABLE_BINARYCLASS       = 'univariable-binaryclass'
-Task_MULTIVARIABLE_BINARYCLASS     = 'multivariable-binaryclass'
-Task_UNIVARIABLE_MULTICALSS        = 'univariable-multiclass'
-Task_MULTIVARIABLE_MULTICALSS      = 'multivariable-multiclass'
+Task_UNIVARIATE_FORECAST          = 'univariate-forecast'
+Task_MULTIVARIATE_FORECAST        = 'multivariate-forecast'
+Task_UNIVARIATE_BINARYCLASS       = 'univariate-binaryclass'
+Task_MULTIVARIATE_BINARYCLASS     = 'multivariate-binaryclass'
+Task_UNIVARIATE_MULTICALSS        = 'univariate-multiclass'
+Task_MULTIVARIATE_MULTICALSS      = 'multivariate-multiclass'
 Task_FORECAST                      = 'forecast'
 Task_CLASSIFICATION                = 'classification'
 Task_REGRESSION                    = 'regression'
 
 TASK_LIST_FORECAST                 = ['forecast',
-'univariable-forecast', 'multivariable-forecast'
+'univariate-forecast', 'multivariate-forecast'
 ]
 
 TASK_LIST_CLASSIFICATION           = ['classification',
-'univariable-binaryclass', 'multivariable-binaryclass',
-'univariable-multiclass', 'multivariable-multiclass'
+'univariate-binaryclass', 'multivariate-binaryclass',
+'univariate-multiclass', 'multivariate-multiclass'
 ]
 
 TASK_LIST_REGRESSION               = ['regression'
 ]
 
-TASK_LIST_BINARYCLASS              = ['univariable-binaryclass', 'multivariable-binaryclass']
+TASK_LIST_BINARYCLASS              = ['univariate-binaryclass', 'multivariate-binaryclass']
 
-TASK_LIST_MULTICLASS               = ['univariable-multiclass', 'multivariable-multiclass']
+TASK_LIST_MULTICLASS               = ['univariate-multiclass', 'multivariate-multiclass']
 
 Mode_STATS                         = 'stats'
 Mode_DL                            = 'dl'

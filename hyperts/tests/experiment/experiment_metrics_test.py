@@ -5,105 +5,105 @@ from hyperts.experiment import make_experiment, process_test_data
 from hyperts.datasets import load_arrow_head, load_fixed_univariate_forecast_dataset, load_network_traffic
 
 
-class Test_Univariable_Forecast_Metrics():
-    def test_univariable_forecast_metrics_mse(self):
-        _test_univariable_forecast_metric(consts.Metric_MSE)
+class Test_Univariate_Forecast_Metrics():
+    def test_univariate_forecast_metrics_mse(self):
+        _test_univariate_forecast_metric(consts.Metric_MSE)
 
-    def test_univariable_forecast_metrics_rmse(self):
-        _test_univariable_forecast_metric(consts.Metric_RMSE)
+    def test_univariate_forecast_metrics_rmse(self):
+        _test_univariate_forecast_metric(consts.Metric_RMSE)
 
-    def test_univariable_forecast_metrics_mae(self):
-        _test_univariable_forecast_metric(consts.Metric_MAE)
+    def test_univariate_forecast_metrics_mae(self):
+        _test_univariate_forecast_metric(consts.Metric_MAE)
 
-    def test_univariable_forecast_metrics_mape(self):
-        _test_univariable_forecast_metric(consts.Metric_MAPE)
+    def test_univariate_forecast_metrics_mape(self):
+        _test_univariate_forecast_metric(consts.Metric_MAPE)
 
-    def test_univariable_forecast_metrics_smape(self):
-        _test_univariable_forecast_metric(consts.Metric_SMAPE)
+    def test_univariate_forecast_metrics_smape(self):
+        _test_univariate_forecast_metric(consts.Metric_SMAPE)
 
-    def test_univariable_forecast_metrics_r2(self):
-        _test_univariable_forecast_metric(consts.Metric_R2)
+    def test_univariate_forecast_metrics_r2(self):
+        _test_univariate_forecast_metric(consts.Metric_R2)
 
-    def test_univariable_forecast_metrics_msle(self):
-        _test_univariable_forecast_metric(consts.Metric_MSLE)
+    def test_univariate_forecast_metrics_msle(self):
+        _test_univariate_forecast_metric(consts.Metric_MSLE)
 
-    def test_univariable_forecast_metrics_None(self):
-        _test_univariable_forecast_metric(None)
-
-
-class Test_Univariable_BinaryClass_Metrics():
-    def test_univariable_binaryclass_metrics_accuracy(self):
-        _test_univariable_binaryclass_metric(consts.Metric_ACCURACY)
-
-    def test_univariable_binaryclass_metrics_presicion(self):
-        _test_univariable_binaryclass_metric(consts.Metric_PRESICION)
-
-    def test_univariable_binaryclass_metrics_recall(self):
-        _test_univariable_binaryclass_metric(consts.Metric_RECALL)
-
-    def test_univariable_binaryclass_metrics_auc(self):
-        _test_univariable_binaryclass_metric(consts.Metric_AUC)
-
-    def test_univariable_binaryclass_metrics_f1(self):
-        _test_univariable_binaryclass_metric(consts.Metric_F1)
-
-    def test_univariable_binaryclass_metrics_logloss(self):
-        _test_univariable_binaryclass_metric(consts.Metric_LOGLOSS)
-
-    def test_univariable_binaryclass_metrics_None(self):
-        _test_univariable_binaryclass_metric(None)
+    def test_univariate_forecast_metrics_None(self):
+        _test_univariate_forecast_metric(None)
 
 
-class Test_Univariable_MultiClass_Metrics():
-    def test_univariable_multiclass_metrics_accuracy(self):
-        _test_univariable_multiclass_metric(consts.Metric_ACCURACY)
+class Test_Univariate_BinaryClass_Metrics():
+    def test_univariate_binaryclass_metrics_accuracy(self):
+        _test_univariate_binaryclass_metric(consts.Metric_ACCURACY)
 
-    def test_univariable_multiclass_metrics_presicion(self):
-        _test_univariable_multiclass_metric(consts.Metric_PRESICION)
+    def test_univariate_binaryclass_metrics_presicion(self):
+        _test_univariate_binaryclass_metric(consts.Metric_PRESICION)
 
-    def test_univariable_multiclass_metrics_recall(self):
-        _test_univariable_multiclass_metric(consts.Metric_RECALL)
+    def test_univariate_binaryclass_metrics_recall(self):
+        _test_univariate_binaryclass_metric(consts.Metric_RECALL)
 
-    def test_univariable_multiclass_metrics_auc(self):
-        _test_univariable_multiclass_metric(consts.Metric_AUC)
+    def test_univariate_binaryclass_metrics_auc(self):
+        _test_univariate_binaryclass_metric(consts.Metric_AUC)
 
-    def test_univariable_multiclass_metrics_f1(self):
-        _test_univariable_multiclass_metric(consts.Metric_F1)
+    def test_univariate_binaryclass_metrics_f1(self):
+        _test_univariate_binaryclass_metric(consts.Metric_F1)
 
-    def test_univariable_multiclass_metrics_logloss(self):
-        _test_univariable_multiclass_metric(consts.Metric_LOGLOSS)
+    def test_univariate_binaryclass_metrics_logloss(self):
+        _test_univariate_binaryclass_metric(consts.Metric_LOGLOSS)
 
-    def test_univariable_multiclass_metrics_none(self):
-        _test_univariable_multiclass_metric(None)
-
-
-class Test_Multivariable_Forecast_Metrics():
-    def test_multivariable_forecast_metrics_mse(self):
-        _test_multivariable_forecast(consts.Metric_MSE)
-
-    def test_multivariable_forecast_metrics_rmse(self):
-        _test_multivariable_forecast(consts.Metric_RMSE)
-
-    def test_multivariable_forecast_metrics_mae(self):
-        _test_multivariable_forecast(consts.Metric_MAE)
-
-    def test_multivariable_forecast_metrics_mape(self):
-        _test_multivariable_forecast(consts.Metric_MAPE)
-
-    def test_multivariable_forecast_metrics_smape(self):
-        _test_multivariable_forecast(consts.Metric_SMAPE)
-
-    def test_multivariable_forecast_metrics_r2(self):
-        _test_multivariable_forecast(consts.Metric_R2)
-
-    def test_multivariable_forecast_metrics_msle(self):
-        _test_multivariable_forecast(consts.Metric_MSLE)
-
-    def test_multivariable_forecast_metrics_None(self):
-        _test_multivariable_forecast(None)
+    def test_univariate_binaryclass_metrics_None(self):
+        _test_univariate_binaryclass_metric(None)
 
 
-def _test_univariable_forecast_metric(metric):
+class Test_Univariate_MultiClass_Metrics():
+    def test_univariate_multiclass_metrics_accuracy(self):
+        _test_univariate_multiclass_metric(consts.Metric_ACCURACY)
+
+    def test_univariate_multiclass_metrics_presicion(self):
+        _test_univariate_multiclass_metric(consts.Metric_PRESICION)
+
+    def test_univariate_multiclass_metrics_recall(self):
+        _test_univariate_multiclass_metric(consts.Metric_RECALL)
+
+    def test_univariate_multiclass_metrics_auc(self):
+        _test_univariate_multiclass_metric(consts.Metric_AUC)
+
+    def test_univariate_multiclass_metrics_f1(self):
+        _test_univariate_multiclass_metric(consts.Metric_F1)
+
+    def test_univariate_multiclass_metrics_logloss(self):
+        _test_univariate_multiclass_metric(consts.Metric_LOGLOSS)
+
+    def test_univariate_multiclass_metrics_none(self):
+        _test_univariate_multiclass_metric(None)
+
+
+class Test_Multivariate_Forecast_Metrics():
+    def test_multivariate_forecast_metrics_mse(self):
+        _test_multivariate_forecast(consts.Metric_MSE)
+
+    def test_multivariate_forecast_metrics_rmse(self):
+        _test_multivariate_forecast(consts.Metric_RMSE)
+
+    def test_multivariate_forecast_metrics_mae(self):
+        _test_multivariate_forecast(consts.Metric_MAE)
+
+    def test_multivariate_forecast_metrics_mape(self):
+        _test_multivariate_forecast(consts.Metric_MAPE)
+
+    def test_multivariate_forecast_metrics_smape(self):
+        _test_multivariate_forecast(consts.Metric_SMAPE)
+
+    def test_multivariate_forecast_metrics_r2(self):
+        _test_multivariate_forecast(consts.Metric_R2)
+
+    def test_multivariate_forecast_metrics_msle(self):
+        _test_multivariate_forecast(consts.Metric_MSLE)
+
+    def test_multivariate_forecast_metrics_None(self):
+        _test_multivariate_forecast(None)
+
+
+def _test_univariate_forecast_metric(metric):
     def get_params_test_task():
         return "example_wp_log_peyton_manning.csv", {'timestamp': 'ds',
                                                      'optimize_direction': consts.OptimizeDirection_MINIMIZE,
@@ -123,7 +123,7 @@ def _test_univariable_forecast_metric(metric):
     assert y_pred.shape == y_test.shape
 
 
-def _test_univariable_binaryclass_metric(metric):
+def _test_univariate_binaryclass_metric(metric):
     df = load_arrow_head()
     df = df[df.target.isin(['0', '1'])]
     tb = get_tool_box(df)
@@ -151,7 +151,7 @@ def _test_univariable_binaryclass_metric(metric):
     assert y_pred.shape == y_test.shape
 
 
-def _test_univariable_multiclass_metric(metric):
+def _test_univariate_multiclass_metric(metric):
     df = load_arrow_head()
     tb = get_tool_box(df)
     train_df, test_df = tb.random_train_test_split(df, test_size=0.2)
@@ -176,7 +176,7 @@ def _test_univariable_multiclass_metric(metric):
     assert y_pred.shape == y_test.shape
 
 
-def _test_multivariable_forecast(metric):
+def _test_multivariate_forecast(metric):
     df = load_network_traffic()
     df.drop(['CBWD'], axis=1, inplace=True)
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
@@ -186,7 +186,7 @@ def _test_multivariable_forecast(metric):
 
     timestamp = 'TimeStamp'
 
-    task = consts.Task_MULTIVARIABLE_FORECAST
+    task = consts.Task_MULTIVARIATE_FORECAST
     reward_metric = metric
     optimize_direction = consts.OptimizeDirection_MINIMIZE
 
@@ -203,4 +203,4 @@ def _test_multivariable_forecast(metric):
     y_pred = model.predict(X_test)
     assert y_pred.shape == y_test.shape
     score = metrics.mape(y_test, y_pred)
-    print('multivariable_forecast mape: ', score)
+    print('multivariate_forecast mape: ', score)

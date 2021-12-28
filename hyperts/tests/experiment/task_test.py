@@ -19,7 +19,7 @@ class Test_Task():
         X_train, X_test, y_train, y_test = tb.temporal_train_test_split(X, y, test_horizon=16)
 
         rs = RandomSearcher(search_space_univariate_forecast_generator(covariate=['id'], timestamp='ds'), optimize_direction=OptimizeDirection.Minimize)
-        hyper_model = HyperTS(rs, task='univariable-forecast', reward_metric='rmse', callbacks=[SummaryCallback()])
+        hyper_model = HyperTS(rs, task='univariate-forecast', reward_metric='rmse', callbacks=[SummaryCallback()])
 
         exp = TSCompeteExperiment(hyper_model, X_train, y_train, X_eval=X_test, y_eval=y_test, timestamp_col='ds', covariate_cols=['id'])
         pipeline_model = exp.run(max_trials=3)
@@ -34,7 +34,7 @@ class Test_Task():
         X_train, X_test, y_train, y_test = tb.temporal_train_test_split(X, y, test_horizon=16)
 
         rs = RandomSearcher(search_space_multivariate_forecast_generator(timestamp='ds'), optimize_direction=OptimizeDirection.Minimize)
-        hyper_model = HyperTS(rs, task='multivariable-forecast', reward_metric='rmse', callbacks=[SummaryCallback()])
+        hyper_model = HyperTS(rs, task='multivariate-forecast', reward_metric='rmse', callbacks=[SummaryCallback()])
 
         exp = TSCompeteExperiment(hyper_model, X_train, y_train, X_eval=X_test, y_eval=y_test, timestamp_col='ds')
         pipeline_model = exp.run(max_trials=3)
@@ -49,7 +49,7 @@ class Test_Task():
         X_train, X_test, y_train, y_test = tb.random_train_test_split(X, y, test_size=0.2)
 
         rs = RandomSearcher(search_space_multivariate_classification, optimize_direction=OptimizeDirection.Maximize)
-        hyper_model = HyperTS(rs, task='univariable-multiclass', reward_metric='accuracy', callbacks=[SummaryCallback()])
+        hyper_model = HyperTS(rs, task='univariate-multiclass', reward_metric='accuracy', callbacks=[SummaryCallback()])
 
         exp = TSCompeteExperiment(hyper_model, X_train, y_train, X_eval=X_test, y_eval=y_test)
         pipeline_model = exp.run(max_trials=3)

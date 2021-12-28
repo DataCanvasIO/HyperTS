@@ -285,13 +285,13 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
             multivar_containers['var'] = (
             VARForecastEstimator, self.default_var_init_kwargs, self.default_var_fit_kwargs)
 
-        if self.task == consts.Task_UNIVARIABLE_FORECAST:
+        if self.task == consts.Task_UNIVARIATE_FORECAST:
             return univar_containers
-        elif self.task == consts.Task_MULTIVARIABLE_FORECAST:
+        elif self.task == consts.Task_MULTIVARIATE_FORECAST:
             return multivar_containers
         else:
-            raise ValueError(f'Incorrect task name, default {consts.Task_UNIVARIABLE_FORECAST}'
-                             f' or {consts.Task_MULTIVARIABLE_FORECAST}.')
+            raise ValueError(f'Incorrect task name, default {consts.Task_UNIVARIATE_FORECAST}'
+                             f' or {consts.Task_MULTIVARIATE_FORECAST}.')
 
 
 class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
@@ -353,14 +353,14 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
             multivar_containers['knn'] = (
             KNNClassificationEstimator, self.default_knn_init_kwargs, self.default_knn_fit_kwargs)
 
-        if self.task in [consts.Task_UNIVARIABLE_BINARYCLASS, consts.Task_UNIVARIABLE_MULTICALSS]:
+        if self.task in [consts.Task_UNIVARIATE_BINARYCLASS, consts.Task_UNIVARIATE_MULTICALSS]:
             return univar_containers
-        elif self.task in [consts.Task_MULTIVARIABLE_BINARYCLASS, consts.Task_MULTIVARIABLE_MULTICALSS]:
+        elif self.task in [consts.Task_MULTIVARIATE_BINARYCLASS, consts.Task_MULTIVARIATE_MULTICALSS]:
             return multivar_containers
         else:
-            raise ValueError(f'Incorrect task name, default {consts.Task_UNIVARIABLE_BINARYCLASS}'
-                             f', {consts.Task_UNIVARIABLE_MULTICALSS}, {consts.Task_MULTIVARIABLE_BINARYCLASS}'
-                             f', or {consts.Task_MULTIVARIABLE_MULTICALSS}.')
+            raise ValueError(f'Incorrect task name, default {consts.Task_UNIVARIATE_BINARYCLASS}'
+                             f', {consts.Task_UNIVARIATE_MULTICALSS}, {consts.Task_MULTIVARIATE_BINARYCLASS}'
+                             f', or {consts.Task_MULTIVARIATE_MULTICALSS}.')
 
 
 stats_forecast_search_space = StatsForecastSearchSpace
@@ -378,7 +378,7 @@ dl_multivariate_classification_search_space = None
 if __name__ == '__main__':
     from hypernets.searchers.random_searcher import RandomSearcher
 
-    sfss = stats_forecast_search_space(task='univariable-forecast', timestamp='ts', covariables=['id', 'cos'])
+    sfss = stats_forecast_search_space(task='univariate-forecast', timestamp='ts', covariables=['id', 'cos'])
     searcher = RandomSearcher(sfss, optimize_direction='min')
     sample = searcher.sample()
     print(sample)

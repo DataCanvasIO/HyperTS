@@ -26,7 +26,7 @@ class Test_HyperTS():
         tb = get_tool_box(X)
         X_train, X_test, y_train, y_test = tb.temporal_train_test_split(X, y, test_horizon=24)
 
-        task = consts.Task_UNIVARIABLE_FORECAST
+        task = consts.Task_UNIVARIATE_FORECAST
         optimize_direction = consts.OptimizeDirection_MINIMIZE
         reward_metric = consts.Metric_RMSE
 
