@@ -1,7 +1,7 @@
 import numpy as np
 from hyperts.utils import consts
 from hyperts.framework.dl import DeepAR, HybirdRNN, LSTNet
-from ._base import EstimatorWrapper, WrapperMixin
+from hyperts.framework.wrappers._base import EstimatorWrapper, WrapperMixin
 
 from hypernets.utils import logging
 
@@ -52,6 +52,9 @@ class HybirdRNNWrapper(EstimatorWrapper, WrapperMixin):
         else:
             return self.model.predict(X)
 
+    def predict_proba(self, X, **kwargs):
+        return self.model.predict_proba(X)
+
 
 class LSTNetWrapper(EstimatorWrapper, WrapperMixin):
 
@@ -75,3 +78,6 @@ class LSTNetWrapper(EstimatorWrapper, WrapperMixin):
             return preds
         else:
             return self.model.predict(X)
+
+    def predict_proba(self, X, **kwargs):
+        return self.model.predict_proba(X)

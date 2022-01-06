@@ -1,114 +1,50 @@
 # -*- coding:utf-8 -*-
-
+import os
 import time
 import math
+
 import numpy as np
 import pandas as pd
-from collections import OrderedDict
-
 import tensorflow as tf
-import tensorflow.keras.backend as K
 from tensorflow.keras.utils import plot_model
-from tensorflow.keras.models import load_model, model_from_json
+from tensorflow.keras.models import save_model, load_model
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
 
-from hyperts.utils import consts, get_tool_box
 from hyperts.framework.dl import layers
 from hyperts.framework.dl.timeseries import from_array_to_timeseries
 from hyperts.framework.dl.metainfo import MetaTSFprocessor, MetaTSCprocessor
 
-from hypernets.utils import logging
+from hyperts.utils import consts, get_tool_box
+
+from hypernets.utils import logging, fs
 
 logger = logging.get_logger(__name__)
 
+import warnings
+warnings.filterwarnings("ignore")
 
-class BaseDeepMixin:
+Metircs = {
+    'mse': tf.keras.metrics.MeanSquaredError(name='mse'),
+    'rmse': tf.keras.metrics.RootMeanSquaredError(name='rmse'),
+    'accuracy': tf.keras.metrics.CategoricalAccuracy(name='acc'),
+    'auc': tf.keras.metrics.AUC(name='auc'),
+    'precison': tf.keras.metrics.Precision(name='precison'),
+    'recall': tf.keras.metrics.Recall(name='precall'),
+}
 
-    @staticmethod
-    def build_input_head(window, continuous_columns, categorical_columns):
-        """
+Losses = {
+    'mse': tf.keras.losses.MeanSquaredError(),
+    'mean_squared_error': tf.keras.losses.MeanSquaredError(),
+    'mae': tf.keras.losses.MeanAbsoluteError(),
+    'mean_absolute_error': tf.keras.losses.MeanAbsoluteError(),
+    'huber_loss': tf.keras.losses.Huber(),
+    'mape': tf.keras.losses.MeanAbsolutePercentageError(),
+    'mean_absolute_percentage_error': tf.keras.losses.MeanAbsolutePercentageError(),
+    'categorical_crossentropy': tf.keras.losses.CategoricalCrossentropy(),
+    'binary_crossentropy': tf.keras.losses.BinaryCrossentropy(),
 
-        """
-        continuous_inputs = OrderedDict()
-        categorical_inputs = OrderedDict()
-        for column in continuous_columns:
-            continuous_inputs[column.name] = layers.Input(shape=(window, column.input_dim),
-                                                          name=column.name, dtype=column.dtype)
-
-        if categorical_columns is not None and len(categorical_columns) > 0:
-            categorical_inputs['all_categorical_vars'] = layers.Input(shape=((window, len(categorical_columns))),
-                                                                      name='input_categorical_vars_all')
-
-        return continuous_inputs, categorical_inputs
-
-    @staticmethod
-    def build_denses(continuous_columns, continuous_inputs, use_batchnormalization=False):
-        """
-
-        """
-        if len(continuous_inputs) > 1:
-            dense_layer = layers.Concatenate(name='concat_continuous_inputs')(
-                list(continuous_inputs.values()))
-        else:
-            dense_layer = list(continuous_inputs.values())[0]
-
-        if use_batchnormalization:
-            dense_layer = layers.BatchNormalization(name='continuous_inputs_bn')(dense_layer)
-
-        return dense_layer
-
-    @staticmethod
-    def build_embeddings(categorical_columns, categorical_inputs):
-        """
-
-        """
-        if 'all_categorical_vars' in categorical_inputs:
-            input_layer = categorical_inputs['all_categorical_vars']
-            input_dims = [column.vocabulary_size for column in categorical_columns]
-            output_dims = [column.embedding_dim for column in categorical_columns]
-            embeddings = layers.MultiColEmbedding(input_dims, output_dims)(input_layer)
-        else:
-            embeddings = None
-
-        return embeddings
-
-    @staticmethod
-    def build_output_tail(x, task, nb_outputs, nb_steps=1):
-        """
-
-        """
-        if task in consts.TASK_LIST_REGRESSION + consts.TASK_LIST_BINARYCLASS:
-            outputs = layers.Dense(units=1, activation='sigmoid', name='dense_out')(x)
-        elif task in consts.TASK_LIST_MULTICLASS:
-            outputs = layers.Dense(units=nb_outputs, activation='softmax', name='dense_out')(x)
-        elif task in consts.TASK_LIST_FORECAST:
-            outputs = layers.Dense(units=nb_outputs * nb_steps, activation='linear', name='dense_out')(x)
-            outputs = layers.Lambda(lambda k: K.reshape(k, (-1, nb_steps, nb_outputs)), name='lambda_out')(outputs)
-        else:
-            raise ValueError(f'Unsupported task type {task}.')
-        return outputs
-
-    @staticmethod
-    def rnn_forward(x, nb_units, nb_layers, rnn_type, name, drop_rate=0., i=0):
-        """
-
-        """
-        if rnn_type == 'lstm':
-            for i in range(nb_layers - 1):
-                x = layers.LSTM(units=nb_units, return_sequences=True, name=f'{name}_{i}')(x)
-                x = layers.Dropout(rate=drop_rate, name=f'{name}_{i}_dropout')(x)
-            x = layers.LSTM(units=nb_units, return_sequences=False, name=f'{name}_{i + 1}')(x)
-        elif rnn_type == 'gru':
-            for i in range(nb_layers - 1):
-                x = layers.GRU(units=nb_units, return_sequences=True, name=f'{name}_{i}')(x)
-                x = layers.Dropout(rate=drop_rate, name=f'{name}_{i}_dropout')(x)
-            x = layers.GRU(units=nb_units, return_sequences=False, name=f'{name}_{i + 1}')(x)
-        elif rnn_type == 'simple_rnn':
-            for i in range(nb_layers - 1):
-                x = layers.SimpleRNN(units=nb_units, return_sequences=True, name=f'{name}_{i}')(x)
-                x = layers.Dropout(rate=drop_rate, name=f'{name}_{i}_dropout')(x)
-            x = layers.SimpleRNN(units=nb_units, return_sequences=False, name=f'{name}_{i + 1}')(x)
-        return x
+    'log_gaussian_loss': layers.log_gaussian_loss,
+}
 
 
 class BaseDeepEstimator(object):
@@ -121,6 +57,9 @@ class BaseDeepEstimator(object):
                  window=None,
                  horizon=None,
                  forecast_length=1,
+                 monitor_metric=None,
+                 reducelr_patience=None,
+                 earlystop_patience=None,
                  embedding_output_dim=4,
                  continuous_columns=None,
                  categorical_columns=None):
@@ -129,13 +68,15 @@ class BaseDeepEstimator(object):
         self.window = window
         self.horizon = horizon
         self.forecast_length = forecast_length
+        self.monitor_metric = monitor_metric
+        self.reducelr_patience = reducelr_patience
+        self.earlystop_patience = earlystop_patience
         self.embedding_output_dim=embedding_output_dim
         self.continuous_columns = continuous_columns
         self.categorical_columns = categorical_columns
         self.time_columns = None
         self.forecast_start = None
         self.model = None
-        self.callbacks = None
 
     def _build_estimator(self, **kwargs):
         raise NotImplementedError
@@ -188,21 +129,14 @@ class BaseDeepEstimator(object):
         if batch_size is None:
             batch_size = min(int(len(X) / 16), 128)
 
-        if steps_per_epoch is None:
-            steps_per_epoch = len(X) // batch_size
-            if steps_per_epoch == 0:
-                steps_per_epoch = 1
-        if validation_steps is None:
-            validation_steps = len(X_val) // batch_size - 1
-            if validation_steps <= 1:
-                validation_steps = 1
-
         X_train, y_train = self._dataloader(self.task, X, y, self.window, self.horizon, self.forecast_length,
                                             is_train=True)
         X_valid, y_valid = self._dataloader(self.task, X_val, y_val, self.window, self.horizon, self.forecast_length,
                                             is_train=False)
 
-        history = self._fit(X_train, y_train, X_valid, y_valid, epochs=epochs, batch_size=batch_size,
+        callbacks = self._inject_callbacks(callbacks, epochs, self.reducelr_patience, self.earlystop_patience)
+
+        model, history = self._fit(X_train, y_train, X_valid, y_valid, epochs=epochs, batch_size=batch_size,
                             initial_epoch=initial_epoch,
                             verbose=verbose, callbacks=callbacks, shuffle=shuffle, class_weight=class_weight,
                             sample_weight=sample_weight,
@@ -210,9 +144,8 @@ class BaseDeepEstimator(object):
                             validation_batch_size=validation_batch_size,
                             validation_freq=validation_freq, max_queue_size=max_queue_size, workers=workers,
                             use_multiprocessing=use_multiprocessing)
-
+        self.model = model
         logger.info(f'Training finished, total taken {time.time() - start}s.')
-
         return history
 
     def forecast(self, X):
@@ -243,7 +176,7 @@ class BaseDeepEstimator(object):
             X = X[X_cont_cols + X_cat_cols].values
 
         futures = []
-        data = self.forecast_start
+        data = self.forecast_start.copy()
         if X.shape[1] >= 1:
             continuous_length = len(self.mata.cont_column_names)
             categorical_length = len(self.mata.cat_column_names)
@@ -301,45 +234,69 @@ class BaseDeepEstimator(object):
             predict = self.mata.inverse_transform_y(predict)
         return predict
 
-    def _compile_info(self, monitor='val_loss', reducelr_patience=0, earlystop_patience=0, learning_rate=0.001):
+    def _inject_callbacks(self, callbacks, epochs, reducelr_patience=5, earlystop_patience=10, verbose=1):
+        lr, es = None, None
+        if callbacks is not None:
+            for callback in callbacks:
+                if isinstance(callback, ReduceLROnPlateau):
+                    lr = callback
+                if isinstance(callback, EarlyStopping):
+                    es = callback
+        else:
+            callbacks = []
+
+        if epochs <= 10:
+            return []
+        else:
+            if lr is None and isinstance(reducelr_patience, int) and reducelr_patience > 0:
+                lr = ReduceLROnPlateau(monitor=self.monitor, factor=0.5,
+                        patience=reducelr_patience, min_lr=0.0001, verbose=verbose)
+                callbacks.append(lr)
+                logger.info(f'Injected a callback [ReduceLROnPlateau]. monitor:{lr.monitor}, '
+                            f'patience:{lr.patience}')
+            if es is None and isinstance(earlystop_patience, int) and earlystop_patience > 0:
+                es = EarlyStopping(monitor=self.monitor, min_delta=1e-5,
+                        patience=earlystop_patience, verbose=verbose)
+                callbacks.append(es)
+                logger.info(f'Injected a callback [EarlyStopping]. monitor:{es.monitor}, '
+                            f'patience:{es.patience}')
+            return callbacks
+
+
+    def _compile_model(self, model, optimizer, learning_rate=0.001):
         if self.task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_REGRESSION:
             if self.loss == 'auto':
-                self.loss = tf.keras.losses.Huber()
+                self.loss = 'huber_loss'
             if self.metrics == 'auto':
-                self.metrics = tf.keras.metrics.RootMeanSquaredError(name='rmse')
+                self.metrics = ['rmse']
         elif self.task in consts.TASK_LIST_MULTICLASS:
             if self.loss == 'auto':
-                self.loss = tf.keras.losses.CategoricalCrossentropy()
+                self.loss = 'categorical_crossentropy'
             if self.metrics == 'auto':
-                self.metrics = tf.keras.metrics.CategoricalAccuracy(name='acc')
+                self.metrics = ['accuracy']
         elif self.task in consts.TASK_LIST_BINARYCLASS:
             if self.loss == 'auto':
-                self.loss = tf.keras.losses.BinaryCrossentropy()
+                self.loss = 'binary_crossentropy'
             if self.metrics == 'auto':
-                self.metrics = tf.keras.metrics.AUC(name='auc')
+                self.metrics = ['auc']
         else:
             print('Unsupport this task: {}, Apart from [multiclass, binary, \
                     forecast, and regression].'.format(self.task))
+        loss = Losses[self.loss]
+        metrics = [Metircs[m] for m in self.metrics]
 
-        if self.optimizer == consts.OptimizerADAM:
-            self.optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, clipnorm=10.)
-        elif self.optimizer == consts.OptimizerSGD:
-            self.optimizer = tf.keras.optimizers.SGD(learning_rate=learning_rate, clipnorm=10.)
+        if optimizer == 'auto':
+            optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, clipnorm=10.)
+            print("The optimizer is 'auto', default: Adam, learning rate=0.001.")
+        elif optimizer == consts.OptimizerADAM:
+            optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, clipnorm=10.)
+        elif optimizer == consts.OptimizerSGD:
+            optimizer = tf.keras.optimizers.SGD(learning_rate=learning_rate, clipnorm=10.)
         else:
-            print('The optimizer is not reset, default: Adam.')
-            self.optimizer = consts.OptimizerADAM
+            raise ValueError(f'Unsupport this optimizer: [optimizer].')
 
-        if reducelr_patience != 0:
-            reduce_lr_callback = ReduceLROnPlateau(monitor=monitor, factor=0.5,
-                                                   patience=reducelr_patience, min_lr=0.0001, verbose=1)
-            self.callbacks = [reduce_lr_callback]
-        if earlystop_patience != 0:
-            early_stop_callback = EarlyStopping(monitor=monitor, min_delta=1e-5,
-                                                patience=earlystop_patience, verbose=1)
-            if self.callbacks is None:
-                self.callbacks = [early_stop_callback]
-            else:
-                self.callbacks.append(early_stop_callback)
+        model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
+        return model
 
     def _dataloader(self, task, X, y, window=1, horizon=1, forecast_length=1, is_train=True):
         """
@@ -407,27 +364,52 @@ class BaseDeepEstimator(object):
             self.categorical_columns = self.mata.categorical_columns
         return X, y
 
-    def plot_net(self, file_path):
-        plot_model(self.model, to_file=f'{file_path}/model.png', show_shapes=True)
+    @property
+    def monitor(self):
+        monitor = self.monitor_metric
+        if monitor is None:
+            if self.metrics is not None and len(self.metrics) > 0:
+                monitor = 'val_' + self.first_metric_name
+        return monitor
 
-    def save_model(self, file_path, name):
-        self.model.save(f'{file_path}/{name}.h5')
-        print(f'Model has been saved as {name}.h5')
+    @property
+    def first_metric_name(self):
+        if self.metrics is None or len(self.metrics) <= 0:
+            raise ValueError('`metrics` is none or empty.')
+        first_metric = self.metrics[0]
+        if isinstance(first_metric, str):
+            return first_metric
+        if callable(first_metric):
+            return first_metric.__name__
+        raise ValueError('`metric` must be string or callable object.')
 
-    def load_model(self, file_path):
-        self.model = load_model(file_path)
-        print('Model restored')
+    def plot_net(self, model_file):
+        plot_model(self.model, to_file=f'{model_file}/model.png', show_shapes=True)
 
-    def save_model_json(self, file_path, name):
-        model_json = self.model.to_json()
-        with open(f'{file_path}/{name}.json', 'w') as json_file:
-            json_file.write(model_json)
-            self.model.save_weights(f'{file_path}/{name}.h5')
-        print('Save model to disk.')
+    def save_model(self, model_file, name='dl_model'):
+        import h5py, io
+        if model_file.endswith('.pkl'):
+            model_file = os.path.splitext(model_file)[0]
+        with fs.open(f'{model_file}_{name}.h5', "wb") as fw:
+            buf = io.BytesIO()
+            with h5py.File(buf, 'w') as h:
+                save_model(self.model, h, save_format='h5')
+            data = buf.getvalue()
+            buf.close()
+            fw.write(data)
+        self.model = None
+        logger.info('Save model to disk.')
 
-    def load_model_json(self, file_path, name):
-        with open(f'{file_path}/{name}.json', 'r') as json_file:
-            loaded_model_json = json_file.read()
-        loaded_model = model_from_json(loaded_model_json)
-        loaded_model.load_weights(f'{file_path}/{name}.h5')
-        print('Loaded model from disk.')
+    @staticmethod
+    def load_model(model_file, name='dl_model'):
+        import h5py, io
+        if model_file.endswith('.pkl'):
+            model_file = os.path.splitext(model_file)[0]
+        with fs.open(f'{model_file}_{name}.h5', "rb") as fp:
+            data = fp.read()
+        buf = io.BytesIO(data)
+        del data
+        with h5py.File(buf, 'r') as h:
+            model = load_model(h, custom_objects=layers.custom_objects)
+        logger.info('Loaded model from disk.')
+        return model

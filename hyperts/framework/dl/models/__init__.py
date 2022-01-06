@@ -1,4 +1,4 @@
-from ._base import BaseDeepMixin, BaseDeepEstimator
+from ._base import BaseDeepEstimator
 from tensorflow.keras.models import Model, Sequential
 
 from .deepar import DeepAR
