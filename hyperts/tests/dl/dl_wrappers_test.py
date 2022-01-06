@@ -387,20 +387,14 @@ def test_univariate_classification_lstnet():
         'task': task,
 
         'rnn_type': 'simple_rnn',
-        'skip_rnn_type': 'gru',
-        'cnn_filters': 16,
-        'kernel_size': 3,
         'rnn_units': 10,
         'rnn_layers': 2,
-        'skip_rnn_units': 10,
-        'skip_rnn_layers': 2,
-        'skip_period': 0,
-        'ar_order': 0,
         'learning_rate': 0.001,
 
-        'y_scale': np.random.choice(['min_max', 'max_abs'], size=1)[0]
+        'x_scale': np.random.choice(['min_max', 'max_abs'], size=1)[0],
     }
-    model = LSTNetWrapper(fit_kwargs, **init_kwargs)
+
+    model = HybirdRNNWrapper(fit_kwargs, **init_kwargs)
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
@@ -437,7 +431,8 @@ def test_multivariate_classification_lstnet():
         'ar_order': 0,
         'learning_rate': 0.001,
 
-        'y_scale': np.random.choice(['min_max', 'max_abs'], size=1)[0]
+        'x_scale': np.random.choice(['min_max', 'max_abs'], size=1)[0],
+
     }
     model = LSTNetWrapper(fit_kwargs, **init_kwargs)
     model.fit(X_train, y_train)

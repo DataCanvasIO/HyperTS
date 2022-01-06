@@ -11,7 +11,7 @@ from sktime.classification.distance_based import KNeighborsTimeSeriesClassifier
 
 from hypernets.utils import logging
 
-from ._base import EstimatorWrapper, WrapperMixin, suppress_stdout_stderr
+from hyperts.framework.wrappers._base import EstimatorWrapper, WrapperMixin, suppress_stdout_stderr
 
 logger = logging.get_logger(__name__)
 

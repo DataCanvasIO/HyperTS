@@ -16,7 +16,8 @@ class Test_Experiment():
         reward_metric = metrics.smape
         optimize_direction = consts.OptimizeDirection_MINIMIZE
 
-        exp = make_experiment(train_df,
+        exp = make_experiment(train_df.copy(),
+                              mode='stats',
                               timestamp=timestamp,
                               covariables=covariables,
                               task=task,
@@ -44,7 +45,8 @@ class Test_Experiment():
         reward_metric = consts.Metric_RMSE
         optimize_direction = consts.OptimizeDirection_MINIMIZE
 
-        exp = make_experiment(train_df,
+        exp = make_experiment(train_df.copy(),
+                              mode='stats',
                               timestamp=timestamp,
                               covariables=covariables,
                               task=task,
@@ -72,6 +74,7 @@ class Test_Experiment():
         optimize_direction = consts.OptimizeDirection_MAXIMIZE
 
         exp = make_experiment(train_df.copy(),
+                              mode='stats',
                               task=task,
                               eval_data=test_df.copy(),
                               target=target,
@@ -100,6 +103,7 @@ class Test_Experiment():
         optimize_direction = consts.OptimizeDirection_MAXIMIZE
 
         exp = make_experiment(train_df.copy(),
+                              mode='stats',
                               task=task,
                               eval_data=test_df.copy(),
                               target=target,
