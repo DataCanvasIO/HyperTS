@@ -2,6 +2,7 @@
 """
 
 """
+import copy
 
 import time
 import pickle
@@ -18,14 +19,16 @@ from hypernets.dispatchers.in_process_dispatcher import InProcessDispatcher
 
 from hyperts.utils import consts
 from hyperts.utils.metrics import calc_score
+from hyperts.framework.dl.models import BaseDeepEstimator
 
 logger = logging.get_logger(__name__)
 
 
 class HyperTSEstimator(Estimator):
-    def __init__(self, task, space_sample, data_cleaner_params=None):
+    def __init__(self, task, mode, space_sample, data_cleaner_params=None):
         super(HyperTSEstimator, self).__init__(space_sample=space_sample, task=task)
         self.data_pipeline = None
+        self.mode = mode
         self.data_cleaner_params = data_cleaner_params
         self.model = None  # Time-Series model
         self.cv_models_ = None
@@ -179,20 +182,33 @@ class HyperTSEstimator(Estimator):
         return scores
 
     def save(self, model_file):
-        with fs.open(f'{model_file}', 'wb') as output:
-            pickle.dump(self, output, protocol=pickle.HIGHEST_PROTOCOL)
+        if self.mode == consts.Mode_STATS:
+            with fs.open(f'{model_file}', 'wb') as output:
+                pickle.dump(self, output, protocol=pickle.HIGHEST_PROTOCOL)
+        else:
+            subself = copy.copy(self)
+            subself.model.model.save_model(model_file)
+            with fs.open(f'{model_file}', 'wb') as output:
+                pickle.dump(subself, output, protocol=pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
-    def load(model_file):
-        with fs.open(f'{model_file}', 'rb') as input:
-            model = pickle.load(input)
-            return model
+    def _load(model_file, mode):
+        if mode == consts.Mode_STATS:
+            with fs.open(f'{model_file}', 'rb') as input:
+                estimator = pickle.load(input)
+        else:
+            with fs.open(f'{model_file}', 'rb') as input:
+                estimator = pickle.load(input)
+            model = BaseDeepEstimator.load_model(model_file)
+            estimator.model.model.model = model
+        return estimator
 
 
 class HyperTS(HyperModel):
 
     def __init__(self,
                  searcher,
+                 mode='stats',
                  dispatcher=None,
                  callbacks=None,
                  reward_metric='accuracy',
@@ -202,6 +218,7 @@ class HyperTS(HyperModel):
                  cache_dir=None,
                  clear_cache=None):
 
+        self.mode = mode
         self.data_cleaner_params = data_cleaner_params
 
         HyperModel.__init__(self,
@@ -213,11 +230,11 @@ class HyperTS(HyperModel):
                             discriminator=discriminator)
 
     def _get_estimator(self, space_sample):
-        estimator = HyperTSEstimator(task=self.task, space_sample=space_sample, data_cleaner_params=self.data_cleaner_params)
+        estimator = HyperTSEstimator(task=self.task, mode=self.mode, space_sample=space_sample, data_cleaner_params=self.data_cleaner_params)
         return estimator
 
     def load_estimator(self, model_file):
-        return HyperTSEstimator.load(model_file)
+        return HyperTSEstimator._load(model_file, self.mode)
 
     def _get_reward(self, value, key=None):
         def cast_float(value):
