@@ -7,6 +7,8 @@ from sklearn.preprocessing import OrdinalEncoder
 from sklearn.model_selection import train_test_split as sklearn_tts
 from hypernets.tabular.toolbox import ToolBox
 
+from hyperts.utils import consts
+
 class TSToolBox(ToolBox):
 
     @staticmethod
@@ -42,7 +44,7 @@ class TSToolBox(ToolBox):
         return df
 
     @staticmethod
-    def infer_ts_freq(df: pd.DataFrame, ts_name: str = 'TimeStamp'):
+    def infer_ts_freq(df: pd.DataFrame, ts_name: str = consts.TIMESTAMP):
         return _infer_ts_freq(df, ts_name)
 
     @staticmethod
@@ -106,7 +108,7 @@ class TSToolBox(ToolBox):
         return encoder_df
 
     @staticmethod
-    def drop_duplicated_ts_rows(df: pd.DataFrame, ts_name: str = 'TimeStamp', keep_data: str = 'last'):
+    def drop_duplicated_ts_rows(df: pd.DataFrame, ts_name: str = consts.TIMESTAMP, keep_data: str = 'last'):
         """Returns without duplicate time series,  the last be keeped by default.
         Example:
             TimeStamp      y
@@ -130,7 +132,7 @@ class TSToolBox(ToolBox):
         return drop_df
 
     @staticmethod
-    def smooth_missed_ts_rows( df: pd.DataFrame, freq: str = None, ts_name: str = 'TimeStamp'):
+    def smooth_missed_ts_rows( df: pd.DataFrame, freq: str = None, ts_name: str = consts.TIMESTAMP):
         """Returns full time series.
         Example:
             TimeStamp      y
@@ -255,11 +257,11 @@ class TSToolBox(ToolBox):
 
         Parameters
         ----------
-        X : np.ndarray
+        data : np.ndarray
             3-dimensional Numpy array to convert to nested pandas DataFrame format
-        column_names: list-like, default = None
+        columns: list-like, default = None
             Optional list of names to use for naming nested DataFrame's columns
-        cells_as_numpy : bool, default = False
+        cells_as_array : bool, default = False
             If True, then nested cells contain Numpy array
             If False, then nested cells contain pandas Series
 
@@ -292,12 +294,12 @@ class TSToolBox(ToolBox):
 
         Parameters
         ----------
-        X : pd.DataFrame
+        data : pd.DataFrame
             Nested pandas DataFrame
 
         Returns
         -------
-        X_3d : np.arrray
+        data_3d : np.arrray
             3-dimensional NumPy array
 
         References
