@@ -10,11 +10,15 @@ from hyperts.framework.wrappers import (ProphetWrapper,
                                         VARWrapper,
                                         ARIMAWrapper,
                                         TSForestWrapper,
-                                        KNeighborsWrapper)
+                                        KNeighborsWrapper,
+                                        DeepARWrapper,
+                                        HybirdRNNWrapper,
+                                        LSTNetWrapper)
 
 logger = logging.get_logger(__name__)
 
 
+##################################### Define Statistic Model HyperEstimator #####################################
 class HyperEstimator(ModuleSpace):
 
     def __init__(self, fit_kwargs=None, space=None, name=None, **hyperparams):
@@ -198,10 +202,10 @@ class ARIMAForecastEstimator(HyperEstimator):
 
     def _build_estimator(self, task, fit_kwargs, kwargs):
         if task == consts.Task_UNIVARIATE_FORECAST:
-            var = ARIMAWrapper(fit_kwargs, **kwargs)
+            arima = ARIMAWrapper(fit_kwargs, **kwargs)
         else:
             raise ValueError('ARIMA model supports only univariate forecast task.')
-        return var
+        return arima
 
 
 class VARForecastEstimator(HyperEstimator):
@@ -340,3 +344,507 @@ class KNNClassificationEstimator(HyperEstimator):
         else:
             raise ValueError('KNN model supports only classification task.')
         return knn
+
+
+##################################### Define Deep Learning Model HyperEstimator #####################################
+class DeepARForecastEstimator(HyperEstimator):
+    """Time Series Forecast Estimator based on Hypernets.
+    Estimator: Deep AutoRegressive (DeepAR).
+    Suitable for: Univariate Forecast Task.
+
+    Parameters
+    ----------
+    timestamp  : Str - Timestamp name, not optional.
+    task       : Str - Only 'univariate-forecast' is supported,
+                 default = 'univariate-forecast'.
+    rnn_type   : Str - Type of recurrent neural network,
+                 {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
+    rnn_units  : Positive Int - The dimensionality of the output space for recurrent neural network,
+                 default = 16.
+    rnn_layers : Positive Int - The number of the layers for recurrent neural network,
+                 default = 1.
+    drop_rate  : Float between 0 and 1 - The rate of Dropout for neural nets,
+                 default = 0.
+    window     : Positive Int - Length of the time series sequences for a sample,
+                 default = 3.
+    horizon    : Positive Int - Length of the prediction horizon,
+                 default = 1.
+    forecast_length : Positive Int - Step of the forecast outputs,
+                 default = 1.
+    metrics    : Str - List of metrics to be evaluated by the model during training and testing,
+                 default = 'auto'.
+    monitor    : Str - Quality indicators monitored during neural network training.
+                 default = 'val_loss'.
+    optimizer  : Str or keras Instance - for example, 'adam', 'sgd', and so on.
+                 default = 'auto'.
+    learning_rate : Positive Float - The optimizer's learning rate,
+                 default = 0.001.
+    loss       : Str - Only 'log_gaussian_loss' is supported for DeepAR, which has been defined.
+                 default = 'log_gaussian_loss'.
+    reducelr_patience : Positive Int - The number of epochs with no improvement after which learning rate
+                 will be reduced, default = 5.
+    earlystop_patience : Positive Int - The number of epochs with no improvement after which training
+                 will be stopped, default = 5.
+    summary    : Bool - Whether to output network structure information,
+                 default = True.
+    batch_size : Int or None - Number of samples per gradient update.
+                 default = 32.
+    epochs     : Int - Number of epochs to train the model,
+                 default = 1.
+    verbose    : 0, 1, or 2. Verbosity mode.
+                 0 = silent, 1 = progress bar, 2 = one line per epoch.
+                 Note that the progress bar is not particularly useful when logged to a file, so verbose=2
+                 is recommended when not running interactively (eg, in a production environment).
+                 default = 1.
+    callbacks  : List of `keras.callbacks.Callback` instances.
+                 List of callbacks to apply during training.
+                 See `tf.keras.callbacks`. Note `tf.keras.callbacks.ProgbarLogger`
+                 and `tf.keras.callbacks.History` callbacks are created automatically
+                 and need not be passed into `model.fit`.
+                 `tf.keras.callbacks.ProgbarLogger` is created or not based on
+                 `verbose` argument to `model.fit`.
+                 default = None.
+    validation_split : Float between 0 and 1.
+                 Fraction of the training data to be used as validation data.
+                 The model will set apart this fraction of the training data, will not train on it, and will
+                 evaluate the loss and any model metrics on this data at the end of each epoch,
+                 default = 0.
+    shuffle    : Boolean (whether to shuffle the training data
+                 before each epoch) or str (for 'batch').
+    max_queue_size : Int - Used for generator or `keras.utils.Sequence`
+                 input only. Maximum size for the generator queue,
+                 default = 10.
+    workers    : Int - Used for generator or `keras.utils.Sequence` input
+                 only. Maximum number of processes to spin up when using process-based
+                 threading. If 0, will execute the generator on the main thread,
+                 default = 1.
+    use_multiprocessing : Bool. Used for generator or
+                 `keras.utils.Sequence` input only. If `True`, use process-based
+                 threading. Note that because this implementation relies on
+                 multiprocessing, you should not pass non-picklable arguments to
+                 the generator as they can't be passed easily to children processes.
+                 default = False.
+    """
+
+    def __init__(self, fit_kwargs=None, timestamp=None, task='univariate-forecast',
+                 rnn_type='gru', rnn_units=16, rnn_layers=1,
+                 drop_rate=0., window=3, horizon=1, forecast_length=1, metrics='auto',
+                 monitor='val_loss', optimizer='auto', learning_rate=0.001, loss='log_gaussian_loss',
+                 reducelr_patience=5, earlystop_patience=10, summary=True,
+                 batch_size=None, epochs=1, verbose=1, callbacks=None,
+                 validation_split=0., shuffle=True, max_queue_size=10,
+                 workers=1, use_multiprocessing=False,
+                 space=None, name=None, **kwargs):
+
+        if timestamp is not None:
+            kwargs['timestamp'] = timestamp
+        else:
+            raise ValueError('timestamp can not be None.')
+        if task is not None:
+            kwargs['task'] = task
+        if rnn_type is not None and rnn_type != 'gru':
+            kwargs['rnn_type'] = rnn_type
+        if rnn_units is not None and rnn_units != 16:
+            kwargs['rnn_units'] = rnn_units
+        if rnn_layers is not None and rnn_layers != 1:
+            kwargs['rnn_layers'] = rnn_layers
+        if drop_rate is not None and drop_rate != 0.:
+            kwargs['drop_rate'] = drop_rate
+        if window is not None and window != 7:
+            kwargs['window'] = window
+        if horizon is not None and horizon != 1:
+            kwargs['horizon'] = horizon
+        if forecast_length is not None and forecast_length != 1:
+            kwargs['forecast_length'] = forecast_length
+        if metrics is not None and metrics != 'auto':
+            kwargs['metrics'] = metrics
+        if monitor is not None and monitor != 'val_loss':
+            kwargs['monitor'] = monitor
+        if optimizer is not None and optimizer != 'auto':
+            kwargs['optimizer'] = optimizer
+        if learning_rate is not None and learning_rate != 0.001:
+            kwargs['learning_rate'] = learning_rate
+        if loss is not None and loss != 'log_gaussian_loss':
+            kwargs['loss'] = 'log_gaussian_loss'
+        if reducelr_patience is not None and reducelr_patience != 5:
+            kwargs['reducelr_patience'] = reducelr_patience
+        if earlystop_patience is not None and earlystop_patience != 10:
+            kwargs['earlystop_patience'] = earlystop_patience
+        if summary is not None and summary != True:
+            kwargs['summary'] = summary
+
+        if batch_size is not None:
+            kwargs['batch_size'] = batch_size
+        if epochs is not None and epochs != 1:
+            kwargs['epochs'] = epochs
+        if verbose is not None and verbose != 1:
+            kwargs['verbose'] = verbose
+        if callbacks is not None:
+            kwargs['callbacks'] = callbacks
+        if validation_split is not None and validation_split != 0.:
+            kwargs['validation_split'] = validation_split
+        if shuffle is not None and shuffle != True:
+            kwargs['shuffle'] = shuffle
+        if max_queue_size is not None and max_queue_size != 10:
+            kwargs['max_queue_size'] = max_queue_size
+        if workers is not None and workers != 1:
+            kwargs['workers'] = workers
+        if use_multiprocessing is not None and use_multiprocessing != False:
+            kwargs['use_multiprocessing'] = use_multiprocessing
+
+        HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
+
+    def _build_estimator(self, task, fit_kwargs, kwargs):
+        if task == consts.Task_UNIVARIATE_FORECAST:
+            deepar = DeepARWrapper(fit_kwargs, **kwargs)
+        else:
+            raise ValueError('DeepAR model supports only univariate forecast task.')
+        return deepar
+
+
+class HybirdRNNGeneralEstimator(HyperEstimator):
+    """Time Series Forecast|Classification|Regression Estimator based on Hypernets.
+    Estimator: SimpleRNN|GRU|LSTM (DeepAR).
+    Suitable for: The General Time Series Tasks.
+
+    Parameters
+    ----------
+    timestamp  : Str or None - Timestamp name, the forecast task must be given.
+    task       : Str - Support forecast, classification, and regression.
+                 default = 'univariate-forecast'.
+    rnn_type   : Str - Type of recurrent neural network,
+                 {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
+    rnn_units  : Positive Int - The dimensionality of the output space for recurrent neural network,
+                 default = 16.
+    rnn_layers : Positive Int - The number of the layers for recurrent neural network,
+                 default = 1.
+    out_activation : Str - Forecast the task output activation function, optional {'linear', 'sigmoid'},
+                 default = 'linear'.
+    drop_rate  : Float between 0 and 1 - The rate of Dropout for neural nets,
+                 default = 0.
+    window     : Positive Int - Length of the time series sequences for a sample,
+                 default = 3.
+    horizon    : Positive Int - Length of the prediction horizon,
+                 default = 1.
+    forecast_length : Positive Int - Step of the forecast outputs,
+                 default = 1.
+    metrics    : Str - List of metrics to be evaluated by the model during training and testing,
+                 default = 'auto'.
+    monitor    : Str - Quality indicators monitored during neural network training.
+                 default = 'val_loss'.
+    optimizer  : Str or keras Instance - for example, 'adam', 'sgd', and so on.
+                 default = 'auto'.
+    learning_rate : Positive Float - The optimizer's learning rate,
+                 default = 0.001.
+    loss       : Str - Only 'log_gaussian_loss' is supported for DeepAR, which has been defined.
+                 default = 'log_gaussian_loss'.
+    reducelr_patience : Positive Int - The number of epochs with no improvement after which learning rate
+                 will be reduced, default = 5.
+    earlystop_patience : Positive Int - The number of epochs with no improvement after which training
+                 will be stopped, default = 5.
+    summary    : Bool - Whether to output network structure information,
+                 default = True.
+    batch_size : Int or None - Number of samples per gradient update.
+                 default = 32.
+    epochs     : Int - Number of epochs to train the model,
+                 default = 1.
+    verbose    : 0, 1, or 2. Verbosity mode.
+                 0 = silent, 1 = progress bar, 2 = one line per epoch.
+                 Note that the progress bar is not particularly useful when logged to a file, so verbose=2
+                 is recommended when not running interactively (eg, in a production environment).
+                 default = 1.
+    callbacks  : List of `keras.callbacks.Callback` instances.
+                 List of callbacks to apply during training.
+                 See `tf.keras.callbacks`. Note `tf.keras.callbacks.ProgbarLogger`
+                 and `tf.keras.callbacks.History` callbacks are created automatically
+                 and need not be passed into `model.fit`.
+                 `tf.keras.callbacks.ProgbarLogger` is created or not based on
+                 `verbose` argument to `model.fit`.
+                 default = None.
+    validation_split : Float between 0 and 1.
+                 Fraction of the training data to be used as validation data.
+                 The model will set apart this fraction of the training data, will not train on it, and will
+                 evaluate the loss and any model metrics on this data at the end of each epoch,
+                 default = 0.
+    shuffle    : Boolean (whether to shuffle the training data
+                 before each epoch) or str (for 'batch').
+    max_queue_size : Int - Used for generator or `keras.utils.Sequence`
+                 input only. Maximum size for the generator queue,
+                 default = 10.
+    workers    : Int - Used for generator or `keras.utils.Sequence` input
+                 only. Maximum number of processes to spin up when using process-based
+                 threading. If 0, will execute the generator on the main thread,
+                 default = 1.
+    use_multiprocessing : Bool. Used for generator or
+                 `keras.utils.Sequence` input only. If `True`, use process-based
+                 threading. Note that because this implementation relies on
+                 multiprocessing, you should not pass non-picklable arguments to
+                 the generator as they can't be passed easily to children processes.
+                 default = False.
+    """
+
+    def __init__(self, fit_kwargs=None, timestamp=None, task='univariate-forecast',
+                 rnn_type='gru', rnn_units=16, rnn_layers=1, out_activation='linear',
+                 drop_rate=0., window=3, horizon=1, forecast_length=1, metrics='auto',
+                 monitor='val_loss', optimizer='auto', learning_rate=0.001, loss='auto',
+                 reducelr_patience=5, earlystop_patience=10, summary=True,
+                 batch_size=None, epochs=1, verbose=1, callbacks=None,
+                 validation_split=0., shuffle=True, max_queue_size=10,
+                 workers=1, use_multiprocessing=False,
+                 space=None, name=None, **kwargs):
+
+        if task in consts.TASK_LIST_FORECAST and rnn_type is None:
+            raise ValueError('Timestamp need to be given for forecast task.')
+        else:
+            kwargs['timestamp'] = timestamp
+        if task is not None:
+            kwargs['task'] = task
+        if rnn_type is not None and rnn_type != 'gru':
+            kwargs['rnn_type'] = rnn_type
+        if rnn_units is not None and rnn_units != 16:
+            kwargs['rnn_units'] = rnn_units
+        if rnn_layers is not None and rnn_layers != 1:
+            kwargs['rnn_layers'] = rnn_layers
+        if drop_rate is not None and drop_rate != 0.:
+            kwargs['drop_rate'] = drop_rate
+        if out_activation is not None and out_activation != 'linear':
+            kwargs['out_activation'] = out_activation
+        if window is not None and window != 7:
+            kwargs['window'] = window
+        if horizon is not None and horizon != 1:
+            kwargs['horizon'] = horizon
+        if forecast_length is not None and forecast_length != 1:
+            kwargs['forecast_length'] = forecast_length
+        if metrics is not None and metrics != 'auto':
+            kwargs['metrics'] = metrics
+        if monitor is not None and monitor != 'val_loss':
+            kwargs['monitor'] = monitor
+        if optimizer is not None and optimizer != 'auto':
+            kwargs['optimizer'] = optimizer
+        if learning_rate is not None and learning_rate != 0.001:
+            kwargs['learning_rate'] = learning_rate
+        if loss is not None and loss != 'auto':
+            kwargs['loss'] = loss
+        if reducelr_patience is not None and reducelr_patience != 5:
+            kwargs['reducelr_patience'] = reducelr_patience
+        if earlystop_patience is not None and earlystop_patience != 10:
+            kwargs['earlystop_patience'] = earlystop_patience
+        if summary is not None and summary != True:
+            kwargs['summary'] = summary
+
+        if batch_size is not None:
+            kwargs['batch_size'] = batch_size
+        if epochs is not None and epochs != 1:
+            kwargs['epochs'] = epochs
+        if verbose is not None and verbose != 1:
+            kwargs['verbose'] = verbose
+        if callbacks is not None:
+            kwargs['callbacks'] = callbacks
+        if validation_split is not None and validation_split != 0.:
+            kwargs['validation_split'] = validation_split
+        if shuffle is not None and shuffle != True:
+            kwargs['shuffle'] = shuffle
+        if max_queue_size is not None and max_queue_size != 10:
+            kwargs['max_queue_size'] = max_queue_size
+        if workers is not None and workers != 1:
+            kwargs['workers'] = workers
+        if use_multiprocessing is not None and use_multiprocessing != False:
+            kwargs['use_multiprocessing'] = use_multiprocessing
+
+        HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
+
+    def _build_estimator(self, task, fit_kwargs, kwargs):
+        if task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION:
+            rnn = HybirdRNNWrapper(fit_kwargs, **kwargs)
+        else:
+            raise ValueError('Check whether the task type meets specifications.')
+        return rnn
+
+
+class LSTNetGeneralEstimator(HyperEstimator):
+    """Time Series Forecast|Classification|Regression Estimator based on Hypernets.
+    Estimator: Long-and Short-term Time-series network (LSTNet).
+    Suitable for: The General Time Series Tasks.
+
+    Parameters
+    ----------
+    timestamp  : Str or None - Timestamp name, the forecast task must be given.
+    task       : Str - Support forecast, classification, and regression.
+                 default = 'univariate-forecast'.
+    rnn_type   : Str - Type of recurrent neural network,
+                 {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
+    skip_rnn_type : Str - Type of skip recurrent neural network,
+                 {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
+    cnn_filters: Positive Int - The dimensionality of the output space (i.e. the number of filters
+                 in the convolution), default = 16.
+    kernel_size: Positive Int - A single integer specifying the spatial dimensions of the filters,
+                 default = 1.
+    rnn_units  : Positive Int - The dimensionality of the output space for recurrent neural network,
+                 default = 16.
+    rnn_layers : Positive Int - The number of the layers for recurrent neural network,
+                 default = 1.
+    skip_rnn_units : Positive Int - The dimensionality of the output space for skip recurrent neural network,
+                 default = 16.
+    skip_rnn_layers : Positive Int - The number of the layers for skip recurrent neural network,
+                 default = 1.
+    skip_period: Positive Int or None - The length of skip for recurrent neural network,
+                 default = None.
+    ar_order   : Positive Int or None - The window size of the autoregressive component,
+                 default = None.
+    drop_rate  : Float between 0 and 1 - The rate of Dropout for neural nets,
+                 default = 0.
+    out_activation : Str - Forecast the task output activation function, optional {'linear', 'sigmoid'},
+                 default = 'linear'.
+    window     : Positive Int - Length of the time series sequences for a sample,
+                 default = 7.
+    horizon    : Positive Int - Length of the prediction horizon,
+                 default = 1.
+    forecast_length : Positive Int - Step of the forecast outputs,
+                 default = 1.
+    metrics    : Str - List of metrics to be evaluated by the model during training and testing,
+                 default = 'auto'.
+    monitor    : Str - Quality indicators monitored during neural network training.
+                 default = 'val_loss'.
+    optimizer  : Str or keras Instance - for example, 'adam', 'sgd', and so on.
+                 default = 'auto'.
+    learning_rate : Positive Float - The optimizer's learning rate,
+                 default = 0.001.
+    loss       : Str - Only 'log_gaussian_loss' is supported for DeepAR, which has been defined.
+                 default = 'log_gaussian_loss'.
+    reducelr_patience : Positive Int - The number of epochs with no improvement after which learning rate
+                 will be reduced, default = 5.
+    earlystop_patience : Positive Int - The number of epochs with no improvement after which training
+                 will be stopped, default = 5.
+    summary    : Bool - Whether to output network structure information,
+                 default = True.
+    batch_size : Int or None - Number of samples per gradient update,
+                 default = 32.
+    epochs     : Int - Number of epochs to train the model,
+                 default = 1.
+    verbose    : 0, 1, or 2. Verbosity mode.
+                 0 = silent, 1 = progress bar, 2 = one line per epoch.
+                 Note that the progress bar is not particularly useful when logged to a file, so verbose=2
+                 is recommended when not running interactively (eg, in a production environment).
+                 default = 1.
+    callbacks  : List of `keras.callbacks.Callback` instances.
+                 List of callbacks to apply during training.
+                 See `tf.keras.callbacks`. Note `tf.keras.callbacks.ProgbarLogger`
+                 and `tf.keras.callbacks.History` callbacks are created automatically
+                 and need not be passed into `model.fit`.
+                 `tf.keras.callbacks.ProgbarLogger` is created or not based on
+                 `verbose` argument to `model.fit`.
+                 default = None.
+    validation_split : Float between 0 and 1.
+                 Fraction of the training data to be used as validation data.
+                 The model will set apart this fraction of the training data, will not train on it, and will
+                 evaluate the loss and any model metrics on this data at the end of each epoch,
+                 default = 0.
+    shuffle    : Boolean (whether to shuffle the training data
+                 before each epoch) or str (for 'batch').
+    max_queue_size : Int - Used for generator or `keras.utils.Sequence`
+                 input only. Maximum size for the generator queue,
+                 default = 10.
+    workers    : Int - Used for generator or `keras.utils.Sequence` input
+                 only. Maximum number of processes to spin up when using process-based
+                 threading. If 0, will execute the generator on the main thread,
+                 default = 1.
+    use_multiprocessing : Bool. Used for generator or
+                 `keras.utils.Sequence` input only. If `True`, use process-based
+                 threading. Note that because this implementation relies on
+                 multiprocessing, you should not pass non-picklable arguments to
+                 the generator as they can't be passed easily to children processes.
+                 default = False.
+    """
+
+    def __init__(self, fit_kwargs=None, timestamp=None, task='univariate-forecast',
+                 rnn_type='gru', skip_rnn_type='gru',
+                 cnn_filters=16, kernel_size=1, rnn_units=16, rnn_layers=1,
+                 skip_rnn_units=16, skip_rnn_layers=1, skip_period=0, ar_order=0,
+                 drop_rate=0., out_activation='linear', window=7, horizon=1, forecast_length=1,
+                 metrics='auto', monitor='val_loss', optimizer='auto', learning_rate=0.001,
+                 loss='auto', reducelr_patience=5, earlystop_patience=10, summary=True,
+                 batch_size=None, epochs=1, verbose=1, callbacks=None,
+                 validation_split=0., shuffle=True, max_queue_size=10,
+                 workers=1, use_multiprocessing=False,
+                 space=None, name=None, **kwargs):
+
+        if task in consts.TASK_LIST_FORECAST and timestamp is None:
+            raise ValueError('Timestamp need to be given for forecast task.')
+        else:
+            kwargs['timestamp'] = timestamp
+        if task is not None:
+            kwargs['task'] = task
+        if rnn_type is not None and rnn_type != 'gru':
+            kwargs['rnn_type'] = rnn_type
+        if skip_rnn_type is not None and skip_rnn_type != 'gru':
+            kwargs['skip_rnn_type'] = skip_rnn_type
+        if cnn_filters is not None and cnn_filters != 16:
+            kwargs['cnn_filters'] = cnn_filters
+        if kernel_size is not None and kernel_size != 1:
+            kwargs['kernel_size'] = kernel_size
+        if rnn_units is not None and rnn_units != 16:
+            kwargs['rnn_units'] = rnn_units
+        if rnn_layers is not None and rnn_layers != 1:
+            kwargs['rnn_layers'] = rnn_layers
+        if skip_rnn_units is not None and skip_rnn_units != 16:
+            kwargs['skip_rnn_units'] = skip_rnn_units
+        if skip_rnn_layers is not None and skip_rnn_layers != 1:
+            kwargs['skip_rnn_layers'] = skip_rnn_layers
+        if skip_period is not None and skip_period != 0:
+            kwargs['skip_period'] = skip_period
+        if ar_order is not None and ar_order != 0:
+            kwargs['ar_order'] = ar_order
+        if drop_rate is not None and drop_rate != 0.:
+            kwargs['drop_rate'] = drop_rate
+        if out_activation is not None and out_activation != 'linear':
+            kwargs['out_activation'] = out_activation
+        if window is not None and window != 7:
+            kwargs['window'] = window
+        if horizon is not None and horizon != 1:
+            kwargs['horizon'] = horizon
+        if forecast_length is not None and forecast_length != 1:
+            kwargs['forecast_length'] = forecast_length
+        if metrics is not None and metrics != 'auto':
+            kwargs['metrics'] = metrics
+        if monitor is not None and monitor != 'val_loss':
+            kwargs['monitor'] = monitor
+        if optimizer is not None and optimizer != 'auto':
+            kwargs['optimizer'] = optimizer
+        if learning_rate is not None and learning_rate != 0.001:
+            kwargs['learning_rate'] = learning_rate
+        if loss is not None and loss != 'auto':
+            kwargs['loss'] = loss
+        if reducelr_patience is not None and reducelr_patience != 5:
+            kwargs['reducelr_patience'] = reducelr_patience
+        if earlystop_patience is not None and earlystop_patience != 10:
+            kwargs['earlystop_patience'] = earlystop_patience
+        if summary is not None and summary != True:
+            kwargs['summary'] = summary
+
+        if batch_size is not None:
+            kwargs['batch_size'] = batch_size
+        if epochs is not None and epochs != 1:
+            kwargs['epochs'] = epochs
+        if verbose is not None and verbose != 1:
+            kwargs['verbose'] = verbose
+        if callbacks is not None:
+            kwargs['callbacks'] = callbacks
+        if validation_split is not None and validation_split != 0.:
+            kwargs['validation_split'] = validation_split
+        if shuffle is not None and shuffle != True:
+            kwargs['shuffle'] = shuffle
+        if max_queue_size is not None and max_queue_size != 10:
+            kwargs['max_queue_size'] = max_queue_size
+        if workers is not None and workers != 1:
+            kwargs['workers'] = workers
+        if use_multiprocessing is not None and use_multiprocessing != False:
+            kwargs['use_multiprocessing'] = use_multiprocessing
+
+        HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
+
+    def _build_estimator(self, task, fit_kwargs, kwargs):
+        if task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION:
+            lstnet = LSTNetWrapper(fit_kwargs, **kwargs)
+        else:
+            raise ValueError('Check whether the task type meets specifications.')
+        return lstnet

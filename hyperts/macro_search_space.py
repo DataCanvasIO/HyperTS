@@ -11,7 +11,10 @@ from hyperts.estimators import (ProphetForecastEstimator,
                                 ARIMAForecastEstimator,
                                 VARForecastEstimator,
                                 TSFClassificationEstimator,
-                                KNNClassificationEstimator)
+                                KNNClassificationEstimator,
+                                DeepARForecastEstimator,
+                                HybirdRNNGeneralEstimator,
+                                LSTNetGeneralEstimator)
 
 from hypernets.tabular import column_selector as tcs
 from hypernets.core.ops import HyperInput, ModuleChoice, Optional
@@ -363,16 +366,247 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
                              f', or {consts.Task_MULTIVARIATE_MULTICALSS}.')
 
 
+class DLForecastSearchSpace(BaseSearchSpaceGenerator):
+
+    def __init__(self, task, timestamp=None, metrics=None,
+                 enable_deepar=True,
+                 enable_hybirdrnn=True,
+                 enable_lstnet=True,
+                 **kwargs):
+        kwargs['timestamp'] = timestamp
+        logger.info("Tip: If other parameters exist, set them directly. For example, covariables=['is_holiday'].")
+
+        super(DLForecastSearchSpace, self).__init__(task, **kwargs)
+
+        self.task = task
+        self.timestamp = timestamp
+        self.metrics = metrics
+        self.enable_deepar = enable_deepar
+        self.enable_hybirdrnn = enable_hybirdrnn
+        self.enable_lstnet = enable_lstnet
+
+    @property
+    def default_deepar_init_kwargs(self):
+        return {
+            'timestamp': self.timestamp,
+            'task': self.task,
+            'metrics': self.metrics,
+            'reducelr_patience': 5,
+            'earlystop_patience': 10,
+            'summary': True,
+
+            'rnn_type': Choice(['simple_rnn', 'gru', 'lstm']),
+            'rnn_units': Choice([8, 16, 32, 64, 128]),
+            'rnn_layers': Choice([1, 2, 3]),
+            'drop_rate': Choice([0., 0.1, 0.2]),
+            'window': Choice([3, 7, 12, 24, 48]),
+
+            'y_log': Choice(['logx', 'log-none']),
+            'y_scale': Choice(['min_max', 'max_abs'])
+        }
+
+    @property
+    def default_deepar_fit_kwargs(self):
+        return {
+            'epochs': 60,
+            'batch_size': None,
+            'verbose': 1,
+        }
+
+    @property
+    def default_hybirdrnn_init_kwargs(self):
+        return {
+            'timestamp': self.timestamp,
+            'task': self.task,
+            'metrics': self.metrics,
+            'reducelr_patience': 5,
+            'earlystop_patience': 10,
+            'summary': True,
+
+            'rnn_type': Choice(['simple_rnn', 'gru', 'lstm']),
+            'rnn_units': Choice([8, 16, 32, 64, 128]),
+            'rnn_layers': Choice([1, 2, 3]),
+            'out_activation': Choice(['linear', 'sigmoid']),
+            'drop_rate': Choice([0., 0.1, 0.2]),
+            'window': Choice([3, 7, 12, 24, 48]),
+
+            'y_log': Choice(['logx', 'log-none']),
+            'y_scale': Choice(['min_max', 'max_abs'])
+        }
+
+    @property
+    def default_hybirdrnn_fit_kwargs(self):
+        return {
+            'epochs': 60,
+            'batch_size': None,
+            'verbose': 1,
+        }
+
+    @property
+    def default_lstnet_init_kwargs(self):
+        return {
+            'timestamp': self.timestamp,
+            'task': self.task,
+            'metrics': self.metrics,
+            'reducelr_patience': 5,
+            'earlystop_patience': 10,
+            'summary': True,
+
+            'rnn_type': Choice(['simple_rnn', 'gru', 'lstm']),
+            'skip_rnn_type': Choice(['simple_rnn', 'gru', 'lstm']),
+            'cnn_filters': Choice([8, 16, 32, 64, 128]),
+            'kernel_size': Choice([1, 3, 5]),
+            'rnn_units': Choice([8, 16, 32, 64, 128]),
+            'skip_rnn_units': Choice([8, 16, 32, 64]),
+            'rnn_layers': Choice([1, 2, 3]),
+            'skip_rnn_layers': Choice([1, 2, 3]),
+            'out_activation': Choice(['linear', 'sigmoid']),
+            'drop_rate': Choice([0., 0.1, 0.2]),
+            'window': Choice([12, 24, 48]),
+            'skip_period': Choice([3, 5, 7]),
+            'ar_order': Choice([1, 3, 5, 7]),
+
+            'y_log': Choice(['logx', 'log-none']),
+            'y_scale': Choice(['min_max', 'max_abs'])
+        }
+
+    @property
+    def default_lstnet_fit_kwargs(self):
+        return {
+            'epochs': 60,
+            'batch_size': None,
+            'verbose': 1,
+        }
+
+    @property
+    def estimators(self):
+        univar_containers = {}
+        multivar_containers = {}
+
+        if self.enable_deepar:
+            univar_containers['deepar'] = (
+                DeepARForecastEstimator, self.default_deepar_init_kwargs, self.default_deepar_fit_kwargs)
+        if self.enable_hybirdrnn:
+            univar_containers['hybirdrnn'] = (
+                HybirdRNNGeneralEstimator, self.default_hybirdrnn_init_kwargs, self.default_hybirdrnn_fit_kwargs)
+            multivar_containers['hybirdrnn'] = (
+                HybirdRNNGeneralEstimator, self.default_hybirdrnn_init_kwargs, self.default_hybirdrnn_fit_kwargs)
+        if self.enable_lstnet:
+            univar_containers['lstnet'] = (
+                LSTNetGeneralEstimator, self.default_lstnet_init_kwargs, self.default_lstnet_fit_kwargs)
+            multivar_containers['lstnet'] = (
+                LSTNetGeneralEstimator, self.default_lstnet_init_kwargs, self.default_lstnet_fit_kwargs)
+
+        if self.task == consts.Task_UNIVARIATE_FORECAST:
+            return univar_containers
+        elif self.task == consts.Task_MULTIVARIATE_FORECAST:
+            return multivar_containers
+        else:
+            raise ValueError(f'Incorrect task name, default {consts.Task_UNIVARIATE_FORECAST}'
+                             f' or {consts.Task_MULTIVARIATE_FORECAST}.')
+
+
+class DLClassificationSearchSpace(BaseSearchSpaceGenerator):
+
+    def __init__(self, task, timestamp=None, metrics=None,
+                 enable_hybirdrnn=True,
+                 enable_lstnet=True,
+                 **kwargs):
+        if hasattr(kwargs, 'covariables'):
+            kwargs.pop('covariables', None)
+        logger.info("Tip: If other parameters exist, set them directly. For example, n_estimators=200.")
+
+        super(DLClassificationSearchSpace, self).__init__(task, **kwargs)
+
+        self.task = task
+        self.timestamp = timestamp
+        self.metrics = metrics
+        self.enable_hybirdrnn = enable_hybirdrnn
+        self.enable_lstnet = enable_lstnet
+
+    @property
+    def default_hybirdrnn_init_kwargs(self):
+        return {
+            'timestamp': self.timestamp,
+            'task': self.task,
+            'metrics': self.metrics,
+            'reducelr_patience': 5,
+            'earlystop_patience': 10,
+            'summary': True,
+
+            'rnn_type': Choice(['simple_rnn', 'gru', 'lstm']),
+            'rnn_units': Choice([8, 16, 32, 64, 128]),
+            'rnn_layers': Choice([1, 2, 3]),
+            'drop_rate': Choice([0., 0.1, 0.2]),
+
+            'x_scale': Choice(['z_score', 'min_max', 'max_abs'])
+        }
+
+    @property
+    def default_hybirdrnn_fit_kwargs(self):
+        return {
+            'epochs': 60,
+            'batch_size': None,
+            'verbose': 1,
+        }
+
+    @property
+    def default_lstnet_init_kwargs(self):
+        return {
+            'timestamp': self.timestamp,
+            'task': self.task,
+            'metrics': self.metrics,
+            'reducelr_patience': 5,
+            'earlystop_patience': 10,
+            'summary': True,
+
+            'rnn_type': Choice(['simple_rnn', 'gru', 'lstm']),
+            'cnn_filters': Choice([8, 16, 32, 64, 128]),
+            'kernel_size': Choice([1, 3, 5]),
+            'rnn_units': Choice([8, 16, 32, 64, 128]),
+            'rnn_layers': Choice([1, 2, 3]),
+            'drop_rate': Choice([0., 0.1, 0.2]),
+
+            'x_scale': Choice(['z_score', 'min_max', 'max_abs'])
+        }
+
+    @property
+    def default_lstnet_fit_kwargs(self):
+        return {
+            'epochs': 60,
+            'batch_size': None,
+            'verbose': 1,
+        }
+
+    @property
+    def estimators(self):
+        containers = {}
+
+        if self.enable_hybirdrnn:
+            containers['hybirdrnn'] = (
+                HybirdRNNGeneralEstimator, self.default_hybirdrnn_init_kwargs, self.default_hybirdrnn_fit_kwargs)
+        if self.enable_lstnet:
+            containers['lstnet'] = (
+                LSTNetGeneralEstimator, self.default_lstnet_init_kwargs, self.default_lstnet_fit_kwargs)
+
+        if self.task in consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION:
+            return containers
+        else:
+            raise ValueError(f'Incorrect task name, default {consts.TASK_LIST_CLASSIFICATION}'
+                             f', or {consts.TASK_LIST_REGRESSION}.')
+
+
 stats_forecast_search_space = StatsForecastSearchSpace
 
 stats_classification_search_space = StatsClassificationSearchSpace
 
 stats_regression_search_space = None
 
-dl_univariate_forecast_search_space = None
-dl_multivariate_forecast_search_space = None
-dl_univariate_classification_search_space = None
-dl_multivariate_classification_search_space = None
+dl_forecast_search_space = DLForecastSearchSpace
+
+dl_classification_search_space = DLClassificationSearchSpace
+
+dl_regression_search_space = None
 
 
 if __name__ == '__main__':
