@@ -7,12 +7,14 @@ from hypernets.discriminators import make_discriminator
 from hypernets.experiment.cfg import ExperimentCfg as cfg
 from hypernets.utils import load_data, logging, isnotebook, load_module
 
-from hyperts.utils import consts
+from hyperts.utils._base import get_tool_box
 from hyperts.utils.metrics import metric_to_scorer
+from hyperts.utils import consts, tf_gpu, set_random_state
 from hyperts.hyper_ts import HyperTS as hyper_ts_cls
 from hyperts.framework.compete import TSCompeteExperiment
-from hyperts.macro_search_space import stats_forecast_search_space, stats_classification_search_space
-from hyperts.utils._base import get_tool_box
+from hyperts.macro_search_space import (stats_forecast_search_space, stats_classification_search_space,
+                                        dl_forecast_search_space, dl_classification_search_space)
+
 
 logger = logging.get_logger(__name__)
 
@@ -37,7 +39,10 @@ def make_experiment(train_data,
                     optimize_direction=None,
                     discriminator=None,
                     hyper_model_options=None,
+                    dl_gpu_usage_strategy=0,
+                    dl_memory_limit=2048,
                     log_level='info',
+                    random_state=None,
                     **kwargs):
     """
     Parameters
@@ -72,7 +77,7 @@ def make_experiment(train_data,
 
         return searcher
 
-    def default_search_space(mode, task, search_pace, timestamp=None, covariables=None):
+    def default_search_space(mode, task, search_pace=None, timestamp=None, metrics=None, covariables=None):
         if search_pace is not None:
             return search_pace
         if mode == consts.Mode_STATS and task in consts.TASK_LIST_FORECAST:
@@ -82,9 +87,9 @@ def make_experiment(train_data,
         elif mode == consts.Mode_STATS and task in consts.TASK_LIST_REGRESSION:
             search_pace = None
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_FORECAST:
-            search_pace = None
+            search_pace = dl_forecast_search_space(task=task, timestamp=timestamp, metrics=metrics, covariables=covariables)
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_CLASSIFICATION:
-            search_pace = None
+            search_pace = dl_classification_search_space(task=task, timestamp=timestamp, metrics=metrics)
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_REGRESSION:
             search_pace = None
         elif mode == consts.Mode_NAS and task in consts.TASK_LIST_FORECAST:
@@ -141,9 +146,27 @@ def make_experiment(train_data,
 
     kwargs = kwargs.copy()
 
+    # Set Log Level
     if log_level is None:
         log_level = logging.WARN
     logging.set_level(log_level)
+
+    # Set Random State
+    if random_state is not None:
+        set_random_state(seed=random_state, mode=mode)
+
+    # Set GPU Usage Strategy for DL Mode
+    if mode == consts.Mode_DL:
+        if dl_gpu_usage_strategy == 0:
+            import os
+            os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+        elif dl_gpu_usage_strategy == 1:
+            tf_gpu.set_memory_growth()
+        elif dl_gpu_usage_strategy == 2:
+            tf_gpu.set_memory_limit(limit=dl_memory_limit)
+        else:
+            raise ValueError(f'The GPU strategy is not supported. '
+                             f'Default [0:cpu | 1:gpu-memory growth | 2: gpu-memory limit].')
 
     # Data Checking
     train_data, eval_data = [load_data(data) if data is not None else None for data in (train_data, eval_data)]
@@ -244,12 +267,12 @@ def make_experiment(train_data,
 
     if hyper_model_options is None:
         hyper_model_options = {}
-    hyper_model = hyper_ts_cls(searcher, reward_metric=reward_metric, task=task, callbacks=search_callbacks,
+    hyper_model = hyper_ts_cls(searcher, mode=mode, reward_metric=reward_metric, task=task, callbacks=search_callbacks,
                                discriminator=discriminator, **hyper_model_options)
 
     experiment = TSCompeteExperiment(hyper_model, X_train=X_train, y_train=y_train, X_eval=X_eval, y_eval=y_eval,
-                                     timestamp_col=timestamp, covariate_cols=covariables, log_level=log_level,
-                                     task=task, id=id, callbacks=callbacks, scorer=scorer, **kwargs)
+                    timestamp_col=timestamp, covariate_cols=covariables, log_level=log_level,random_state=random_state,
+                    task=task, id=id, callbacks=callbacks, scorer=scorer, **kwargs)
 
     return experiment
 

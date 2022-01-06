@@ -18,3 +18,17 @@ try:
     register_tstoolbox(TSCumlToolBox, None)
 except ImportError:
     print("Import TSCumlToolBox Error")
+
+
+def set_random_state(seed=9527, mode=consts.Mode_STATS):
+    import os, random
+    import numpy as np
+
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    os.environ['TF_DETERMINISTIC_OPS'] = '0'
+    np.random.seed(seed)
+
+    if mode != consts.Mode_DL:
+        import tensorflow as tf
+        tf.random.set_seed(seed)
