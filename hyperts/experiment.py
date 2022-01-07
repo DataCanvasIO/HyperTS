@@ -2,6 +2,8 @@
 """
 
 """
+import pandas as pd
+
 from hypernets.searchers import make_searcher
 from hypernets.discriminators import make_discriminator
 from hypernets.experiment.cfg import ExperimentCfg as cfg
@@ -47,12 +49,100 @@ def make_experiment(train_data,
     """
     Parameters
     ----------
+    train_data : str, Pandas or Dask or Cudf DataFrame.
+        Feature data for training with target column.
+        For str, it's should be the data path in file system, will be loaded as pnadas Dataframe.
+        we'll detect data format from this path (only .csv and .parquet are supported now).
+
+    task : str or None, (default=None)
+        Task type(*binary*, *multiclass* or *regression*).
+        If None, inference the type of task automatically
+
+    eval_data : str, Pandas or Dask or Cudf DataFrame, optional
+        Feature data for evaluation, should be None or have the same python type with 'train_data'.
+    mode:
+
+    target : str, optional
+        Target feature name for training, which must be one of the drain_data columns, default is 'y'.
+
+    id : str or None, (default=None)
+        The experiment id.
+    callbacks: list of ExperimentCallback, optional
+        ExperimentCallback list.
+    searcher : str, searcher class, search object, optional
+        The hypernets Searcher instance to explore search space, default is EvolutionSearcher instance.
+        For str, should be one of 'evolution', 'mcts', 'random'.
+        For class, should be one of EvolutionSearcher, MCTSSearcher, RandomSearcher, or subclass of hypernets Searcher.
+        For other, should be instance of hypernets Searcher.
+    searcher_options: dict, optional, default is None
+        The options to create searcher, is used if searcher is str.
+    search_space : callable, optional
+        Used to initialize searcher instance (if searcher is None, str or class).
+    search_callbacks
+        Hypernets search callbacks, used to initialize searcher instance (if searcher is None, str or class).
+        If log_level >= WARNNING, default is EarlyStoppingCallback only.
+        If log_level < WARNNING, defalult is EarlyStoppingCallback plus SummaryCallback.
+    early_stopping_rounds :　int, optional
+        Setting of EarlyStoppingCallback, is used if EarlyStoppingCallback instance not found from search_callbacks.
+        Set zero or None to disable it, default is 10.
+    early_stopping_time_limit : int, optional
+        Setting of EarlyStoppingCallback, is used if EarlyStoppingCallback instance not found from search_callbacks.
+        Set zero or None to disable it, default is 3600 seconds.
+    early_stopping_reward : float, optional
+        Setting of EarlyStoppingCallback, is used if EarlyStoppingCallback instance not found from search_callbacks.
+        Set zero or None to disable it, default is None.
+    reward_metric : str, callable, optional, (default 'accuracy' for binary/multiclass task, 'rmse' for regression task)
+        Hypernets search reward metric name or callable. Possible values:
+            - accuracy
+            - auc
+            - f1
+            - logloss
+            - mse
+            - mae
+            - msle
+            - precision
+            - rmse
+            - r2
+            - recall
+    optimize_direction : str, optional
+        Hypernets search reward metric direction, default is detected from reward_metric.
+    discriminator : instance of hypernets.discriminator.BaseDiscriminator, optional
+        Discriminator is used to determine whether to continue training
+    hyper_model_options: dict, optional
+        Options to initlize HyperModel except *reward_metric*, *task*, *callbacks*, *discriminator*.
+    evaluation_metrics: str, list, or None (default='auto'),
+        If *eval_data* is not None, it used to evaluate model with the metrics.
+        For str should be 'auto', it will selected metrics accord to machine learning task type.
+        For list should be metrics name.
+    evaluation_persist_prediction: bool (default=False)
+    evaluation_persist_prediction_dir: str or None (default='predction')
+        The dir to persist prediction, if exists will be overwritten
+    report_render: str, obj, optional, default is None
+        The experiment report render.
+        For str should be one of 'excel'
+        for obj should be instance ReportRender
+    report_render_options: dict, optional
+        The options to create render, is used if render is str.
+    experiment_cls: class, or None, (default=CompeteExperiment)
+        The experiment type, CompeteExperiment or it's subclass.
+    clear_cache: bool, optional, (default False)
+        Clear cache store before running the expeirment.
+    log_level : int, str, or None, (default=None),
+        Level of logging, possible values:
+            -logging.CRITICAL
+            -logging.FATAL
+            -logging.ERROR
+            -logging.WARNING
+            -logging.WARN
+            -logging.INFO
+            -logging.DEBUG
+            -logging.NOTSET
 
     kwargs:
-        Parameters to initialize experiment instance, refrence CompeteExperiment for more details.
+        Parameters to initialize experiment instance, refrence TSCompeteExperiment for more details.
     Returns
     -------
-    Runnable experiment object
+    Runnable experiment object.
 
     """
 
@@ -311,3 +401,107 @@ def process_test_data(test_df, timestamp=None, target=None, covariables=None, fr
         X_test = test_df
         y_test = X_test.pop(target)
         return X_test, y_test
+
+
+def make_evaluation(y_true, y_pred, y_proba=None, task=None, metrics=None):
+    from hyperts.utils.metrics import calc_score
+
+    pd.set_option('display.max_columns', 10,
+                  'display.max_rows', 10,
+                  'display.float_format', lambda x: '%.4f' % x)
+
+    if task in consts.TASK_LIST_FORECAST and metrics is None:
+        metrics = ['r2', 'mae', 'mse', 'rmse', 'mape', 'smape']
+    else:
+        metrics = ['accuracy', 'f1', 'precision', 'recall']
+
+    scores = calc_score(y_true, y_pred, y_proba=y_proba, metrics=metrics)
+
+    scores = pd.DataFrame.from_dict(scores, orient='index', columns=['Score'])
+    scores = scores.reset_index().rename(columns={'index': 'Metirc'})
+
+    return scores
+
+
+def forecast_plotly(test_df, y_pred, train_df=None, timestamp=None, covariables=None):
+    import plotly.graph_objects as go
+
+    X_test, y_test = process_test_data(test_df, timestamp=timestamp, covariables=covariables, impute=True)
+    if train_df is not None:
+        X_train, y_train = process_test_data(train_df, timestamp=timestamp, covariables=covariables, impute=True)
+        train_end_date = X_train[timestamp].iloc[-1]
+    else:
+        X_train, y_train, train_end_date = None, None, None
+
+    fig = go.Figure()
+
+    forecast = go.Scatter(
+        x=X_test[timestamp],
+        y=y_pred.squeeze(),
+        mode='lines',
+        line=dict(color='rgba(250, 43, 20, 0.7)'),
+        name='Forecast'
+    )
+    fig.add_trace(forecast)
+
+    actual = go.Scatter(
+        x=X_test[timestamp],
+        y=y_test.values.squeeze(),
+        mode='lines',
+        line=dict(color='rgba(0, 90, 181, 0.8)'),
+        name='Actual'
+    )
+    fig.add_trace(actual)
+
+    if train_end_date is not None:
+        train = go.Scatter(
+            x=X_train[timestamp],
+            y=y_train.squeeze(),
+            mode='lines',
+            line=dict(color='rgba(100, 100, 100, 0.7)'),
+            name='Historical'
+        )
+        fig.add_trace(train)
+
+        new_layout = dict(
+            shapes=[dict(
+                type="line",
+                xref="x",
+                yref="paper",
+                x0=train_end_date,
+                y0=0,
+                x1=train_end_date,
+                y1=1,
+                line=dict(
+                    color="rgba(0, 90, 181, 0.7)",
+                    width=1.0)
+            )],
+
+            annotations=[dict(
+                xref="x",
+                x=train_end_date,
+                yref="paper",
+                y=.95,
+                text="Train End Date",
+                showarrow=True,
+                arrowhead=0,
+                ax=-60,
+                ay=0
+            )]
+        )
+        fig.update_layout(new_layout)
+
+    layout = go.Layout(
+        xaxis=dict(title='Date'),
+        yaxis=dict(title=y_test.columns[0]),
+        title='Actual vs Forecast',
+        title_x=0.5,
+        showlegend=True,
+        legend={'traceorder': 'reversed'},
+        hovermode="x"
+    )
+    fig.update_layout(layout)
+
+    fig.update_xaxes(rangeslider_visible=True)
+
+    fig.show()

@@ -5,6 +5,7 @@
 import copy
 
 import numpy as np
+import pandas as pd
 
 from hypernets.core import set_random_state
 from hypernets.experiment.compete import SteppedExperiment, ExperimentStep, \
@@ -42,7 +43,7 @@ class TSFDataPreprocessStep(ExperimentStep):
         self.covariate_data_cleaner_args.update({'correct_object_dtype': False})
 
         # fitted
-        self.covariate_data_cleaner_ = None
+        self.covariate_data_cleaner_ = get_tool_box(pd.DataFrame).data_cleaner(**self.covariate_data_cleaner_args)
 
     def fit_transform(self, hyper_model, X_train, y_train, X_test=None, X_eval=None, y_eval=None, **kwargs):
         super().fit_transform(hyper_model, X_train, y_train, X_test=X_test, X_eval=X_eval, y_eval=y_eval)
