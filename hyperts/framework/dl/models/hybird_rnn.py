@@ -1,6 +1,5 @@
 # -*- coding:utf-8 -*-
 
-import time
 import tensorflow as tf
 import tensorflow.keras.backend as K
 
@@ -8,18 +7,34 @@ from hyperts.utils import consts
 from hyperts.framework.dl import layers
 from hyperts.framework.dl.models import Model, BaseDeepEstimator
 
-from hypernets.utils import logging
-logger = logging.get_logger(__name__)
-
 
 def HybirdRNNModel(task, window, rnn_type, continuous_columns, categorical_columns,
         rnn_units, rnn_layers, drop_rate=0., nb_outputs=1, nb_steps=1, out_activation='linear',
         summary=False, **kwargs):
-    """
+    """SimpleRNN|GRU|LSTM Model (HybirdRNN).
+
     Parameters
     ----------
-
-
+    task       : Str - Support forecast, classification, and regression.
+                 See hyperts.utils.consts for details.
+    window     : Positive Int - Length of the time series sequences for a sample.
+    rnn_type   : Str - Type of recurrent neural network,
+                 optional {'simple_rnn', 'gru', 'lstm}.
+    continuous_columns: CategoricalColumn class.
+                 Contains some information(name, column_names, input_dim, dtype,
+                 input_name) about continuous variables.
+    categorical_columns: CategoricalColumn class.
+                 Contains some information(name, vocabulary_size, embedding_dim,
+                 dtype, input_name) about categorical variables.
+    rnn_units  : Positive Int - The dimensionality of the output space for RNN.
+    rnn_layers : Positive Int - The number of the layers for RNN.
+    drop_rate  : Float between 0 and 1 - The rate of Dropout for neural nets.
+    nb_outputs : Int, default 1.
+    nb_steps   : Int, The step length of forecast, default 1.
+    out_activation : Str - Forecast the task output activation function,
+                 optional {'linear', 'sigmoid'}, default = 'linear'.
+    summary    : Bool - Whether to output network structure information,
+                 default = True.
     """
     K.clear_session()
     continuous_inputs, categorical_inputs = layers.build_input_head(window, continuous_columns, categorical_columns)
@@ -45,8 +60,52 @@ def HybirdRNNModel(task, window, rnn_type, continuous_columns, categorical_colum
 
 
 class HybirdRNN(BaseDeepEstimator):
-    """
+    """SimpleRNN|GRU|LSTM Estimator (HybirdRNN).
 
+    Parameters
+    ----------
+    task       : Str - Support forecast, classification, and regression.
+                 See hyperts.utils.consts for details.
+    rnn_type   : Str - Type of recurrent neural network,
+                 optional {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
+    rnn_units  : Positive Int - The dimensionality of the output space for recurrent neural network,
+                 default = 16.
+    rnn_layers : Positive Int - The number of the layers for recurrent neural network,
+                 default = 1.
+    drop_rate  : Float between 0 and 1 - The rate of Dropout for neural nets,
+                 default = 0.
+    out_activation : Str - Forecast the task output activation function, optional {'linear', 'sigmoid'},
+                 default = 'linear'.
+    timestamp  : Str or None - Timestamp name, the forecast task must be given,
+                 default None.
+    window     : Positive Int - Length of the time series sequences for a sample,
+                 default = 3.
+    horizon    : Positive Int - Length of the prediction horizon,
+                 default = 1.
+    forecast_length : Positive Int - Step of the forecast outputs,
+                 default = 1.
+    metrics    : Str - List of metrics to be evaluated by the model during training and testing,
+                 default = 'auto'.
+    monitor_metric : Str - Quality indicators monitored during neural network training.
+                 default = 'val_loss'.
+    optimizer  : Str or keras Instance - for example, 'adam', 'sgd', and so on.
+                 default = 'auto'.
+    learning_rate : Positive Float - The optimizer's learning rate,
+                 default = 0.001.
+    loss       : Str - Loss function, optional {'auto', 'adam', 'sgd'},
+                 default = 'auto'.
+    reducelr_patience : Positive Int - The number of epochs with no improvement after which learning rate
+                 will be reduced, default = 5.
+    earlystop_patience : Positive Int - The number of epochs with no improvement after which training
+                 will be stopped, default = 5.
+    summary    : Bool - Whether to output network structure information,
+                 default = True.
+    continuous_columns: CategoricalColumn class.
+                 Contains some information(name, column_names, input_dim, dtype,
+                 input_name) about continuous variables.
+    categorical_columns: CategoricalColumn class.
+                 Contains some information(name, vocabulary_size, embedding_dim,
+                 dtype, input_name) about categorical variables.
     """
 
     def __init__(self,
@@ -113,20 +172,19 @@ class HybirdRNN(BaseDeepEstimator):
                               **kwargs)
 
     def _fit(self, train_X, train_y, valid_X, valid_y, **kwargs):
-
+        train_ds = self._from_tensor_slices(X=train_X, y=train_y,
+                                            batch_size=kwargs['batch_size'],
+                                            shuffle=True)
+        valid_ds = self._from_tensor_slices(valid_X, valid_y,
+                                            batch_size=kwargs.pop('batch_size'),
+                                            shuffle=True)
         model = self._build_estimator()
 
         model = self._compile_model(model, self.optimizer, self.learning_rate)
 
-        history = model.fit(x=train_X, y=train_y, validation_data=(valid_X, valid_y), **kwargs)
-        return model, history
+        history = model.fit(train_ds, validation_data=valid_ds, **kwargs)
 
-    def predict(self, X, batch_size=128):
-        start = time.time()
-        probs = self.predict_proba(X, batch_size)
-        preds = self.proba2predict(probs, encode_to_label=True)
-        logger.info(f'predict taken {time.time() - start}s')
-        return preds
+        return model, history
 
     @tf.function(experimental_relax_shapes=True)
     def _predict(self, X):
