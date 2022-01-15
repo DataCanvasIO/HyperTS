@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.metrics import *
-from hypernets.utils import const
 from sklearn import metrics as sk_metrics
+from hypernets.utils import const
 
 greater_is_better = {
     'mse': False,
@@ -229,13 +229,20 @@ metric2scoring = {
     # ...
 }
 
+def _task_to_average(task):
+    if 'binaryclass' or 'binary' in task:
+        average = 'macro'
+    elif 'multiclass' in task:
+        average = 'binary'
+    else:
+        average = None
+    return average
+
 def metric_to_scorer(metric, task, pos_label=None, **options):
     if pos_label is not None:
         options['pos_label'] = pos_label
-    if 'binaryclass' in task:
-        options['average'] = 'binary'
-    elif 'multiclass' in task:
-        options['average'] = 'macro'
+    options['average'] = _task_to_average(task)
+
     if isinstance(metric, str) and isinstance(metric2scoring[metric], str):
         return get_scorer(metric2scoring[metric])
     elif isinstance(metric, str) and callable(metric2scoring[metric]):
@@ -289,25 +296,14 @@ def metric_to_scoring(metric, task=const.TASK_BINARY, pos_label=None):
 
     return scoring
 
-def _task_to_average(task):
-    if task == const.TASK_MULTICLASS:
-        average = 'macro'
-    else:
-        average = 'binary'
-    return average
-
-
-def calc_score(y_true, y_preds, y_proba=None, metrics=('accuracy',), task=const.TASK_BINARY, pos_label=1,
-               classes=None, average=None):
+def calc_score(y_true, y_preds, y_proba=None, metrics=('accuracy',), task=const.TASK_BINARY,
+               pos_label=1, classes=None, average=None):
     score = {}
     if y_proba is None:
         y_proba = y_preds
 
     if average is None:
-        if task == const.TASK_MULTICLASS:
-            average = 'macro'
-        else:
-            average = 'binary'
+        average = _task_to_average(task)
 
     recall_options = dict(average=average, labels=classes)
     if pos_label is not None:
@@ -323,7 +319,7 @@ def calc_score(y_true, y_preds, y_proba=None, metrics=('accuracy',), task=const.
             metric_lower = metric.lower()
             if metric_lower == 'auc':
                 if len(y_proba.shape) == 2:
-                    if task == const.TASK_MULTICLASS:
+                    if 'multiclass' in task:
                         score[metric] = roc_auc_score(y_true, y_proba, multi_class='ovo', labels=classes)
                     else:
                         score[metric] = roc_auc_score(y_true, y_proba[:, 1])
