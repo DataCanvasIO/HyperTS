@@ -536,7 +536,7 @@ class DLClassificationSearchSpace(BaseSearchSpaceGenerator):
 
             'rnn_type': Choice(['simple_rnn', 'gru', 'lstm']),
             'rnn_units': Choice([8, 16, 32, 64, 128]),
-            'rnn_layers': Choice([1, 2, 3]),
+            'rnn_layers': Choice([2, 3]),
             'drop_rate': Choice([0., 0.1, 0.2]),
 
             'x_scale': Choice(['z_score', 'min_max', 'max_abs'])
@@ -561,10 +561,10 @@ class DLClassificationSearchSpace(BaseSearchSpaceGenerator):
             'summary': True,
 
             'rnn_type': Choice(['simple_rnn', 'gru', 'lstm']),
-            'cnn_filters': Choice([8, 16, 32, 64, 128]),
-            'kernel_size': Choice([1, 3, 5]),
+            'cnn_filters': Choice([16, 32, 64, 128]),
+            'kernel_size': Choice([3, 5, 8]),
             'rnn_units': Choice([8, 16, 32, 64, 128]),
-            'rnn_layers': Choice([1, 2, 3]),
+            'rnn_layers': Choice([2, 3]),
             'drop_rate': Choice([0., 0.1, 0.2]),
 
             'x_scale': Choice(['z_score', 'min_max', 'max_abs'])
