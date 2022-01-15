@@ -7,3 +7,4 @@ pandas>=0.25.3
 scikit-learn>=0.22.1
 chinesecalendar>=1.5.1
 tensorflow>=2.4.0
+plotly==5.5.0
