@@ -1,6 +1,5 @@
 # -*- coding:utf-8 -*-
 
-import time
 import tensorflow as tf
 import tensorflow.keras.backend as K
 
@@ -8,17 +7,43 @@ from hyperts.utils import consts
 from hyperts.framework.dl import layers
 from hyperts.framework.dl.models import Model, BaseDeepEstimator
 
-from hypernets.utils import logging
-logger = logging.get_logger(__name__)
-
 
 def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categorical_columns,
         cnn_filters, kernel_size, rnn_units, rnn_layers, skip_rnn_units, skip_rnn_layers, skip_period,
         ar_order, drop_rate=0., nb_outputs=1, nb_steps=1, out_activation='linear', summary=False, **kwargs):
-    """
+    """Long-and Short-term Time-series Network Model (LSTNet).
+
     Parameters
     ----------
-
+    task       : Str - Support forecast, classification, and regression.
+                 See hyperts.utils.consts for details.
+    window     : Positive Int - Length of the time series sequences for a sample.
+    rnn_type   : Str - Type of recurrent neural network,
+                 optional {'simple_rnn', 'gru', 'lstm}.
+    skip_rnn_type : Str - Type of skip recurrent neural network,
+                 optional {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
+    continuous_columns: CategoricalColumn class.
+                 Contains some information(name, column_names, input_dim, dtype,
+                 input_name) about continuous variables.
+    categorical_columns: CategoricalColumn class.
+                 Contains some information(name, vocabulary_size, embedding_dim,
+                 dtype, input_name) about categorical variables.
+    cnn_filters: Positive Int - The dimensionality of the output space (i.e. the number of filters
+                 in the convolution).
+    kernel_size: Positive Int - A single integer specifying the spatial dimensions of the filters,
+    rnn_units  : Positive Int - The dimensionality of the output space for RNN.
+    rnn_layers : Positive Int - The number of the layers for RNN.
+    skip_rnn_units : Positive Int - The dimensionality of the output space for skip RNN.
+    skip_rnn_layers : Positive Int - The number of the layers for skip RNN.
+    skip_period: Positive Int or None - The length of skip for recurrent neural network.
+    ar_order   : Positive Int or None - The window size of the autoregressive component.
+    drop_rate  : Float between 0 and 1 - The rate of Dropout for neural nets.
+    nb_outputs : Int, default 1.
+    nb_steps   : Int, The step length of forecast, default 1.
+    out_activation : Str - Forecast the task output activation function,
+                 optional {'linear', 'sigmoid'}, default = 'linear'.
+    summary    : Bool - Whether to output network structure information,
+                 default = True.
 
     """
     K.clear_session()
@@ -39,8 +64,7 @@ def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categ
     r = layers.Dropout(rate=drop_rate, name=f'lambda_{rnn_type}_dropout')(r)
 
     if skip_period:
-        # pt = min(int((window - kernel_size + 1) / skip_period), 1)
-        pt = int((window - kernel_size + 1) / skip_period)
+        pt = min(int((window - kernel_size + 1) / skip_period), 1)
         s = layers.Lambda(lambda k: k[:, int(-pt*skip_period):, :], name=f'lambda_skip_{rnn_type}_0')(c)
         s = layers.Lambda(lambda k: K.reshape(k, (-1, pt, skip_period, cnn_filters)), name=f'lambda_skip_{rnn_type}_1')(s)
         s = layers.Lambda(lambda k: K.permute_dimensions(k, (0, 2, 1, 3)), name=f'lambda_skip_{rnn_type}_2')(s)
@@ -72,6 +96,57 @@ def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categ
 
 class LSTNet(BaseDeepEstimator):
     """
+
+    task       : Str - Support forecast, classification, and regression.
+                 See hyperts.utils.consts for details.
+    rnn_type   : Str - Type of recurrent neural network,
+                 optional {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
+    skip_rnn_type : Str - Type of skip recurrent neural network,
+                 optional {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
+    cnn_filters: Positive Int - The dimensionality of the output space (i.e. the number of filters
+                 in the convolution), default = 16.
+    kernel_size: Positive Int - A single integer specifying the spatial dimensions of the filters,
+                 default = 1.
+    rnn_units  : Positive Int - The dimensionality of the output space for recurrent neural network,
+                 default = 16.
+    rnn_layers : Positive Int - The number of the layers for recurrent neural network,
+                 default = 1.
+    skip_rnn_units : Positive Int - The dimensionality of the output space for skip recurrent neural network,
+                 default = 16.
+    skip_rnn_layers : Positive Int - The number of the layers for skip recurrent neural network,
+                 default = 1.
+    skip_period: Positive Int or None - The length of skip for recurrent neural network,
+                 default = None.
+    ar_order   : Positive Int or None - The window size of the autoregressive component,
+                 default = None.
+    drop_rate  : Float between 0 and 1 - The rate of Dropout for neural nets,
+                 default = 0.
+    out_activation : Str - Forecast the task output activation function, optional {'linear', 'sigmoid'},
+                 default = 'linear'.
+    timestamp  : Str or None - Timestamp name, the forecast task must be given,
+                 default None.
+    window     : Positive Int - Length of the time series sequences for a sample,
+                 default = 7.
+    horizon    : Positive Int - Length of the prediction horizon,
+                 default = 1.
+    forecast_length : Positive Int - Step of the forecast outputs,
+                 default = 1.
+    metrics    : Str - List of metrics to be evaluated by the model during training and testing,
+                 default = 'auto'.
+    monitor_metric : Str - Quality indicators monitored during neural network training.
+                 default = 'val_loss'.
+    optimizer  : Str or keras Instance - for example, 'adam', 'sgd', and so on.
+                 default = 'auto'.
+    learning_rate : Positive Float - The optimizer's learning rate,
+                 default = 0.001.
+    loss       : Str - Loss function, optional {'auto', 'adam', 'sgd'},
+                 default = 'auto'.
+    reducelr_patience : Positive Int - The number of epochs with no improvement after which learning rate
+                 will be reduced, default = 5.
+    earlystop_patience : Positive Int - The number of epochs with no improvement after which training
+                 will be stopped, default = 5.
+    summary    : Bool - Whether to output network structure information,
+                 default = True.
 
     """
 
@@ -160,19 +235,19 @@ class LSTNet(BaseDeepEstimator):
                            **kwargs)
 
     def _fit(self, train_X, train_y, valid_X, valid_y, **kwargs):
+        train_ds = self._from_tensor_slices(X=train_X, y=train_y,
+                                            batch_size=kwargs['batch_size'],
+                                            shuffle=True)
+        valid_ds = self._from_tensor_slices(valid_X, valid_y,
+                                            batch_size=kwargs.pop('batch_size'),
+                                            shuffle=True)
         model = self._build_estimator()
 
         model = self._compile_model(model, self.optimizer, self.learning_rate)
 
-        history = model.fit(x=train_X, y=train_y, validation_data=(valid_X, valid_y), **kwargs)
-        return model, history
+        history = model.fit(train_ds, validation_data=valid_ds, **kwargs)
 
-    def predict(self, X, batch_size=128):
-        start = time.time()
-        probs = self.predict_proba(X, batch_size)
-        preds = self.proba2predict(probs, encode_to_label=True)
-        logger.info(f'predict taken {time.time() - start}s')
-        return preds
+        return model, history
 
     @tf.function(experimental_relax_shapes=True)
     def _predict(self, X):
