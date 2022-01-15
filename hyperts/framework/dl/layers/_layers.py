@@ -1,5 +1,3 @@
-import math
-
 from hyperts.utils import consts
 from collections import OrderedDict
 
@@ -21,8 +19,6 @@ class MultiColEmbedding(layers.Layer):
     input_dims: Integer. A list or tuple. Sizes of the vocabulary for per columns.
     output_dims: A list or tuple. Dimension of the dense embedding.
     input_length: Integer. Length of input sequences.
-
-
     """
 
     def __init__(self, input_dims, output_dims, input_length=None, **kwargs):
@@ -143,18 +139,21 @@ class Highway(layers.Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
-def log_gaussian_loss(y_true, y_pred):
-    mu, sigma = tf.split(y_pred, 2, axis=-1)
-    return tf.reduce_mean(
-        tf.math.log(tf.math.sqrt(2 * math.pi))
-        + tf.math.log(sigma)
-        + tf.math.truediv(tf.math.square(y_true - mu), 2 * tf.math.square(sigma)))
-
-
 def build_input_head(window, continuous_columns, categorical_columns):
+    """Build the input head. An input variable may have two parts: continuous variables
+       and categorical variables.
+
+    Parameters
+    ----------
+    window: length of the time series sequences for a sample, i.e., timestamp.
+    continuous_columns: CategoricalColumn class.
+        Contains some information(name, column_names, input_dim, dtype,
+        input_name) about continuous variables.
+    categorical_columns: CategoricalColumn class.
+        Contains some information(name, vocabulary_size, embedding_dim,
+        dtype, input_name) about categorical variables.
     """
 
-    """
     continuous_inputs = OrderedDict()
     categorical_inputs = OrderedDict()
     for column in continuous_columns:
@@ -169,9 +168,17 @@ def build_input_head(window, continuous_columns, categorical_columns):
 
 
 def build_denses(continuous_columns, continuous_inputs, use_batchnormalization=False):
+    """Concatenate continuous inputs.
+
+    Parameters
+    ----------
+    continuous_columns: CategoricalColumn class.
+        Contains some information(name, column_names, input_dim, dtype,
+        input_name) about continuous variables.
+    continuous_inputs: list, tf.keras.layers.Input objects.
+    use_batchnormalization: bool, default False.
     """
 
-    """
     if len(continuous_inputs) > 1:
         dense_layer = layers.Concatenate(name='concat_continuous_inputs')(
             list(continuous_inputs.values()))
@@ -185,9 +192,16 @@ def build_denses(continuous_columns, continuous_inputs, use_batchnormalization=F
 
 
 def build_embeddings(categorical_columns, categorical_inputs):
+    """Build embeddings if there are categorical variables.
+
+    Parameters
+    ----------
+    categorical_columns: CategoricalColumn class.
+        Contains some information(name, vocabulary_size, embedding_dim,
+        dtype, input_name) about categorical variables.
+    categorical_inputs: list, tf.keras.layers.Input objects.
     """
 
-    """
     if 'all_categorical_vars' in categorical_inputs:
         input_layer = categorical_inputs['all_categorical_vars']
         input_dims = [column.vocabulary_size for column in categorical_columns]
@@ -200,9 +214,15 @@ def build_embeddings(categorical_columns, categorical_inputs):
 
 
 def build_output_tail(x, task, nb_outputs, nb_steps=1):
+    """Build the output tail.
+
+    Parameters
+    ----------
+    task: str, See hyperts.utils.consts for details.
+    nb_outputs: int, the number of output units.
+    nb_steps: int, the step length of forecast, default 1.
     """
 
-    """
     if task in consts.TASK_LIST_REGRESSION + consts.TASK_LIST_BINARYCLASS:
         outputs = layers.Dense(units=1, activation='sigmoid', name='dense_out')(x)
     elif task in consts.TASK_LIST_MULTICLASS:
@@ -216,37 +236,30 @@ def build_output_tail(x, task, nb_outputs, nb_steps=1):
 
 
 def rnn_forward(x, nb_units, nb_layers, rnn_type, name, drop_rate=0., i=0):
+    """Multi-RNN layers.
+
+    Parameters
+    ----------
+    nb_units: int, the dimensionality of the output space for
+        recurrent neural network.
+    nb_layers: int, the number of the layers for recurrent neural network.
+    rnn_type: str, type of recurrent neural network,
+        including {'simple_rnn', 'gru', 'lstm}.
+    name: recurrent neural network name.
+    drop_rate: float, the rate of Dropout for neural nets, default 0.
     """
 
-    """
-    if rnn_type == 'lstm':
-        for i in range(nb_layers - 1):
-            x = layers.LSTM(units=nb_units, return_sequences=True, name=f'{name}_{i}')(x)
-            x = layers.Dropout(rate=drop_rate, name=f'{name}_{i}_dropout')(x)
-        x = layers.LSTM(units=nb_units, return_sequences=False, name=f'{name}_{i + 1}')(x)
-    elif rnn_type == 'gru':
-        for i in range(nb_layers - 1):
-            x = layers.GRU(units=nb_units, return_sequences=True, name=f'{name}_{i}')(x)
-            x = layers.Dropout(rate=drop_rate, name=f'{name}_{i}_dropout')(x)
-        x = layers.GRU(units=nb_units, return_sequences=False, name=f'{name}_{i + 1}')(x)
-    elif rnn_type == 'simple_rnn':
-        for i in range(nb_layers - 1):
-            x = layers.SimpleRNN(units=nb_units, return_sequences=True, name=f'{name}_{i}')(x)
-            x = layers.Dropout(rate=drop_rate, name=f'{name}_{i}_dropout')(x)
-        x = layers.SimpleRNN(units=nb_units, return_sequences=False, name=f'{name}_{i + 1}')(x)
+    RnnCell = {'lstm': layers.LSTM, 'gru': layers.GRU, 'simple_rnn': layers.SimpleRNN}[rnn_type]
+    for i in range(nb_layers - 1):
+        x = RnnCell(units=nb_units, return_sequences=True, name=f'{name}_{i}')(x)
+        x = layers.Dropout(rate=drop_rate, name=f'{name}_{i}_dropout')(x)
+    x = RnnCell(units=nb_units, return_sequences=False, name=f'{name}_{i + 1}')(x)
     return x
 
-def register_custom_objects(objs_dict:dict):
-    for k,v in objs_dict.items():
-        if custom_objects.get(k) is None:
-            custom_objects[k] = v
-        else:
-            logger.error(f'`register_custom_objects` cannot register an existing key [{k}].')
 
-custom_objects = {
+layers_custom_objects = {
     'MultiColEmbedding': MultiColEmbedding,
     'WeightedAttention': WeightedAttention,
     'AutoRegressive': AutoRegressive,
     'Highway': Highway,
-    'log_gaussian_loss': log_gaussian_loss,
 }
