@@ -15,24 +15,34 @@ from hyperts.utils.transformers import (LogXplus1Transformer,
 
 
 class EstimatorWrapper:
+    """Abstract base class for time series estimator wrapper.
 
+    Notes
+    -------
+    X:  For classification and regeression tasks, X are the time series
+        variable features. For forecast task, X is the timestamps and
+        other covariables.
+    """
     def fit(self, X, y=None, **kwargs):
-        raise NotImplementedError
+        raise NotImplementedError(
+            'fit is a protected abstract method, it must be implemented.'
+        )
 
     def predict(self, X, **kwargs):
-        """
-        X:  For classification and regeression tasks, X are the time series
-            variable features. For forecast task, X is the timestamps and
-            other covariables.
-        """
-        raise NotImplementedError
+        raise NotImplementedError(
+            'predict is a protected abstract method, it must be implemented.'
+        )
 
     def predict_proba(self, X, **kwargs):
-        raise NotImplementedError
+        raise NotImplementedError(
+            'predict_proba is a protected abstract method, it must be implemented.'
+        )
 
 
 class WrapperMixin:
+    """Mixin class for all transformers in estimator wrapper.
 
+    """
     def __init__(self, fit_kwargs, **kwargs):
         if fit_kwargs.get('timestamp') is not None:
             self.timestamp = fit_kwargs.pop('timestamp')
@@ -170,6 +180,9 @@ class WrapperMixin:
 
 ##################################### Define Simple Time Series Estimator #####################################
 class SimpleTSEstimator(ModuleSpace):
+    """A Simple Time Series Estimator.
+
+    """
     def __init__(self, wrapper_cls, fit_kwargs=None, space=None, name=None, **hyperparams):
         ModuleSpace.__init__(self, space, name, **hyperparams)
         self.fit_kwargs = fit_kwargs if fit_kwargs is not None else {}
