@@ -19,12 +19,25 @@ from hypernets.dispatchers.in_process_dispatcher import InProcessDispatcher
 
 from hyperts.utils import consts
 from hyperts.utils.metrics import calc_score
-from hyperts.framework.dl.models import BaseDeepEstimator
 
 logger = logging.get_logger(__name__)
 
 
 class HyperTSEstimator(Estimator):
+    """A `Estimator` object about Time Series.
+
+    Parameters
+    ----------
+    task: 'str'.
+        Task could be 'univariate-forecast', 'multivariate-binaryclass', etc.
+        See consts.py for details.
+    mode: 'str'.
+        The hyperts can support three mode: 'dl', 'stats', and 'nas'.
+    space_sample: An instance class representing a hyperts estimator.
+    data_cleaner_params: 'dirt' or None, default None.
+        For details of parameters, refer to hypernets.tabular.data_cleaner.
+    """
+
     def __init__(self, task, mode, space_sample, data_cleaner_params=None):
         super(HyperTSEstimator, self).__init__(space_sample=space_sample, task=task)
         self.data_pipeline = None
@@ -193,6 +206,7 @@ class HyperTSEstimator(Estimator):
 
     @staticmethod
     def _load(model_file, mode):
+        from hyperts.framework.dl.models import BaseDeepEstimator
         if mode == consts.Mode_STATS:
             with fs.open(f'{model_file}', 'rb') as input:
                 estimator = pickle.load(input)
@@ -205,18 +219,47 @@ class HyperTSEstimator(Estimator):
 
 
 class HyperTS(HyperModel):
+    """A `HyperModel` object about Time Series.
+
+    Parameters
+    ----------
+    searcher: 'str', searcher class, search object.
+        Searchers come from hypernets, such as EvolutionSearcher, MCTSSearcher, or RandomSearcher, etc.
+        See hypernets.searchers for details.
+    task: 'str' or None, default None.
+        Task could be 'univariate-forecast', 'multivariate-forecast', and 'univariate-binaryclass', etc.
+        See consts.py for details.
+    mode: 'str', default 'stats'.
+        The hyperts can support three mode: 'dl', 'stats', and 'nas'.
+    dispatcher: class object or None, default None.
+        Dispatcher is used to provide different execution modes for search trials,
+        such as in process mode (`InProcessDispatcher`), distributed parallel mode (`DaskDispatcher`), etc.
+    callbacks: list of ExperimentCallback or None, default None.
+    reward_metric: 'str' or callable.
+        Default 'accuracy' for binary/multiclass task, 'rmse' for forecast/regression task.
+    discriminator: Instance of hypernets.discriminator.BaseDiscriminator, which is used to determine
+        whether to continue training. Default None.
+    data_cleaner_params: 'dirt' or None, default None.
+        For details of parameters, refer to hypernets.tabular.data_cleaner.
+    clear_cache: 'bool', default False.
+        Clear cache store before running the expeirment.
+
+    Returns
+    -------
+    hyper_ts_cls: subclass of HyperModel
+        Subclass of HyperModel to run trials within the experiment.
+    """
 
     def __init__(self,
                  searcher,
+                 task=None,
                  mode='stats',
                  dispatcher=None,
                  callbacks=None,
                  reward_metric='accuracy',
-                 task=None,
                  discriminator=None,
                  data_cleaner_params=None,
-                 cache_dir=None,
-                 clear_cache=None):
+                 clear_cache=False):
 
         self.mode = mode
         self.data_cleaner_params = data_cleaner_params

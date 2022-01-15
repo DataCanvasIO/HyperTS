@@ -13,8 +13,8 @@ class TSToolBox(ToolBox):
 
     @staticmethod
     def reduce_memory_usage(df: pd.DataFrame, verbose=True):
-        '''Reduce RAM Usage
-        '''
+        """Reduce RAM Usage
+        """
         numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
         start_mem = df.memory_usage().sum() / 1024 ** 2
         for col in df.columns:
@@ -44,21 +44,58 @@ class TSToolBox(ToolBox):
         return df
 
     @staticmethod
+    def DataFrame(data=None, index = None, columns = None, dtype = None, copy = False):
+        """Two-dimensional, size-mutable, potentially heterogeneous tabular data.
+
+        Parameters
+        ----------
+        data : ndarray (structured or homogeneous), Iterable, dict, or DataFrame
+            Dict can contain Series, arrays, constants, or list-like objects.
+
+            .. versionchanged:: 0.23.0
+            If data is a dict, column order follows insertion-order for
+            Python 3.6 and later.
+
+            .. versionchanged:: 0.25.0
+            If data is a list of dicts, column order follows insertion-order
+            for Python 3.6 and later.
+
+        index : Index or array-like
+            Index to use for resulting frame. Will default to RangeIndex if
+            no indexing information part of input data and no index provided.
+        columns : Index or array-like
+            Column labels to use for resulting frame. Will default to
+            RangeIndex (0, 1, 2, ..., n) if no column labels are provided.
+        dtype : dtype, default None
+            Data type to force. Only a single dtype is allowed. If None, infer.
+        copy : bool, default False
+            Copy data from inputs. Only affects DataFrame / 2d ndarray input.
+        """
+        return pd.DataFrame(data=data, index=index, columns=columns, dtype=dtype, copy=copy)
+
+    @staticmethod
     def infer_ts_freq(df: pd.DataFrame, ts_name: str = consts.TIMESTAMP):
+        """ Infer the frequency of the time series.
+        Parameters
+        ----------
+        ts_name: 'str', time column name.
+        """
         return _infer_ts_freq(df, ts_name)
 
     @staticmethod
     def multi_period_loop_imputer(df: pd.DataFrame, freq: str, offsets: list = None, max_loops: int = 10):
-        """Multiple Period Loop Impute NAN.
-        Args:
-            offsets: list
-            freq: str
-                'S' - second
-                'T' - minute
-                'H' - hour
-                'D' - day
-                'M' - month
-                'Y','A', A-DEC' - year
+        """Multiple period loop impute NAN.
+        Parameters
+        ----------
+        freq: str
+            'S' - second
+            'T' - minute
+            'H' - hour
+            'D' - day
+            'M' - month
+            'Y','A', A-DEC' - year
+        offsets: list, offset lag.
+        max_loops: 'int', maximum number of loop imputed.
         """
         if offsets == None and freq == 'S':
             offsets = _offsets_pool.minute
@@ -78,7 +115,7 @@ class TSToolBox(ToolBox):
         values = df.values.copy()
         loop, missing_rate = 0, 1
         while loop < max_loops and missing_rate > 0:
-            values, missing_rate = _inpute(values, offsets)
+            values, missing_rate = _impute(values, offsets)
             loop += 1
         values[np.where(np.isnan(values))] = np.nanmean(values)
 
@@ -87,6 +124,11 @@ class TSToolBox(ToolBox):
 
     @staticmethod
     def forward_period_imputer(df: pd.DataFrame, offset: int):
+        """ Forward period imputer.
+        Parameters
+        ----------
+        offsets: 'int', offset lag.
+        """
         fill_df = df.fillna(df.rolling(window=offset, min_periods=1).agg(lambda x: x.iloc[0]))
         return fill_df
 
@@ -109,7 +151,7 @@ class TSToolBox(ToolBox):
 
     @staticmethod
     def drop_duplicated_ts_rows(df: pd.DataFrame, ts_name: str = consts.TIMESTAMP, keep_data: str = 'last'):
-        """Returns without duplicate time series,  the last be keeped by default.
+        """Returns without duplicate time series, the last be keeped by default.
         Example:
             TimeStamp      y
             2021-03-01    3.4
@@ -165,9 +207,9 @@ class TSToolBox(ToolBox):
     @staticmethod
     def clip_to_outliers(df: pd.DataFrame, std_threshold: int = 3):
         """Replace outliers above threshold with that threshold.
-        Args:
-            df (pandas.DataFrame): DataFrame containing numeric data
-            std_threshold (float): The number of standard deviations away from mean to count as outlier.
+        Parameters
+        ----------
+        std_threshold: 'float', the number of standard deviations away from mean to count as outlier.
         """
         assert isinstance(df, pd.DataFrame)
         df_std = df.std(axis=0, skipna=True)
@@ -181,9 +223,9 @@ class TSToolBox(ToolBox):
     @staticmethod
     def nan_to_outliers(df: pd.DataFrame, std_threshold: int = 3):
         """Replace outliers above threshold with that threshold.
-        Args:
-            df (pandas.DataFrame): DataFrame containing numeric data
-            std_threshold (float): The number of standard deviations away from mean to count as outlier.
+        Parameters
+        ----------
+        std_threshold: 'float', the number of standard deviations away from mean to count as outlier.
         """
         assert isinstance(df, pd.DataFrame)
         df_outlier = df.copy()
@@ -196,6 +238,15 @@ class TSToolBox(ToolBox):
 
     @staticmethod
     def generate_ts_covariables(start_date, periods, freq='H'):
+        """Generate covariates about time.
+        Parameters
+        ----------
+        start_date: 'str' or datetime-like.
+            Left bound for generating dates.
+        periods: 'int'.
+            Number of periods to generate.
+        freq: str or DateOffset, default 'H'.
+        """
         dstime = pd.date_range(start_date, periods=periods, freq=freq)
         fds = pd.DataFrame(dstime, columns={'TimeStamp'})
         fds['Hour'] = fds['TimeStamp'].dt.hour
@@ -226,7 +277,9 @@ class TSToolBox(ToolBox):
     @staticmethod
     def infer_forecast_interval(train, forecast, n: int = 5, prediction_interval: float = 0.9):
         """A corruption of Bayes theorem.
-        It will be sensitive to the transformations of the data."""
+        It will be sensitive to the transformations of the data.
+
+        """
         prior_mu = train.mean()
         prior_sigma = train.std()
         from scipy.stats import norm
@@ -394,9 +447,10 @@ class TSToolBox(ToolBox):
     def list_diff(p: list, q: list):
         """Gets the difference set of two lists.
         Parameters
+        ----------
         p: list.
         q: list.
-        ----------
+
         Returns
         A list.
         -------
@@ -425,14 +479,24 @@ class _offsets_pool:
     month  = [-1, 1, -12 * 4, -12 * 3, -12 * 2, -12 * 1, 12 * 1, 12 * 2, 12 * 3, 12 * 4]
     year   = [-1, 1]
 
-def _infer_ts_freq(df: pd.DataFrame, ts_name: str = 'TimeStamp'):
+def _infer_ts_freq(df: pd.DataFrame, ts_name: str = consts.TIMESTAMP):
+    """ Infer the frequency of the time series.
+    Parameters
+    ----------
+    ts_name: 'str', time column name.
+    """
     dateindex = pd.DatetimeIndex(pd.to_datetime(df[ts_name]))
     for i in range(len(df)):
         freq = pd.infer_freq(dateindex[i:i + 3])
         if freq != None:
             return freq
 
-def _inpute(values, offsets):
+def _impute(values, offsets):
+    """ Index slide imputation.
+    Parameters
+    ----------
+    offsets: list, offset lag.
+    """
     indices0, indices1 = np.where(np.isnan(values))
     if len(indices0) > 0 and len(indices1) > 0:
         padding = []
@@ -451,9 +515,14 @@ def _inpute(values, offsets):
 
 def _get_holidays(year=None, include_weekends=True):
     """
-    :param year: which year
-    :param include_weekends: False for excluding Saturdays and Sundays
-    :return: list
+    Parameters
+    ----------
+    year: which year
+    include_weekends: False for excluding Saturdays and Sundays
+
+    Returns
+    -------
+    A list.
     """
     if not year:
         year = datetime.datetime.now().year

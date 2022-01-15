@@ -9,7 +9,9 @@ logger = logging.get_logger(__name__)
 
 
 class DeepARWrapper(EstimatorWrapper, WrapperMixin):
-
+    """
+    Adapt: univariate forecast.
+    """
     def __init__(self, fit_kwargs, **kwargs):
         super(DeepARWrapper, self).__init__(fit_kwargs, **kwargs)
         self.update_dl_kwargs()
@@ -26,11 +28,14 @@ class DeepARWrapper(EstimatorWrapper, WrapperMixin):
             preds = np.clip(preds, a_min=1e-6, a_max=abs(preds)) if self.is_scale is not None else preds
             return preds
         else:
-            return self.model.predict(X)
+            X = self.transform(X)
+            return self.model.predict_proba(X)
 
 
 class HybirdRNNWrapper(EstimatorWrapper, WrapperMixin):
-
+    """
+    Adapt: forecast, classification and regression.
+    """
     def __init__(self, fit_kwargs, **kwargs):
         super(HybirdRNNWrapper, self).__init__(fit_kwargs, **kwargs)
         self.update_dl_kwargs()
@@ -49,15 +54,22 @@ class HybirdRNNWrapper(EstimatorWrapper, WrapperMixin):
             preds = self.inverse_transform(preds)
             preds = np.clip(preds, a_min=1e-6, a_max=abs(preds)) if self.is_scale is not None else preds
             return preds
-        else:
+        elif self.init_kwargs.get('task') in consts.TASK_LIST_CLASSIFICATION:
+            X = self.transform(X)
             return self.model.predict(X)
+        else:
+            X = self.transform(X)
+            return self.model.predict_proba(X)
 
     def predict_proba(self, X, **kwargs):
+        X = self.transform(X)
         return self.model.predict_proba(X)
 
 
 class LSTNetWrapper(EstimatorWrapper, WrapperMixin):
-
+    """
+    Adapt: forecast, classification and regression.
+    """
     def __init__(self, fit_kwargs, **kwargs):
         super(LSTNetWrapper, self).__init__(fit_kwargs, **kwargs)
         self.update_dl_kwargs()
@@ -76,8 +88,13 @@ class LSTNetWrapper(EstimatorWrapper, WrapperMixin):
             preds = self.inverse_transform(preds)
             preds = np.clip(preds, a_min=1e-6, a_max=abs(preds)) if self.is_scale is not None else preds
             return preds
-        else:
+        elif self.init_kwargs.get('task') in consts.TASK_LIST_CLASSIFICATION:
+            X = self.transform(X)
             return self.model.predict(X)
+        else:
+            X = self.transform(X)
+            return self.model.predict_proba(X)
 
     def predict_proba(self, X, **kwargs):
+        X = self.transform(X)
         return self.model.predict_proba(X)

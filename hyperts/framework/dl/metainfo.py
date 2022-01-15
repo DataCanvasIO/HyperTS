@@ -50,6 +50,9 @@ class ContinuousColumn(
 
 
 class MetaPreprocessor:
+    """Abstract base class representing Meta Preprocessor.
+
+    """
     def __init__(self):
         self.labels_ = None
         self.classes_ = None
@@ -72,19 +75,29 @@ class MetaPreprocessor:
         return sklearn_ex
 
     def fit_transform(self, X, y, copy_data=True):
-        raise NotImplementedError
+        raise NotImplementedError(
+            'fit_transform is a protected abstract method, it must be implemented.'
+        )
 
     def transform_X(self, X, copy_data=True):
-        raise NotImplementedError
+        raise NotImplementedError(
+            'transform_X is a protected abstract method, it must be implemented.'
+        )
 
     def transform_y(self, y, copy_data=True):
-        raise NotImplementedError
+        raise NotImplementedError(
+            'transform_y is a protected abstract method, it must be implemented.'
+        )
 
     def transform(self, X, y, copy_data=True):
-        raise NotImplementedError
+        raise NotImplementedError(
+            'transform is a protected abstract method, it must be implemented.'
+        )
 
     def inverse_transform_y(self, y_indicator):
-        raise NotImplementedError
+        raise NotImplementedError(
+            'inverse_transform_y is a protected abstract method, it must be implemented.'
+        )
 
     def get_categorical_columns(self):
         return [c.name for c in self.categorical_columns]
@@ -128,7 +141,17 @@ class MetaPreprocessor:
 
 
 class MetaTSFprocessor(MetaPreprocessor):
+    """Mata Time Series Forecast Processor.
 
+    Parameters
+    ----------
+    timestamp: str, time column name (DataFrame).
+    embedding_output_dim: int, default 4.
+        Embed dimension when there are categorical variables.
+    auto_categorize: bool, default False.
+    auto_encode_label: bool, default True.
+    cat_remain_numeric: bool, default True.
+    """
     def __init__(self,
                  timestamp,
                  embedding_output_dim=4,
@@ -151,6 +174,9 @@ class MetaTSFprocessor(MetaPreprocessor):
         self.X_transformers = collections.OrderedDict()
 
     def _validate_fit_transform(self, X, y):
+        """Verify that the data conforms to fit_transform.
+
+        """
         if X is None:
             raise ValueError(f'X cannot be none.')
         if y is None:
@@ -170,6 +196,9 @@ class MetaTSFprocessor(MetaPreprocessor):
             raise ValueError(f"The number of samples of X and y must be the same. X.shape:{X.shape}, y.shape{y.shape}")
 
     def _concate_Xy(self, X, y):
+        """Concat X and y.
+
+        """
         self.covariable_columns = X.columns.tolist()
         self.covariable_columns.remove(self.timestamp)
         self.target_columns = y.columns.tolist()
@@ -179,12 +208,18 @@ class MetaTSFprocessor(MetaPreprocessor):
         return Xy
 
     def _decouple_Xy(self, Xy):
+        """Decouple X and y.
+
+        """
         Xy.insert(0, self.timestamp, self.time_variables)
         X = Xy[[self.timestamp] + self.covariable_columns]
         y = Xy[self.target_columns]
         return X, y
 
     def _prepare_columns(self, X):
+        """Checks for duplicate column names or reindexes object columns.
+
+        """
         if len(set(X.columns)) != len(list(X.columns)):
             cols = [item for item, count in collections.Counter(X.columns).items() if count > 1]
             raise ValueError(f'Columns with duplicate names in X: {cols}')
@@ -194,6 +229,9 @@ class MetaTSFprocessor(MetaPreprocessor):
         return X
 
     def _prepare_features(self, X):
+        """Identify the column type and transform.
+
+        """
         start = time.time()
 
         logger.info(f'Preparing features...')
@@ -234,6 +272,9 @@ class MetaTSFprocessor(MetaPreprocessor):
         return X
 
     def _categorical_encoding(self, X):
+        """Categorical variables encoding.
+
+        """
         start = time.time()
         logger.info('Categorical encoding...')
         cat_cols = self.get_categorical_columns()
@@ -244,6 +285,9 @@ class MetaTSFprocessor(MetaPreprocessor):
         return X
 
     def transform_X(self, X, copy_data=True):
+        """Transform X.
+
+        """
         start = time.time()
         logger.info("Transform [X]...")
         if copy_data:
@@ -256,6 +300,9 @@ class MetaTSFprocessor(MetaPreprocessor):
         return X_t
 
     def fit_transform(self, X, y, copy_data=True):
+        """Fit and Transform.
+
+        """
         start = time.time()
 
         self._validate_fit_transform(X, y)
@@ -284,6 +331,9 @@ class MetaTSFprocessor(MetaPreprocessor):
         return X, y
 
     def transform(self, X, y, copy_data=True):
+        """Transform.
+
+        """
         start = time.time()
         df = self._concate_Xy(X, y)
         df = self._prepare_columns(df)
@@ -302,7 +352,16 @@ class MetaTSFprocessor(MetaPreprocessor):
 
 
 class MetaTSCprocessor(MetaPreprocessor):
+    """Mata Time Series Classification or Regression Processor.
 
+    Parameters
+    ----------
+    embedding_output_dim: int, default 4.
+        Embed dimension when there are categorical variables.
+    auto_categorize: bool, default False.
+    auto_encode_label: bool, default True.
+    cat_remain_numeric: bool, default True.
+    """
     def __init__(self,
                  embedding_output_dim=4,
                  auto_categorize=False,
@@ -319,6 +378,9 @@ class MetaTSCprocessor(MetaPreprocessor):
         self.continuous_columns = None
 
     def _validate_fit_transform(self, X, y):
+        """Verify that the data conforms to fit_transform.
+
+        """
         if X is None:
             raise ValueError(f'X cannot be none.')
         if y is None:
@@ -338,6 +400,9 @@ class MetaTSCprocessor(MetaPreprocessor):
             raise ValueError(f"The number of samples of X and y must be the same. X.shape:{X.shape}, y.shape{y.shape}")
 
     def transform_X(self, X, copy_data=False):
+        """Transform X.
+
+        """
         tb = get_tool_box(X)
         logger.info("Transform [X]...")
         start = time.time()
@@ -349,10 +414,13 @@ class MetaTSCprocessor(MetaPreprocessor):
         return X
 
     def fit_transform_y(self, y):
+        """Fit and Transform y.
+        Transform ont hot encoding for multiclass.
+        """
         if y.dtype != 'float':
-            self.y_lable_encoder = CategoricalTransformer()
-            y = self.y_lable_encoder.fit_transform(y)
-            self.labels_ = self.y_lable_encoder.classes_
+            self.y_label_encoder = CategoricalTransformer()
+            y = self.y_label_encoder.fit_transform(y)
+            self.labels_ = self.y_label_encoder.classes_
             self.classes_ = len(self.labels_)
         else:
             self.labels_ = []
@@ -360,22 +428,31 @@ class MetaTSCprocessor(MetaPreprocessor):
         return y
 
     def transform_y(self, y, copy_data=False):
+        """Transform y.
+        Transform ont hot encoding for multiclass.
+        """
         logger.info("Transform [y]...")
         start = time.time()
         if copy_data:
             y = self._copy(y)
-        if self.y_lable_encoder is not None:
-            y = self.y_lable_encoder.transform(y)
+        if self.y_label_encoder is not None:
+            y = self.y_label_encoder.transform(y)
         logger.info(f'transform_y taken {time.time() - start}s')
         return y
 
     def inverse_transform_y(self, y_indicator):
-        if self.y_lable_encoder is not None:
-            return self.y_lable_encoder.inverse_transform(y_indicator)
+        """Inverse origonal target format.
+
+        """
+        if self.y_label_encoder is not None:
+            return self.y_label_encoder.inverse_transform(y_indicator)
         else:
             return y_indicator
 
     def _prepare_features(self, X):
+        """Identify the column type and transform.
+
+        """
         start = time.time()
 
         logger.info(f'Preparing features...')
@@ -409,6 +486,9 @@ class MetaTSCprocessor(MetaPreprocessor):
         return X
 
     def fit_transform(self, X, y, copy_data=True):
+        """Fit and Transform.
+
+        """
         start = time.time()
 
         self._validate_fit_transform(X, y)
@@ -428,6 +508,9 @@ class MetaTSCprocessor(MetaPreprocessor):
         return X, y
 
     def transform(self, X, y, copy_data=True):
+        """Transform.
+
+        """
         start = time.time()
         X = self._prepare_features(X)
         X = self.transform_X(X, copy_data)

@@ -20,7 +20,9 @@ logger = logging.get_logger(__name__)
 
 ##################################### Define Statistic Model HyperEstimator #####################################
 class HyperEstimator(ModuleSpace):
+    """An interface class representing a hyperts estimator.
 
+    """
     def __init__(self, fit_kwargs=None, space=None, name=None, **hyperparams):
         ModuleSpace.__init__(self, space, name, **hyperparams)
         self.fit_kwargs = fit_kwargs if fit_kwargs is not None else {}
@@ -358,7 +360,7 @@ class DeepARForecastEstimator(HyperEstimator):
     task       : Str - Only 'univariate-forecast' is supported,
                  default = 'univariate-forecast'.
     rnn_type   : Str - Type of recurrent neural network,
-                 {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
+                 optional {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
     rnn_units  : Positive Int - The dimensionality of the output space for recurrent neural network,
                  default = 16.
     rnn_layers : Positive Int - The number of the layers for recurrent neural network,
@@ -504,7 +506,7 @@ class DeepARForecastEstimator(HyperEstimator):
 
 class HybirdRNNGeneralEstimator(HyperEstimator):
     """Time Series Forecast|Classification|Regression Estimator based on Hypernets.
-    Estimator: SimpleRNN|GRU|LSTM (DeepAR).
+    Estimator: SimpleRNN|GRU|LSTM (HybirdRNN).
     Suitable for: The General Time Series Tasks.
 
     Parameters
@@ -513,7 +515,7 @@ class HybirdRNNGeneralEstimator(HyperEstimator):
     task       : Str - Support forecast, classification, and regression.
                  default = 'univariate-forecast'.
     rnn_type   : Str - Type of recurrent neural network,
-                 {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
+                 optional {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
     rnn_units  : Positive Int - The dimensionality of the output space for recurrent neural network,
                  default = 16.
     rnn_layers : Positive Int - The number of the layers for recurrent neural network,
@@ -536,8 +538,8 @@ class HybirdRNNGeneralEstimator(HyperEstimator):
                  default = 'auto'.
     learning_rate : Positive Float - The optimizer's learning rate,
                  default = 0.001.
-    loss       : Str - Only 'log_gaussian_loss' is supported for DeepAR, which has been defined.
-                 default = 'log_gaussian_loss'.
+    loss       : Str - Loss function, optional {'auto', 'adam', 'sgd'},
+                 default = 'auto'.
     reducelr_patience : Positive Int - The number of epochs with no improvement after which learning rate
                  will be reduced, default = 5.
     earlystop_patience : Positive Int - The number of epochs with no improvement after which training
@@ -672,9 +674,9 @@ class LSTNetGeneralEstimator(HyperEstimator):
     task       : Str - Support forecast, classification, and regression.
                  default = 'univariate-forecast'.
     rnn_type   : Str - Type of recurrent neural network,
-                 {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
+                 optional {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
     skip_rnn_type : Str - Type of skip recurrent neural network,
-                 {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
+                 optional {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
     cnn_filters: Positive Int - The dimensionality of the output space (i.e. the number of filters
                  in the convolution), default = 16.
     kernel_size: Positive Int - A single integer specifying the spatial dimensions of the filters,
@@ -709,8 +711,8 @@ class LSTNetGeneralEstimator(HyperEstimator):
                  default = 'auto'.
     learning_rate : Positive Float - The optimizer's learning rate,
                  default = 0.001.
-    loss       : Str - Only 'log_gaussian_loss' is supported for DeepAR, which has been defined.
-                 default = 'log_gaussian_loss'.
+    loss       : Str - Loss function, optional {'auto', 'adam', 'sgd'},
+                 default = 'auto'.
     reducelr_patience : Positive Int - The number of epochs with no improvement after which learning rate
                  will be reduced, default = 5.
     earlystop_patience : Positive Int - The number of epochs with no improvement after which training

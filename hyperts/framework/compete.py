@@ -249,6 +249,9 @@ class TSCDataPreprocessStep(ExperimentStep):
 
 
 class TSSpaceSearchStep(ExperimentStep):
+    """Time Series Space Searching.
+
+    """
     def __init__(self, experiment, name):
         super().__init__(experiment, name)
         # fitted
@@ -306,10 +309,66 @@ class TSCompeteExperiment(SteppedExperiment):
 
     Parameters
     ----------
-
-
-
+    hyper_model: hypernets.model.HyperModel
+        A `HyperModel` instance
+    X_train: Pandas or Dask DataFrame
+        Feature data for training
+    y_train: Pandas or Dask Series
+        Target values for training
+    X_eval: (Pandas or Dask DataFrame) or None
+        (default=None), Feature data for evaluation
+    y_eval: (Pandas or Dask Series) or None, default None.
+        Target values for evaluation
+    X_test: (Pandas or Dask Series) or None, default None.
+        Unseen data without target values for semi-supervised learning
+    eval_size: 'float' or 'int', default None.
+        Only valid when ``X_eval`` or ``y_eval`` is None. If float, should be between 0.0 and 1.0 and represent
+        the proportion of the dataset to include in the eval split. If int, represents the absolute number of
+        test samples. If None, the value is set to the complement of the train size.
+    freq: 'str', DateOffset or None, default None.
+    target_col: 'str' or list[str], default None.
+    timestamp_col: list[str] or None, default None.
+    covariate_cols: list[str] or None, default None.
+    covariate_data_cleaner_args: 'dict' or None, default None. Suitable for forecast task.
+        Dictionary of parameters to initialize the `DataCleaner` instance. If None, `DataCleaner` will initialized
+        with default values.
+    data_cleaner_args: 'dict' or None, default None. Suitable for classification/regression tasks.
+        Dictionary of parameters to initialize the `DataCleaner` instance. If None, `DataCleaner` will initialized
+        with default values.
+    cv: 'bool', default False.
+        If True, use cross-validation instead of evaluation set reward to guide the search process.
+    num_folds: 'int', default 3.
+        Number of cross-validated folds, only valid when cv is true.
+    task: 'str' or None, default None.
+        Task could be 'univariate-forecast', 'multivariate-forecast', and 'univariate-binaryclass', etc.
+        See consts.py for details.
+    id: trial id, default None.
+    callbacks: list of callback functions or None, default None.
+        List of callback functions that are applied at each experiment step. See `hypernets.experiment.ExperimentCallback`
+        for more information.
+    log_level: 'int', 'str', or None, default None,
+        Level of logging, possible values:
+            -logging.CRITICAL
+            -logging.FATAL
+            -logging.ERROR
+            -logging.WARNING
+            -logging.WARN
+            -logging.INFO
+            -logging.DEBUG
+            -logging.NOTSET
+    random_state: 'int' or RandomState instance, default None.
+        Controls the shuffling applied to the data before applying the split.
+    scorer: 'str', callable or None, default None.
+        Scorer to used for feature importance evaluation and ensemble. It can be a single string
+        (see [get_scorer](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.get_scorer.html))
+        or a callable (see [make_scorer](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.make_scorer.html)).
+        Will be inferred from *hyper_model.reward_metric* if it's None.
+    ensemble_size: 'int', default 10.
+        The number of estimator to ensemble. During the AutoML process, a lot of models will be generated with different
+        preprocessing pipelines, different models, and different hyperparameters. Usually selecting some of the models
+        that perform well to ensemble can obtain better generalization ability than just selecting the single best model.
     """
+
     def __init__(self, hyper_model, X_train, y_train, X_eval=None, y_eval=None, X_test=None,
                  eval_size=consts.DEFAULT_EVAL_SIZE,
                  freq=None,
@@ -318,14 +377,15 @@ class TSCompeteExperiment(SteppedExperiment):
                  covariate_cols=None,
                  covariate_data_cleaner_args=None,
                  data_cleaner_args=None,
-                 cv=False, num_folds=3,
+                 cv=False,
+                 num_folds=3,
                  task=None,
                  id=None,
                  callbacks=None,
                  log_level=None,
                  random_state=None,
                  scorer=None,
-                 ensemble_size=3,
+                 ensemble_size=10,
                  **kwargs):
 
         if random_state is None:
