@@ -228,6 +228,16 @@ class MetaTSFprocessor(MetaPreprocessor):
             logger.warn(f"Column index of X has been converted: {X.columns}")
         return X
 
+    def _is_discrete(self, X):
+        """Determines whether data is a discrete value.
+
+        """
+        if not isinstance(X, np.ndarray):
+            X = np.array(X)
+        fractional_part = np.modf(X)[0]
+        is_discrete = sum(fractional_part == 0.) == len(X)
+        return is_discrete
+
     def _prepare_features(self, X):
         """Identify the column type and transform.
 
@@ -246,6 +256,8 @@ class MetaTSFprocessor(MetaPreprocessor):
             dtype = str(X[c].dtype)
 
             if dtype == 'object' or dtype == 'category' or dtype == 'bool':
+                cat_vars.append((c, dtype, nunique))
+            elif self._is_discrete(X[c]) and nunique < unique_upper_limit:
                 cat_vars.append((c, dtype, nunique))
             elif self.auto_categorize and nunique < unique_upper_limit:
                 convert2cat_vars.append((c, dtype, nunique))
