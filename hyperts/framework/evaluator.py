@@ -539,8 +539,8 @@ class HyperTS:
 
             upper_bound = go.Scatter(
                 name='Upper Bound',
-                x=X_forecast['TimeStamp'],
-                y=upper_forecast.values[:, 0],
+                x=X_forecast[self.timestamp],
+                y=upper_forecast.values[:, var_id],
                 line=dict(
                     width=0.0,
                     color="rgba(0, 90, 181, 0.5)"),

@@ -478,45 +478,101 @@ def make_evaluation(y_true, y_pred, y_proba=None, task=None, metrics=None):
     return scores
 
 
-def forecast_plotly(test_df, y_pred, train_df=None, timestamp=None, covariables=None):
+def plot(forecast,
+         actual=None,
+         train_df=None,
+         var_id=0,
+         timestamp=None,
+         covariables=None,
+         show_forecast_interval=True):
     import plotly.graph_objects as go
 
-    X_test, y_test = process_test_data(test_df, timestamp=timestamp, covariables=covariables, impute=True)
+    if covariables is not None:
+        excluded_variables = [timestamp] + covariables
+    else:
+        excluded_variables = [timestamp]
+
+    X_forecast, y_forecast = process_test_data(forecast, timestamp=timestamp, covariables=covariables)
+
+    tb = get_tool_box(forecast)
+    target = tb.list_diff(forecast.columns.tolist(), excluded_variables)
+
+    if isinstance(var_id, str) and var_id in target:
+        var_id = target.index(var_id)
+    elif isinstance(var_id, str) and var_id not in target:
+        raise ValueError(f'{var_id} might not be target columns {target}.')
+
+    if actual is not None:
+        X_test, y_test = process_test_data(actual, timestamp=timestamp, covariables=covariables)
+    else:
+        X_test, y_test = None, None
+
     if train_df is not None:
-        X_train, y_train = process_test_data(train_df, timestamp=timestamp, covariables=covariables, impute=True)
+        X_train, y_train = process_test_data(train_df, timestamp=timestamp, covariables=covariables)
         train_end_date = X_train[timestamp].iloc[-1]
     else:
         X_train, y_train, train_end_date = None, None, None
 
     fig = go.Figure()
 
-    forecast = go.Scatter(
-        x=X_test[timestamp],
-        y=y_pred.squeeze(),
+    if show_forecast_interval and train_df is not None:
+        tb_y = get_tool_box(y_train)
+        upper_forecast, lower_forecast = tb_y.infer_forecast_interval(y_train, y_forecast)
+
+        lower_bound = go.Scatter(
+            name='Lower Bound',
+            x=X_forecast[timestamp],
+            y=lower_forecast.values[:, var_id],
+            mode='lines',
+            line=dict(
+                width=0.0,
+                color="rgba(0, 90, 181, 0.5)"),
+            legendgroup="interval"
+        )
+        fig.add_trace(lower_bound)
+
+        upper_bound = go.Scatter(
+            name='Upper Bound',
+            x=X_forecast[timestamp],
+            y=upper_forecast.values[:, var_id],
+            line=dict(
+                width=0.0,
+                color="rgba(0, 90, 181, 0.5)"),
+            legendgroup="interval",
+            mode='lines',
+            fillcolor='rgba(0, 90, 181, 0.2)',
+            fill='tonexty'
+        )
+        fig.add_trace(upper_bound)
+
+    if actual is not None:
+        actual_trace = go.Scatter(
+            x=X_test[timestamp],
+            y=y_test.values[:, var_id],
+            mode='lines',
+            line=dict(color='rgba(250, 43, 20, 0.7)'),
+            name='Actual'
+        )
+        fig.add_trace(actual_trace)
+
+    forecast_trace = go.Scatter(
+        x=X_forecast[timestamp],
+        y=y_forecast.values[:, var_id],
         mode='lines',
-        line=dict(color='rgba(0, 90, 181, 0.8)'),
+        line=dict(color='rgba(31, 119, 180, 0.7)'),
         name='Forecast'
     )
-    fig.add_trace(forecast)
-
-    actual = go.Scatter(
-        x=X_test[timestamp],
-        y=y_test.values.squeeze(),
-        mode='lines',
-        line=dict(color='rgba(250, 43, 20, 0.7)'),
-        name='Actual'
-    )
-    fig.add_trace(actual)
+    fig.add_trace(forecast_trace)
 
     if train_end_date is not None:
-        train = go.Scatter(
+        history_trace = go.Scatter(
             x=X_train[timestamp],
-            y=y_train.squeeze(),
+            y=y_train.values[:, var_id],
             mode='lines',
             line=dict(color='rgba(100, 100, 100, 0.7)'),
             name='Historical'
         )
-        fig.add_trace(train)
+        fig.add_trace(history_trace)
 
         new_layout = dict(
             shapes=[dict(
@@ -528,7 +584,7 @@ def forecast_plotly(test_df, y_pred, train_df=None, timestamp=None, covariables=
                 x1=train_end_date,
                 y1=1,
                 line=dict(
-                    color="rgba(0, 90, 181, 0.7)",
+                    color="rgba(100, 100, 100, 0.7)",
                     width=1.0)
             )],
 
@@ -548,13 +604,13 @@ def forecast_plotly(test_df, y_pred, train_df=None, timestamp=None, covariables=
 
     layout = go.Layout(
         xaxis=dict(title='Date'),
-        yaxis=dict(title=y_test.columns[0]),
-        title='Actual vs Forecast',
+        yaxis=dict(title=y_forecast.columns[0]),
+        title='Actual vs Forecast' if actual is not None else 'Forecast Curve',
         title_x=0.5,
         showlegend=True,
         width=1000,
         legend={'traceorder': 'reversed'},
-        hovermode="x"
+        hovermode='x',
     )
     fig.update_layout(layout)
 
