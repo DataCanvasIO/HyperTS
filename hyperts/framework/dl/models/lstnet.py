@@ -95,8 +95,10 @@ def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categ
 
 
 class LSTNet(BaseDeepEstimator):
-    """
+    """Long-and Short-term Time-series Network Estimator (LSTNet).
 
+    Parameters
+    ----------
     task       : Str - Support forecast, classification, and regression.
                  See hyperts.utils.consts for details.
     rnn_type   : Str - Type of recurrent neural network,
