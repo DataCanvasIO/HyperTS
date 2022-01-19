@@ -403,7 +403,7 @@ class HyperTS:
             tb = get_tool_box(X)
             X = tb.smooth_missed_ts_rows(X, ts_name=self.timestamp, freq=self.freq)
             forecast = tb.DataFrame(y_pred, columns=self.target)
-            forecast = tb.concat_df([X, forecast], axis=1)
+            forecast = tb.concat_df([X[self.timestamp], forecast], axis=1)
             return forecast
         else:
             return y_pred
@@ -499,7 +499,7 @@ class HyperTS:
         elif isinstance(var_id, str) and var_id not in self.target:
             raise ValueError(f'{var_id} might not be target columns {self.target}.')
 
-        X_forecast, y_forecast = self.split_X_y(forecast)
+        X_forecast, y_forecast = forecast[[self.timestamp]], forecast[self.target]
 
         if actual is not None:
             X_test, y_test = self.split_X_y(actual)

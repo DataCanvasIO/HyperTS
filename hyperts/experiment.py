@@ -358,7 +358,8 @@ def make_experiment(train_data,
     # 9. Get scorer
     if kwargs.get('scorer') is None:
         greater_is_better = kwargs.pop('greater_is_better', None)
-        scorer = metric_to_scorer(reward_metric, task=task, pos_label=kwargs.get('pos_label'),greater_is_better=greater_is_better)
+        scorer = metric_to_scorer(reward_metric, task=task, pos_label=kwargs.get('pos_label'),
+                                  greater_is_better=greater_is_better)
     else:
         scorer = kwargs.pop('scorer')
         if isinstance(scorer, str):
@@ -458,7 +459,11 @@ def process_test_data(test_df, timestamp=None, target=None, covariables=None, fr
         return X_test, y_test
 
 
-def make_evaluation(y_true, y_pred, y_proba=None, task=None, metrics=None):
+def evaluate(y_true,
+             y_pred,
+             y_proba=None,
+             task=None,
+             metrics=None):
     from hyperts.utils.metrics import calc_score
 
     pd.set_option('display.max_columns', 10,
@@ -479,12 +484,13 @@ def make_evaluation(y_true, y_pred, y_proba=None, task=None, metrics=None):
 
 
 def plot(forecast,
-         actual=None,
-         train_df=None,
+         actual,
+         timestamp,
+         covariables,
          var_id=0,
-         timestamp=None,
-         covariables=None,
-         show_forecast_interval=True):
+         train_data=None,
+         show_forecast_interval=True,
+         include_history=True):
     import plotly.graph_objects as go
 
     if covariables is not None:
@@ -492,36 +498,33 @@ def plot(forecast,
     else:
         excluded_variables = [timestamp]
 
-    X_forecast, y_forecast = process_test_data(forecast, timestamp=timestamp, covariables=covariables)
-
-    tb = get_tool_box(forecast)
-    target = tb.list_diff(forecast.columns.tolist(), excluded_variables)
+    tb = get_tool_box(actual)
+    target = tb.list_diff(actual.columns.tolist(), excluded_variables)
 
     if isinstance(var_id, str) and var_id in target:
         var_id = target.index(var_id)
     elif isinstance(var_id, str) and var_id not in target:
         raise ValueError(f'{var_id} might not be target columns {target}.')
 
-    if actual is not None:
-        X_test, y_test = process_test_data(actual, timestamp=timestamp, covariables=covariables)
-    else:
-        X_test, y_test = None, None
+    X_test, y_test = process_test_data(actual, timestamp=timestamp, covariables=covariables)
 
-    if train_df is not None:
-        X_train, y_train = process_test_data(train_df, timestamp=timestamp, covariables=covariables)
+    forecast = pd.DataFrame(forecast, columns=target)
+
+    if train_data is not None:
+        X_train, y_train = process_test_data(train_data, timestamp=timestamp, covariables=covariables)
         train_end_date = X_train[timestamp].iloc[-1]
     else:
         X_train, y_train, train_end_date = None, None, None
 
     fig = go.Figure()
 
-    if show_forecast_interval and train_df is not None:
+    if show_forecast_interval and train_data is not None:
         tb_y = get_tool_box(y_train)
-        upper_forecast, lower_forecast = tb_y.infer_forecast_interval(y_train, y_forecast)
+        upper_forecast, lower_forecast = tb_y.infer_forecast_interval(y_train, forecast)
 
         lower_bound = go.Scatter(
             name='Lower Bound',
-            x=X_forecast[timestamp],
+            x=X_test[timestamp],
             y=lower_forecast.values[:, var_id],
             mode='lines',
             line=dict(
@@ -533,7 +536,7 @@ def plot(forecast,
 
         upper_bound = go.Scatter(
             name='Upper Bound',
-            x=X_forecast[timestamp],
+            x=X_test[timestamp],
             y=upper_forecast.values[:, var_id],
             line=dict(
                 width=0.0,
@@ -544,27 +547,28 @@ def plot(forecast,
             fill='tonexty'
         )
         fig.add_trace(upper_bound)
+    else:
+        print('Tip: train_data cannot be None when the forecast interval is shown.')
 
-    if actual is not None:
-        actual_trace = go.Scatter(
-            x=X_test[timestamp],
-            y=y_test.values[:, var_id],
-            mode='lines',
-            line=dict(color='rgba(250, 43, 20, 0.7)'),
-            name='Actual'
-        )
-        fig.add_trace(actual_trace)
+    actual_trace = go.Scatter(
+        x=X_test[timestamp],
+        y=y_test.values[:, var_id],
+        mode='lines',
+        line=dict(color='rgba(250, 43, 20, 0.7)'),
+        name='Actual'
+    )
+    fig.add_trace(actual_trace)
 
     forecast_trace = go.Scatter(
-        x=X_forecast[timestamp],
-        y=y_forecast.values[:, var_id],
+        x=X_test[timestamp],
+        y=forecast.values[:, var_id],
         mode='lines',
         line=dict(color='rgba(31, 119, 180, 0.7)'),
         name='Forecast'
     )
     fig.add_trace(forecast_trace)
 
-    if train_end_date is not None:
+    if include_history and train_end_date is not None:
         history_trace = go.Scatter(
             x=X_train[timestamp],
             y=y_train.values[:, var_id],
@@ -604,8 +608,8 @@ def plot(forecast,
 
     layout = go.Layout(
         xaxis=dict(title='Date'),
-        yaxis=dict(title=y_forecast.columns[0]),
-        title='Actual vs Forecast' if actual is not None else 'Forecast Curve',
+        yaxis=dict(title=forecast.columns[0]),
+        title='Actual vs Forecast',
         title_x=0.5,
         showlegend=True,
         width=1000,
