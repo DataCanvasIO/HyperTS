@@ -368,7 +368,7 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
 
 class DLForecastSearchSpace(BaseSearchSpaceGenerator):
 
-    def __init__(self, task, timestamp=None, metrics=None,
+    def __init__(self, task, timestamp=None, metrics=None, window=None,
                  enable_deepar=True,
                  enable_hybirdrnn=True,
                  enable_lstnet=True,
@@ -381,6 +381,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
         self.task = task
         self.timestamp = timestamp
         self.metrics = metrics
+        self.window = window
         self.enable_deepar = enable_deepar
         self.enable_hybirdrnn = enable_hybirdrnn
         self.enable_lstnet = enable_lstnet
@@ -399,7 +400,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'rnn_units': Choice([8, 16, 32, 64, 128]),
             'rnn_layers': Choice([1, 2, 3]),
             'drop_rate': Choice([0., 0.1, 0.2]),
-            'window': Choice([3, 7, 12, 24, 48]),
+            'window': self.window if self.window is not None else Choice([12, 24, 48]),
 
             'y_log': Choice(['logx', 'log-none']),
             'y_scale': Choice(['min_max', 'max_abs'])
@@ -428,7 +429,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'rnn_layers': Choice([1, 2, 3]),
             'out_activation': Choice(['linear', 'sigmoid']),
             'drop_rate': Choice([0., 0.1, 0.2]),
-            'window': Choice([3, 7, 12, 24, 48]),
+            'window': self.window if self.window is not None else Choice([12, 24, 48]),
 
             'y_log': Choice(['logx', 'log-none']),
             'y_scale': Choice(['min_max', 'max_abs'])
@@ -462,9 +463,9 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'skip_rnn_layers': Choice([1, 2, 3]),
             'out_activation': Choice(['linear', 'sigmoid']),
             'drop_rate': Choice([0., 0.1, 0.2]),
-            'window': Choice([12, 24, 48]),
             'skip_period': Choice([3, 5, 7]),
             'ar_order': Choice([1, 3, 5, 7]),
+            'window': self.window if self.window is not None else Choice([12, 24, 48]),
 
             'y_log': Choice(['logx', 'log-none']),
             'y_scale': Choice(['min_max', 'max_abs'])

@@ -1,6 +1,3 @@
-import math
-
-import tensorflow as tf
 from tensorflow.python.keras import losses
 from tensorflow.python.keras import backend as K
 from tensorflow.python.framework import ops
@@ -10,7 +7,7 @@ from tensorflow.python.util.tf_export import keras_export
 
 
 @keras_export('keras.losses.LogGaussianLoss')
-class LogGaussianLoss(losses.Loss):
+class LogGaussianLoss(losses.LossFunctionWrapper):
     """Log Gaussian loss, is applied to DeepAR.
 
     Args:
@@ -26,17 +23,18 @@ class LogGaussianLoss(losses.Loss):
     ```
     """
     def __init__(self, name='log_gaussian_loss', **kwargs):
-        super(LogGaussianLoss, self).__init__(name=name, **kwargs)
+        super(LogGaussianLoss, self).__init__(log_gaussian_error, name=name, **kwargs)
 
-    def call(self, y_true, y_pred):
-        mu, sigma = tf.split(y_pred, 2, axis=-1)
-        return tf.reduce_mean(
-            math_ops.log(tf.math.sqrt(2 * math.pi))
-            + math_ops.log(sigma)
-            + math_ops.truediv(tf.math.square(y_true - mu), 2 * math_ops.square(sigma)))
 
-    def get_config(self):
-        return super(LogGaussianLoss, self).get_config()
+@keras_export('keras.metrics.log_gaussian_error',
+              'keras.losses.log_gaussian_error')
+@dispatch.add_dispatch_support
+def log_gaussian_error(y_true, y_pred):
+    y_pred = ops.convert_to_tensor(y_pred)
+    y_true = math_ops.cast(y_true, y_pred.dtype)
+    diff = math_ops.abs(y_true - y_pred) / \
+           K.maximum((math_ops.abs(y_true) + math_ops.abs(y_pred)), K.epsilon())
+    return 2.0 * 100. * K.mean(diff, axis=-1)
 
 
 @keras_export('keras.metrics.symmetric_mean_absolute_percentage_error',
@@ -47,7 +45,7 @@ class LogGaussianLoss(losses.Loss):
               'keras.losses.SMAPE')
 @dispatch.add_dispatch_support
 def symmetric_mean_absolute_percentage_error(y_true, y_pred):
-    y_pred = ops.convert_to_tensor_v2_with_dispatch(y_pred)
+    y_pred = ops.convert_to_tensor(y_pred)
     y_true = math_ops.cast(y_true, y_pred.dtype)
     diff = math_ops.abs(y_true - y_pred) / \
            K.maximum((math_ops.abs(y_true) + math_ops.abs(y_pred)), K.epsilon())
@@ -56,5 +54,6 @@ def symmetric_mean_absolute_percentage_error(y_true, y_pred):
 
 losses_custom_objects = {
     'LogGaussianLoss': LogGaussianLoss,
+    'log_gaussian_error': log_gaussian_error,
     'symmetric_mean_absolute_percentage_error': symmetric_mean_absolute_percentage_error,
 }

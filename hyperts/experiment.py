@@ -2,8 +2,6 @@
 """
 
 """
-import pandas as pd
-
 from hypernets.searchers import make_searcher
 from hypernets.discriminators import make_discriminator
 from hypernets.experiment.cfg import ExperimentCfg as cfg
@@ -11,7 +9,6 @@ from hypernets.tabular.cache import clear as _clear_cache
 from hypernets.utils import logging, isnotebook, load_module
 
 from hyperts.utils._base import get_tool_box
-from hyperts.utils.metrics import metric_to_scorer
 from hyperts.utils import consts, set_random_state
 from hyperts.hyper_ts import HyperTS as hyper_ts_cls
 from hyperts.framework.compete import TSCompeteExperiment
@@ -25,9 +22,13 @@ def make_experiment(train_data,
                     eval_data=None,
                     test_data=None,
                     mode='stats',
+                    max_trials=3,
                     target=None,
+                    freq=None,
                     timestamp=None,
+                    timestamp_format='%Y-%m-%d %H:%M:%S',
                     covariables=None,
+                    forecast_window=None,
                     id=None,
                     searcher=None,
                     search_space=None,
@@ -61,13 +62,22 @@ def make_experiment(train_data,
         Feature data for evaluation, should be None or have the same python type with 'train_data'.
     test_data : str, Pandas or Dask or Cudf DataFrame, optional.
         Feature data for testing without target column, should be None or have the same python type with 'train_data'.
+    max_trials : int, maximum number of tests (model search), optional, (default=None).
     mode : str, default 'stats'. Optional {'stats', 'dl', 'nas'}, where,
         'stats' indicates that all the models selected in the execution experiment are statistical models.
         'dl' indicates that all the models selected in the execution experiment are deep learning models.
         'nas' indicates that the selected model of the execution experiment will be a deep network model
         for neural architecture search, which is not currently supported.
-    target : str, optional.
-        Target feature name for training, which must be one of the train_data columns.
+    target : str or list, optional.
+        Target feature name for training, which must be one of the train_data columns for classification[str],
+        regression[str] or unvariate forecast task [list]. For multivariate forecast task, it is multiple columns
+        of training data.
+    freq: 'str', DateOffset or None, default None.
+    timestamp : str, forecast task 'timestamp' cannot be None, (default=None).
+    timestamp_format : str, the date format of timestamp col for forecast task, (default='%Y-%m-%d %H:%M:%S').
+    covariables : list[n*str], if the data contains covariables, specify the covariable column names, (default=None).
+    forecast_window : int or None, When selecting 'dl' mode, you can specify window, which is the sequence
+        length of each sample, (default=None).
     id : str or None, (default=None).
         The experiment id.
     callbacks: list of ExperimentCallback, optional.
@@ -163,10 +173,9 @@ def make_experiment(train_data,
 
         return searcher
 
-    def default_search_space(task, mode=consts.Mode_STATS, search_pace=None,
-                             timestamp=None, covariables=None, metrics=None):
-        if search_pace is not None:
-            return search_pace
+    def default_search_space(task, search_space=None, metrics=None):
+        if search_space is not None:
+            return search_space
 
         if callable(metrics):
             metrics = [metrics.__name__]
@@ -177,10 +186,11 @@ def make_experiment(train_data,
 
         if mode == consts.Mode_STATS and task in consts.TASK_LIST_FORECAST:
             from hyperts.macro_search_space import StatsForecastSearchSpace
-            search_pace = StatsForecastSearchSpace(task=task, timestamp=timestamp,
-                                                   covariables=covariables)
+
+            search_pace = StatsForecastSearchSpace(task=task, timestamp=timestamp, covariables=covariables)
         elif mode == consts.Mode_STATS and task in consts.TASK_LIST_CLASSIFICATION:
             from hyperts.macro_search_space import StatsClassificationSearchSpace
+
             search_pace = StatsClassificationSearchSpace(task=task, timestamp=timestamp)
         elif mode == consts.Mode_STATS and task in consts.TASK_LIST_REGRESSION:
             raise NotImplementedError(
@@ -188,12 +198,13 @@ def make_experiment(train_data,
             )
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_FORECAST:
             from hyperts.macro_search_space import DLForecastSearchSpace
-            search_pace = DLForecastSearchSpace(task=task, timestamp=timestamp,
-                                                metrics=metrics, covariables=covariables)
+
+            search_pace = DLForecastSearchSpace(task=task, timestamp=timestamp, metrics=metrics,
+                                                window=forecast_window, covariables=covariables)
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_CLASSIFICATION:
             from hyperts.macro_search_space import DLClassificationSearchSpace
-            search_pace = DLClassificationSearchSpace(task=task, timestamp=timestamp,
-                                                      metrics=metrics)
+
+            search_pace = DLClassificationSearchSpace(task=task, timestamp=timestamp, metrics=metrics)
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_REGRESSION:
             raise NotImplementedError(
                 'DLRegressionSearchSpace is not implemented yet.'
@@ -261,7 +272,14 @@ def make_experiment(train_data,
         raise ValueError(f'Task naming paradigm:' 
                    f'{consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION}')
 
+    if task in consts.TASK_LIST_FORECAST and timestamp is None:
+        raise ValueError("Forecast task 'timestamp' cannot be None.")
+
+    if task in consts.TASK_LIST_FORECAST and covariables is None:
+        logger.warning('If the data contains covariables, specify the covariable column names.')
+
     kwargs = kwargs.copy()
+    kwargs['max_trials'] = max_trials
 
     # 2. Set Log Level
     if log_level is None:
@@ -300,6 +318,13 @@ def make_experiment(train_data,
         eval_data = tb.reset_index(eval_data) if eval_data is not None else None
         X_test = tb.reset_index(test_data) if test_data is not None else None
 
+    if task in consts.TASK_LIST_FORECAST:
+        train_data[timestamp] = tb.datetime_format(train_data[timestamp], format=timestamp_format)
+        if eval_data is not None:
+            eval_data[timestamp] = tb.datetime_format(eval_data[timestamp], format=timestamp_format)
+        if X_test is not None:
+            X_test[timestamp] = tb.datetime_format(X_test[timestamp], format=timestamp_format)
+
     # 6. Split X_train, y_train, X_eval, y_eval
     X_train, y_train, X_eval, y_eval = None, None, None, None
     if task in consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION:
@@ -315,6 +340,8 @@ def make_experiment(train_data,
         excluded_variables = [timestamp] + covariables if covariables is not None else [timestamp]
         if target is None:
             target = tb.list_diff(train_data.columns.tolist(), excluded_variables)
+        elif target is not None and isinstance(target, str):
+            target = [target]
         X_train, y_train = train_data[excluded_variables], train_data[target]
         if eval_data is not None:
             X_eval, y_eval = eval_data[excluded_variables], eval_data[target]
@@ -357,9 +384,8 @@ def make_experiment(train_data,
 
     # 9. Get scorer
     if kwargs.get('scorer') is None:
-        greater_is_better = kwargs.pop('greater_is_better', None)
-        scorer = metric_to_scorer(reward_metric, task=task, pos_label=kwargs.get('pos_label'),
-                                  greater_is_better=greater_is_better)
+        scorer = tb.metrics.metric_to_scorer(reward_metric, task=task, pos_label=kwargs.get('pos_label'),
+                                                                  optimize_direction=optimize_direction)
     else:
         scorer = kwargs.pop('scorer')
         if isinstance(scorer, str):
@@ -372,8 +398,7 @@ def make_experiment(train_data,
 
     # 11. Get search space
     if (searcher is None or isinstance(searcher, str)) and search_space is None:
-        search_space = default_search_space(task, mode, search_pace=search_space,
-            timestamp=timestamp, metrics=reward_metric, covariables=covariables)
+        search_space = default_search_space(task=task, search_space=search_space, metrics=reward_metric)
 
     # 12. Get searcher
     searcher = to_search_object(searcher, search_space)
@@ -402,13 +427,15 @@ def make_experiment(train_data,
     # 16. Define hyper_model
     if hyper_model_options is None:
         hyper_model_options = {}
-    hyper_model = hyper_ts_cls(searcher, mode=mode, reward_metric=reward_metric, task=task, callbacks=search_callbacks,
-                               discriminator=discriminator, **hyper_model_options)
+    hyper_model = hyper_ts_cls(searcher, mode=mode, reward_metric=reward_metric, task=task,
+            callbacks=search_callbacks, discriminator=discriminator, **hyper_model_options)
 
     # 17. Experiment
     experiment = TSCompeteExperiment(hyper_model, X_train=X_train, y_train=y_train, X_eval=X_eval, y_eval=y_eval,
-                    timestamp_col=timestamp, covariate_cols=covariables, log_level=log_level,random_state=random_state,
-                    task=task, id=id, callbacks=callbacks, scorer=scorer, **kwargs)
+                                     timestamp_col=timestamp, covariate_cols=covariables, target_col=target,
+                                     freq=freq, log_level=log_level, random_state=random_state,
+                                     optimize_direction=optimize_direction, scorer=scorer,
+                                     task=task, mode=mode, id=id, callbacks=callbacks, **kwargs)
 
     if clear_cache:
         _clear_cache()
@@ -421,203 +448,3 @@ def make_experiment(train_data,
                     f'test data:{test_shape}, eval data:{eval_shape}, target:{target}, task:{task}')
 
     return experiment
-
-
-def process_test_data(test_df, timestamp=None, target=None, covariables=None, freq=None, impute=False):
-    """
-    Notes: timestamp is required for prediction tasks,
-           target is required for classification and regression task.
-
-    Parameters
-    ----------
-
-
-    Returns
-    -------
-          X_test, y_test.
-    """
-
-    tb = get_tool_box(test_df)
-
-    if timestamp is not None:
-        excluded_variables = [timestamp] + covariables if covariables is not None else [timestamp]
-        if freq is None:
-            freq = tb.infer_ts_freq(test_df[[timestamp]], ts_name=timestamp)
-        if target is None:
-            target = tb.list_diff(test_df.columns.tolist(), excluded_variables)
-        test_df = tb.drop_duplicated_ts_rows(test_df, ts_name=timestamp)
-        test_df = tb.smooth_missed_ts_rows(test_df, ts_name=timestamp, freq=freq)
-
-        if impute is not False:
-            test_df[target] = tb.multi_period_loop_imputer(test_df[target], freq=freq)
-
-        X_test, y_test = test_df[excluded_variables], test_df[target]
-        return X_test, y_test
-    else:
-        X_test = test_df
-        y_test = X_test.pop(target)
-        return X_test, y_test
-
-
-def evaluate(y_true,
-             y_pred,
-             y_proba=None,
-             task=None,
-             metrics=None):
-    from hyperts.utils.metrics import calc_score
-
-    pd.set_option('display.max_columns', 10,
-                  'display.max_rows', 10,
-                  'display.float_format', lambda x: '%.4f' % x)
-
-    if task in consts.TASK_LIST_FORECAST and metrics is None:
-        metrics = ['mae', 'mse', 'rmse', 'mape', 'smape']
-    else:
-        metrics = ['accuracy', 'f1', 'precision', 'recall']
-
-    scores = calc_score(y_true, y_pred, y_proba=y_proba, metrics=metrics, task=task)
-
-    scores = pd.DataFrame.from_dict(scores, orient='index', columns=['Score'])
-    scores = scores.reset_index().rename(columns={'index': 'Metirc'})
-
-    return scores
-
-
-def plot(forecast,
-         actual,
-         timestamp,
-         covariables,
-         var_id=0,
-         train_data=None,
-         show_forecast_interval=True,
-         include_history=True):
-    import plotly.graph_objects as go
-
-    if covariables is not None:
-        excluded_variables = [timestamp] + covariables
-    else:
-        excluded_variables = [timestamp]
-
-    tb = get_tool_box(actual)
-    target = tb.list_diff(actual.columns.tolist(), excluded_variables)
-
-    if isinstance(var_id, str) and var_id in target:
-        var_id = target.index(var_id)
-    elif isinstance(var_id, str) and var_id not in target:
-        raise ValueError(f'{var_id} might not be target columns {target}.')
-
-    X_test, y_test = process_test_data(actual, timestamp=timestamp, covariables=covariables)
-
-    forecast = pd.DataFrame(forecast, columns=target)
-
-    if train_data is not None:
-        X_train, y_train = process_test_data(train_data, timestamp=timestamp, covariables=covariables)
-        train_end_date = X_train[timestamp].iloc[-1]
-    else:
-        X_train, y_train, train_end_date = None, None, None
-
-    fig = go.Figure()
-
-    if show_forecast_interval and train_data is not None:
-        tb_y = get_tool_box(y_train)
-        upper_forecast, lower_forecast = tb_y.infer_forecast_interval(y_train, forecast)
-
-        lower_bound = go.Scatter(
-            name='Lower Bound',
-            x=X_test[timestamp],
-            y=lower_forecast.values[:, var_id],
-            mode='lines',
-            line=dict(
-                width=0.0,
-                color="rgba(0, 90, 181, 0.5)"),
-            legendgroup="interval"
-        )
-        fig.add_trace(lower_bound)
-
-        upper_bound = go.Scatter(
-            name='Upper Bound',
-            x=X_test[timestamp],
-            y=upper_forecast.values[:, var_id],
-            line=dict(
-                width=0.0,
-                color="rgba(0, 90, 181, 0.5)"),
-            legendgroup="interval",
-            mode='lines',
-            fillcolor='rgba(0, 90, 181, 0.2)',
-            fill='tonexty'
-        )
-        fig.add_trace(upper_bound)
-    else:
-        print('Tip: train_data cannot be None when the forecast interval is shown.')
-
-    actual_trace = go.Scatter(
-        x=X_test[timestamp],
-        y=y_test.values[:, var_id],
-        mode='lines',
-        line=dict(color='rgba(250, 43, 20, 0.7)'),
-        name='Actual'
-    )
-    fig.add_trace(actual_trace)
-
-    forecast_trace = go.Scatter(
-        x=X_test[timestamp],
-        y=forecast.values[:, var_id],
-        mode='lines',
-        line=dict(color='rgba(31, 119, 180, 0.7)'),
-        name='Forecast'
-    )
-    fig.add_trace(forecast_trace)
-
-    if include_history and train_end_date is not None:
-        history_trace = go.Scatter(
-            x=X_train[timestamp],
-            y=y_train.values[:, var_id],
-            mode='lines',
-            line=dict(color='rgba(100, 100, 100, 0.7)'),
-            name='Historical'
-        )
-        fig.add_trace(history_trace)
-
-        new_layout = dict(
-            shapes=[dict(
-                type="line",
-                xref="x",
-                yref="paper",
-                x0=train_end_date,
-                y0=0,
-                x1=train_end_date,
-                y1=1,
-                line=dict(
-                    color="rgba(100, 100, 100, 0.7)",
-                    width=1.0)
-            )],
-
-            annotations=[dict(
-                xref="x",
-                x=train_end_date,
-                yref="paper",
-                y=.95,
-                text="Observed End Date",
-                showarrow=True,
-                arrowhead=0,
-                ax=-60,
-                ay=0
-            )]
-        )
-        fig.update_layout(new_layout)
-
-    layout = go.Layout(
-        xaxis=dict(title='Date'),
-        yaxis=dict(title=forecast.columns[0]),
-        title='Actual vs Forecast',
-        title_x=0.5,
-        showlegend=True,
-        width=1000,
-        legend={'traceorder': 'reversed'},
-        hovermode='x',
-    )
-    fig.update_layout(layout)
-
-    fig.update_xaxes(rangeslider_visible=True)
-
-    fig.show()

@@ -17,7 +17,7 @@ from hypernets.core.meta_learner import MetaLearner
 from hypernets.pipeline.base import ComposeTransformer
 from hypernets.dispatchers.in_process_dispatcher import InProcessDispatcher
 
-from hyperts.utils import consts
+from hyperts.utils import consts, get_tool_box
 from hyperts.utils.metrics import calc_score
 
 logger = logging.get_logger(__name__)
@@ -51,6 +51,7 @@ class HyperTSEstimator(Estimator):
         self.class_balancing = None
         self.classes_ = None
         self.pos_label = None
+        self.history_prior = None
         self.transients_ = {}
 
         self._build_model(space_sample)
@@ -115,6 +116,10 @@ class HyperTSEstimator(Estimator):
         else:
             X_transformed = X
         self.model.fit(X_transformed, y, **kwargs)
+
+        if self.task in consts.TASK_LIST_FORECAST:
+            tb = get_tool_box(y)
+            self.history_prior = tb.df_mean_std(y)
 
         if verbose > 0:
             logger.info(f'taken {time.time() - starttime}s')
@@ -187,10 +192,15 @@ class HyperTSEstimator(Estimator):
                 classification_type = 'binary'
             else:
                 classification_type = 'multiclass'
-            scores = calc_score(y, y_pred, y_proba, metrics=metrics, task=classification_type,
-                                pos_label=self.pos_label, classes=self.classes_)
+            scores = get_tool_box(X).metrics.calc_score(y, y_pred, y_proba,
+                                                        metrics=metrics,
+                                                        task=classification_type,
+                                                        pos_label=self.pos_label,
+                                                        classes=self.classes_)
         else:
-            scores = calc_score(y, y_pred, metrics=metrics, task=self.task)
+            scores = get_tool_box(X).metrics.calc_score(y, y_pred,
+                                                        metrics=metrics,
+                                                        task=self.task)
 
         return scores
 

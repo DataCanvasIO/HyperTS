@@ -235,7 +235,7 @@ def build_output_tail(x, task, nb_outputs, nb_steps=1):
     return outputs
 
 
-def rnn_forward(x, nb_units, nb_layers, rnn_type, name, drop_rate=0., i=0):
+def rnn_forward(x, nb_units, nb_layers, rnn_type, name, drop_rate=0., i=0, activation='tanh'):
     """Multi-RNN layers.
 
     Parameters
@@ -251,9 +251,9 @@ def rnn_forward(x, nb_units, nb_layers, rnn_type, name, drop_rate=0., i=0):
 
     RnnCell = {'lstm': layers.LSTM, 'gru': layers.GRU, 'simple_rnn': layers.SimpleRNN}[rnn_type]
     for i in range(nb_layers - 1):
-        x = RnnCell(units=nb_units, return_sequences=True, name=f'{name}_{i}')(x)
+        x = RnnCell(units=nb_units, activation=activation, return_sequences=True, name=f'{name}_{i}')(x)
         x = layers.Dropout(rate=drop_rate, name=f'{name}_{i}_dropout')(x)
-    x = RnnCell(units=nb_units, return_sequences=False, name=f'{name}_{i + 1}')(x)
+    x = RnnCell(units=nb_units, activation=activation, return_sequences=False, name=f'{name}_{i + 1}')(x)
     return x
 
 

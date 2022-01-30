@@ -12,8 +12,8 @@ from tensorflow.keras.models import save_model, load_model
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
 
 from hyperts.framework.dl import layers, losses, metrics
-from hyperts.framework.dl.timeseries import from_array_to_timeseries
-from hyperts.framework.dl.metainfo import MetaTSFprocessor, MetaTSCprocessor
+from hyperts.framework.dl.dl_utils.timeseries import from_array_to_timeseries
+from hyperts.framework.dl.dl_utils.metainfo import MetaTSFprocessor, MetaTSCprocessor
 
 from hyperts.utils import consts, get_tool_box
 
@@ -23,6 +23,7 @@ logger = logging.get_logger(__name__)
 
 import warnings
 warnings.filterwarnings("ignore")
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 
 class Metrics(collections.UserDict):
@@ -131,6 +132,7 @@ class BaseDeepEstimator(object):
         self.time_columns = None
         self.forecast_start = None
         self.model = None
+        self.mata = None
 
     def _build_estimator(self, **kwargs):
         """Build a time series deep neural net model.
@@ -181,7 +183,6 @@ class BaseDeepEstimator(object):
             initial_epoch=0,
             steps_per_epoch=None,
             validation_steps=None,
-            validation_batch_size=None,
             validation_freq=1,
             max_queue_size=10,
             workers=1,
@@ -306,12 +307,6 @@ class BaseDeepEstimator(object):
             the dataset will be consumed, the evaluation will start from the
             beginning of the dataset at each epoch. This ensures that the same
             validation samples are used every time.
-        validation_batch_size: Integer or `None`.
-            Number of samples per validation batch.
-            If unspecified, will default to `batch_size`.
-            Do not specify the `validation_batch_size` if your data is in the
-            form of datasets, generators, or `keras.utils.Sequence` instances
-            (since they generate batches).
         validation_freq: Only relevant if validation data is provided. Integer
             or `collections.abc.Container` instance (e.g. list, tuple, etc.).
             If an integer, specifies how many training epochs to run before a
@@ -353,6 +348,14 @@ class BaseDeepEstimator(object):
 
         if batch_size is None:
             batch_size = min(int(len(X) / 16), 128)
+        if steps_per_epoch is None:
+            steps_per_epoch = len(X) // batch_size - 1
+            if steps_per_epoch == 0:
+                steps_per_epoch = 1
+        if validation_steps is None:
+            validation_steps = len(X_val) // batch_size - 1
+            if validation_steps <= 1:
+                validation_steps = 1
 
         X_train, y_train = self._dataloader(self.task, X, y, self.window, self.horizon, self.forecast_length,
                                             is_train=True)
@@ -366,7 +369,6 @@ class BaseDeepEstimator(object):
                                    verbose=verbose, callbacks=callbacks, shuffle=shuffle, class_weight=class_weight,
                                    sample_weight=sample_weight,
                                    steps_per_epoch=steps_per_epoch, validation_steps=validation_steps,
-                                   validation_batch_size=validation_batch_size,
                                    validation_freq=validation_freq, max_queue_size=max_queue_size, workers=workers,
                                    use_multiprocessing=use_multiprocessing)
         self.model = model
@@ -410,7 +412,7 @@ class BaseDeepEstimator(object):
                     X_cat_cols.append(c)
                 else:
                     raise ValueError('Unknown column.')
-            X = X[X_cont_cols + X_cat_cols].values
+            X = X[X_cont_cols + X_cat_cols].values.astype(consts.DATATYPE_TENSOR_FLOAT)
 
         futures = []
         data = self.forecast_start.copy()
@@ -545,8 +547,8 @@ class BaseDeepEstimator(object):
             if self.metrics == 'auto':
                 self.metrics = ['auc']
         else:
-            print('Unsupport this task: {}, Apart from [multiclass, binary, \
-                    forecast, and regression].'.format(self.task))
+            logger.info('Unsupport this task: {}, Apart from [multiclass, binary, \
+                         forecast, and regression].'.format(self.task))
 
         loss = Losses()[self.loss]
         if set(self.metrics) < set(Metrics().keys()):
@@ -561,7 +563,7 @@ class BaseDeepEstimator(object):
 
         if optimizer == 'auto':
             optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, clipnorm=10.)
-            print("The optimizer is 'auto', default: Adam, learning rate=0.001.")
+            logger.info("The optimizer is 'auto', default: Adam, learning rate=0.001.")
         elif optimizer == consts.OptimizerADAM:
             optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, clipnorm=10.)
         elif optimizer == consts.OptimizerSGD:
@@ -601,7 +603,7 @@ class BaseDeepEstimator(object):
             categorical_length = len(self.mata.cat_column_names)
             column_names = self.mata.cont_column_names + self.mata.cat_column_names
             data = tb.concat_df([y, X], axis=1).drop([self.timestamp], axis=1)
-            data = tb.df_to_array(data[column_names])
+            data = tb.df_to_array(data[column_names]).astype(consts.DATATYPE_TENSOR_FLOAT)
             target_start = window - horizon + 1
             inputs = data[:-target_start]
             targets = data[target_start:]
@@ -627,11 +629,11 @@ class BaseDeepEstimator(object):
             if is_train:
                 tb = get_tool_box(X)
                 self.window = tb.get_shape(X)[1]
-            X_data = X
+            X_data = X.astype('float32')
             y_data = y
         return X_data, y_data
 
-    def _from_tensor_slices(self, X, y, batch_size, epochs=None, shuffle=False, drop_remainder=False):
+    def _from_tensor_slices(self, X, y, batch_size, epochs=None, shuffle=False, drop_remainder=True):
         """Creates a `Dataset` whose elements are slices of the given tensors.
 
         Returns
@@ -641,12 +643,12 @@ class BaseDeepEstimator(object):
         data = {}
         for c in self.continuous_columns:
             if isinstance(X, list):
-                data[c.name] = X[0].astype('float32')
+                data[c.name] = X[0].astype(consts.DATATYPE_TENSOR_FLOAT)
             else:
-                data[c.name] = X.astype('float32')
+                data[c.name] = X.astype(consts.DATATYPE_TENSOR_FLOAT)
 
         if self.categorical_columns is not None and len(self.categorical_columns) > 0:
-            data['input_categorical_vars_all'] = X[1].astype('float32')
+            data['input_categorical_vars_all'] = X[1].astype(consts.DATATYPE_TENSOR_FLOAT)
 
         dataset = tf.data.Dataset.from_tensor_slices((data, y))
 
@@ -656,7 +658,7 @@ class BaseDeepEstimator(object):
         if shuffle:
             dataset = dataset.shuffle(y.shape[0])
 
-        dataset = dataset.batch(batch_size, drop_remainder)
+        dataset = dataset.batch(batch_size, drop_remainder=drop_remainder and y.shape[0] >= batch_size)
         dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
 
         return dataset
@@ -740,6 +742,13 @@ class BaseDeepEstimator(object):
 
         """
         import h5py, io
+        try:
+            from tensorflow.python import keras
+            from hyperts.framework.dl.dl_utils.savemodels import compile_args_from_training_config
+            keras.saving.saving_utils.compile_args_from_training_config = compile_args_from_training_config
+        except:
+            raise ValueError('Perhaps updating version Tensorflow above 2.3.0 will solve the issue.')
+
         custom_objects = {}
         custom_objects.update(layers.layers_custom_objects)
         custom_objects.update(losses.losses_custom_objects)

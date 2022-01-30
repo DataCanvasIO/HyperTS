@@ -1,7 +1,7 @@
 from hyperts.datasets import load_network_traffic, load_arrow_head, load_basic_motions
 from hyperts.utils import consts, metrics
 from hyperts.utils._base import get_tool_box
-from hyperts.experiment import make_experiment, process_test_data
+from hyperts.experiment import make_experiment
 
 class Test_Experiment():
 
@@ -27,12 +27,12 @@ class Test_Experiment():
 
         model = exp.run(max_trials=3)
 
-        X_test, y_test = process_test_data(test_df, timestamp=timestamp, covariables=covariables, impute=True)
+        X_test, y_test = model.split_X_y(test_df.copy())
 
         y_pred = model.predict(X_test)
-        assert y_pred.shape == y_test.shape
-        score = metrics.mape(y_test, y_pred)
-        print('univariate_forecast mape: ', score)
+        assert y_pred.shape[0] == y_test.shape[0]
+        score = model.evaluate(y_test, y_pred)
+        print('univariate_forecast score: ', score)
 
     def test_multivariate_forecast(self):
         df = load_network_traffic()
@@ -56,12 +56,12 @@ class Test_Experiment():
 
         model = exp.run(max_trials=3)
 
-        X_test, y_test = process_test_data(test_df, timestamp=timestamp, covariables=covariables, impute=True)
+        X_test, y_test = model.split_X_y(test_df.copy())
 
         y_pred = model.predict(X_test)
-        assert y_pred.shape == y_test.shape
-        score = metrics.mape(y_test, y_pred)
-        print('multivariate_forecast mape: ', score)
+        assert y_pred.shape[0] == y_test.shape[0]
+        score = model.evaluate(y_test, y_pred)
+        print('multivariate_forecast score: ', score)
 
     def test_univariate_classification(self):
         df = load_arrow_head()
@@ -83,7 +83,7 @@ class Test_Experiment():
 
         model = exp.run(max_trials=3)
 
-        X_test, y_test = process_test_data(test_df, target=target)
+        X_test, y_test = model.split_X_y(test_df.copy())
 
         y_pred = model.predict(X_test)
 
@@ -112,7 +112,7 @@ class Test_Experiment():
 
         model = exp.run(max_trials=3)
 
-        X_test, y_test = process_test_data(test_df, target=target)
+        X_test, y_test = model.split_X_y(test_df.copy())
 
         y_pred = model.predict(X_test)
 

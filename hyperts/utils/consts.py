@@ -37,6 +37,7 @@ Mode_NAS                           = 'nas'
 DataType_INT                       = 'int'
 DataType_FLOAT                     = 'float'
 DataType_OBJECT                    = 'object'
+DATATYPE_TENSOR_FLOAT              = 'float32'
 
 StepName_DATA_PREPROCESSING        = 'data_preprocessing'
 StepName_SPACE_SEARCHING           = 'space_searching'

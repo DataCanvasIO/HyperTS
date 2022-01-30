@@ -4,8 +4,7 @@ from hypernets.core.search_space import HyperSpace, Choice
 from hypernets.searchers.random_searcher import RandomSearcher
 
 from hyperts.hyper_ts import HyperTS
-from hyperts.utils import consts
-from hyperts.utils._base import get_tool_box
+from hyperts.utils import consts, get_tool_box
 from hyperts.datasets import load_random_univariate_forecast_dataset
 from hyperts.framework.wrappers import SimpleTSEstimator, ProphetWrapper
 

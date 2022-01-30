@@ -166,8 +166,6 @@ class WrapperMixin:
             self.fit_kwargs.update({'steps_per_epoch': self.init_kwargs.pop('steps_per_epoch')})
         if self.init_kwargs.get('validation_steps'):
             self.fit_kwargs.update({'validation_steps': self.init_kwargs.pop('validation_steps')})
-        if self.init_kwargs.get('validation_batch_size'):
-            self.fit_kwargs.update({'validation_batch_size': self.init_kwargs.pop('validation_batch_size')})
         if self.init_kwargs.get('validation_freq'):
             self.fit_kwargs.update({'validation_freq': self.init_kwargs.pop('validation_freq')})
         if self.init_kwargs.get('max_queue_size'):

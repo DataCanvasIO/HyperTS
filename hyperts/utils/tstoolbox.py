@@ -1,47 +1,13 @@
 import numpy as np
 import pandas as pd
 
-import datetime
-import chinese_calendar
-from sklearn.preprocessing import OrdinalEncoder
 from sklearn.model_selection import train_test_split as sklearn_tts
 from hypernets.tabular.toolbox import ToolBox
 
-from hyperts.utils import consts
+from hyperts.utils import consts, metrics as metrics_
+from hyperts.utils.holidays import get_holidays
 
 class TSToolBox(ToolBox):
-
-    @staticmethod
-    def reduce_memory_usage(df: pd.DataFrame, verbose=True):
-        """Reduce RAM Usage
-        """
-        numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
-        start_mem = df.memory_usage().sum() / 1024 ** 2
-        for col in df.columns:
-            col_type = df[col].dtypes
-            if col_type in numerics:
-                c_min = df[col].min()
-                c_max = df[col].max()
-                if str(col_type)[:3] == 'int':
-                    if c_min > np.iinfo(np.int8).min and c_max < np.iinfo(np.int8).max:
-                        df[col] = df[col].astype(np.int8)
-                    elif c_min > np.iinfo(np.int16).min and c_max < np.iinfo(np.int16).max:
-                        df[col] = df[col].astype(np.int16)
-                    elif c_min > np.iinfo(np.int32).min and c_max < np.iinfo(np.int32).max:
-                        df[col] = df[col].astype(np.int32)
-                    elif c_min > np.iinfo(np.int64).min and c_max < np.iinfo(np.int64).max:
-                        df[col] = df[col].astype(np.int64)
-                else:
-                    if c_min > np.finfo(np.float16).min and c_max < np.finfo(np.float16).max:
-                        df[col] = df[col].astype(np.float16)
-                    elif c_min > np.finfo(np.float32).min and c_max < np.finfo(np.float32).max:
-                        df[col] = df[col].astype(np.float32)
-                    else:
-                        df[col] = df[col].astype(np.float64)
-        end_mem = df.memory_usage().sum() / 1024 ** 2
-        if verbose: print('Mem. usage decreased to {:5.2f} Mb ({:.1f}% reduction)'.format(end_mem, 100 * (
-                start_mem - end_mem) / start_mem))
-        return df
 
     @staticmethod
     def DataFrame(data=None, index = None, columns = None, dtype = None, copy = False):
@@ -72,6 +38,40 @@ class TSToolBox(ToolBox):
             Copy data from inputs. Only affects DataFrame / 2d ndarray input.
         """
         return pd.DataFrame(data=data, index=index, columns=columns, dtype=dtype, copy=copy)
+
+    @staticmethod
+    def join_df(df1: pd.DataFrame, df2: pd.DataFrame, on: None):
+        """Join columns of another DataFrame.
+
+        Parameters
+        ----------
+        on : str, list of str, or array-like, optional
+            Column or index level name(s) in the caller to join on the index
+            in `other`, otherwise joins index-on-index. If multiple
+            values given, the `other` DataFrame must have a MultiIndex. Can
+            pass an array as the join key if it is not already contained in
+            the calling DataFrame. Like an Excel VLOOKUP operation.
+
+        Returns
+        -------
+        DataFrame
+            A dataframe containing columns from both the caller and `other`.
+        """
+        return df1.join(df2.set_index(on), on=on)
+
+    @staticmethod
+    def to_datetime(df: pd.DataFrame, **kwargs):
+        """Convert argument to datetime.
+
+        """
+        return pd.to_datetime(df, **kwargs)
+
+    @staticmethod
+    def datetime_format(df: pd.DataFrame, format='%Y-%m-%d %H:%M:%S'):
+        """Convert datetime format.
+
+        """
+        return pd.to_datetime(df).dt.strftime(format)
 
     @staticmethod
     def infer_ts_freq(df: pd.DataFrame, ts_name: str = consts.TIMESTAMP):
@@ -142,12 +142,6 @@ class TSToolBox(ToolBox):
         else:
             df = df.fillna(0)
         return df
-
-    @staticmethod
-    def columns_ordinal_encoder(df: pd.DataFrame):
-        enc = OrdinalEncoder(dtype=np.int)
-        encoder_df = enc.fit_transform(df)
-        return encoder_df
 
     @staticmethod
     def drop_duplicated_ts_rows(df: pd.DataFrame, ts_name: str = consts.TIMESTAMP, keep_data: str = 'last'):
@@ -267,7 +261,7 @@ class TSToolBox(ToolBox):
         fds['SeasonStart'] = fds['TimeStamp'].apply(lambda x: x.is_quarter_start * 1)
         fds['SeasonEnd'] = fds['TimeStamp'].apply(lambda x: x.is_quarter_end * 1)
         fds['Weekend'] = fds['TimeStamp'].apply(lambda x: 1 if x.dayofweek in [5, 6] else 0)
-        public_holiday_list = _get_holidays(year=int(start_date[:4]))
+        public_holiday_list = get_holidays(year=int(start_date[:4]))
         public_holiday_list = public_holiday_list['Date'].to_list()
         fds['Date'] = fds['TimeStamp'].apply(lambda x: x.strftime('%Y%m%d'))
         fds['Holiday'] = fds['Date'].apply(lambda x: 1 if x in public_holiday_list else 0)
@@ -275,13 +269,20 @@ class TSToolBox(ToolBox):
         return fds
 
     @staticmethod
-    def infer_forecast_interval(train, forecast, n: int = 5, prediction_interval: float = 0.9):
+    def df_mean_std(data: pd.DataFrame):
+        """Get the mean and standard deviation of the data.
+
+        """
+        mean = data.mean()
+        std = data.std()
+        return mean, std
+
+    @staticmethod
+    def infer_forecast_interval(forecast, prior_mu, prior_sigma, n: int = 5, prediction_interval: float = 0.9):
         """A corruption of Bayes theorem.
         It will be sensitive to the transformations of the data.
 
         """
-        prior_mu = train.mean()
-        prior_sigma = train.std()
         from scipy.stats import norm
 
         p_int = 1 - ((1 - prediction_interval) / 2)
@@ -469,6 +470,8 @@ class TSToolBox(ToolBox):
         else:
             return p
 
+    metrics = metrics_.Metrics
+
 class _offsets_pool:
     neighbor = [-1, 1]
     second = [-1, 1, -60 * 4, -60 * 3, -60 * 2, -60 * 1, 60 * 1, 60 * 2, 60 * 3, 60 * 4]
@@ -512,25 +515,3 @@ def _impute(values, offsets):
     else:
         missing_rate = 0.
     return values, missing_rate
-
-def _get_holidays(year=None, include_weekends=True):
-    """
-    Parameters
-    ----------
-    year: which year
-    include_weekends: False for excluding Saturdays and Sundays
-
-    Returns
-    -------
-    A list.
-    """
-    if not year:
-        year = datetime.datetime.now().year
-    else:
-        year = year
-    start = datetime.date(year, 1, 1)
-    end = datetime.date(year, 12, 31)
-    holidays = chinese_calendar.get_holidays(start, end, include_weekends)
-    holidays = pd.DataFrame(holidays, columns=['Date'])
-    holidays['Date'] = holidays['Date'].apply(lambda x: x.strftime('%Y-%m-%d'))
-    return holidays

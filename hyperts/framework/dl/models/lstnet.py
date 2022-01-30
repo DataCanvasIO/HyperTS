@@ -239,10 +239,11 @@ class LSTNet(BaseDeepEstimator):
     def _fit(self, train_X, train_y, valid_X, valid_y, **kwargs):
         train_ds = self._from_tensor_slices(X=train_X, y=train_y,
                                             batch_size=kwargs['batch_size'],
+                                            epochs=kwargs['epochs'],
                                             shuffle=True)
         valid_ds = self._from_tensor_slices(valid_X, valid_y,
                                             batch_size=kwargs.pop('batch_size'),
-                                            shuffle=True)
+                                            shuffle=False)
         model = self._build_estimator()
 
         model = self._compile_model(model, self.optimizer, self.learning_rate)

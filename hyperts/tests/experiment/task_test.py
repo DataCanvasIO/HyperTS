@@ -40,7 +40,6 @@ class Test_Task():
         pipeline_model = exp.run(max_trials=3)
 
         y_pred = pipeline_model.predict(X_test)
-        assert y_pred.shape[1] == 2
         assert y_pred.shape[0] == X_test.shape[0]
 
     def test_univariate_classification(self):

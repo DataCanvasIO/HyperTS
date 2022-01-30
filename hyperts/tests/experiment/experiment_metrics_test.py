@@ -1,7 +1,6 @@
 import numpy as np
-from hyperts.utils import consts, metrics
-from hyperts.utils._base import get_tool_box
-from hyperts.experiment import make_experiment, process_test_data
+from hyperts.utils import consts, metrics, get_tool_box
+from hyperts.experiment import make_experiment
 from hyperts.datasets import load_arrow_head, load_fixed_univariate_forecast_dataset, load_network_traffic
 
 
@@ -115,12 +114,11 @@ def _test_univariate_forecast_metric(metric):
     df = load_fixed_univariate_forecast_dataset()
     tb = get_tool_box(df)
     train_df, test_df = tb.temporal_train_test_split(df, test_size=0.1)
-    timestamp = 'ds'
     exp = make_experiment(train_df, task=task, reward_metric=reward_metric, **params[1])
     model = exp.run(max_trials=1)
-    X_test, y_test = process_test_data(test_df, timestamp=timestamp, impute=True)
+    X_test, y_test = model.split_X_y(test_df.copy())
     y_pred = model.predict(X_test)
-    assert y_pred.shape == y_test.shape
+    assert y_pred.shape[0] == y_test.shape[0]
 
 
 def _test_univariate_binaryclass_metric(metric):
@@ -145,10 +143,10 @@ def _test_univariate_binaryclass_metric(metric):
 
     model = exp.run(max_trials=1)
 
-    X_test, y_test = process_test_data(test_df, target=target)
+    X_test, y_test = model.split_X_y(test_df.copy())
     y_pred = model.predict(X_test)
 
-    assert y_pred.shape == y_test.shape
+    assert y_pred.shape[0] == y_test.shape[0]
 
 
 def _test_univariate_multiclass_metric(metric):
@@ -170,10 +168,10 @@ def _test_univariate_multiclass_metric(metric):
 
     model = exp.run(max_trials=1)
 
-    X_test, y_test = process_test_data(test_df, target=target)
+    X_test, y_test = model.split_X_y(test_df.copy())
     y_pred = model.predict(X_test)
 
-    assert y_pred.shape == y_test.shape
+    assert y_pred.shape[0] == y_test.shape[0]
 
 
 def _test_multivariate_forecast(metric):
@@ -185,7 +183,6 @@ def _test_multivariate_forecast(metric):
     train_df, test_df = tb.temporal_train_test_split(df, test_size=0.1)
 
     timestamp = 'TimeStamp'
-
     task = consts.Task_MULTIVARIATE_FORECAST
     reward_metric = metric
     optimize_direction = consts.OptimizeDirection_MINIMIZE
@@ -199,8 +196,8 @@ def _test_multivariate_forecast(metric):
 
     model = exp.run(max_trials=1)
 
-    X_test, y_test = process_test_data(test_df, timestamp=timestamp, impute=True)
+    X_test, y_test = model.split_X_y(test_df.copy())
     y_pred = model.predict(X_test)
-    assert y_pred.shape == y_test.shape
-    score = metrics.mape(y_test, y_pred)
+    assert y_pred.shape[0] == y_test.shape[0]
+    score = model.evaluate(y_test, y_pred)
     print('multivariate_forecast mape: ', score)
