@@ -13,8 +13,8 @@ from hypernets.experiment.compete import SteppedExperiment, ExperimentStep, \
 
 from hypernets.utils import logging
 
-from hyperts.utils import consts, metrics
-from hyperts.utils._base import get_tool_box
+from hyperts.utils import consts, metrics, get_tool_box
+from hyperts.utils.plot import plot_unvariate
 
 logger = logging.get_logger(__name__)
 
@@ -304,6 +304,295 @@ class TSEnsembleStep(EnsembleStep):
         return tb.greedy_ensemble(ensemble_task, estimators, scoring=self.scorer, ensemble_size=self.ensemble_size)
 
 
+class TSPipeline:
+    """Pipeline Extension for Time Series Analysis.
+
+        Parameters
+        ----------
+        sk_pipeline: sklearn pipeline, including data_preprocessing, space_searching, final_training and estimator
+            steps and so on.
+        freq: 'str', DateOffset or None, default None.
+        task: 'str' or None, default None.
+            Task could be 'univariate-forecast', 'multivariate-forecast', and 'univariate-binaryclass', etc.
+            See consts.py for details.
+        mode: str, default 'stats'. Optional {'stats', 'dl', 'nas'}, where,
+            'stats' indicates that all the models selected in the execution experiment are statistical models.
+            'dl' indicates that all the models selected in the execution experiment are deep learning models.
+            'nas' indicates that the selected model of the execution experiment will be a deep network model
+            for neural architecture search, which is not currently supported.
+        timestamp: str, forecast task 'timestamp' cannot be None, (default=None).
+        covariables: list[n*str], if the data contains covariables, specify the covariable column names, (default=None).
+        target: str or list, optional.
+            Target feature name for training, which must be one of the train_data columns for classification[str],
+            regression[str] or unvariate forecast task [list]. For multivariate forecast task, it is multiple columns
+            of training data.
+    """
+
+    def __init__(self, sk_pipeline, freq, task, mode, timestamp, covariables, target, history=None):
+        self.freq = freq
+        self.task = task
+        self.mode = mode
+        self.target = target
+        self.timestamp = timestamp
+        self.covariables = covariables
+
+        self.sk_pipeline = sk_pipeline
+        self.prior = sk_pipeline.named_steps.estimator.history_prior
+        if self.task in consts.TASK_LIST_FORECAST:
+            if mode == consts.Mode_STATS:
+                self.history = history
+            else:
+                self.history = history[[timestamp]]
+
+    def predict(self, X, forecast_start=None):
+        """Predicts target for sequences in X.
+
+        Parameters
+        ----------
+        X: 'DataFrame'.
+            For forecast task, X.columns = ['timestamp', (covariate_1), (covariate_2),...].
+            (covariate_1) indicates that it may not exist.
+            For classification or regression tasks, X.columns = [variate_1, variate_2,...].
+        forecast_start : 'DataFrame'. This parameter applies only to 'dl' mode.
+            Forecast the start fragment, if None, by default the last window fragment of the
+            train data.
+            forecast_start.columns = ['timestamp', (covariate_1), (covariate_2),...].
+            (covariate_1) indicates that it may not exist.
+        """
+        tb = get_tool_box(X)
+        if self.task in consts.TASK_LIST_FORECAST:
+            if self.mode == consts.Mode_DL and forecast_start is not None:
+                self.history = copy.deepcopy(forecast_start)
+                X_timestamp_start = tb.to_datetime(tb.df_to_array(X[self.timestamp])[0])
+                forecast_timestamp_end = tb.to_datetime(tb.df_to_array(forecast_start[self.timestamp])[-1])
+                if X_timestamp_start < forecast_timestamp_end:
+                    raise ValueError(f'The start date of X [{X_timestamp_start}] should be after '
+                                     f'the end date of forecast_start [{forecast_timestamp_end}].')
+                forecast_start = self._preprocess_forecast_start(forecast_start)
+                self.sk_pipeline.named_steps.estimator.model.model.forecast_start = forecast_start
+            elif self.mode == consts.Mode_DL and forecast_start is None:
+                estimator = self.sk_pipeline.named_steps.estimator
+                forecast_start = estimator.model.model.forecast_start
+                history = forecast_start[0][0, :, :len(self.target)]
+                history = estimator.model.inverse_transform(history)
+                history = tb.DataFrame(history, columns=self.target)
+                time_df = tb.reset_index(self.history.iloc[-len(history):])
+                self.history = tb.concat_df([time_df, history], axis=1)
+
+            y_pred = self.sk_pipeline.predict(X)
+
+            if X[self.timestamp].dtypes == object:
+                X[self.timestamp] = tb.to_datetime(X[self.timestamp])
+            date_index = tb.smooth_missed_ts_rows(X[[self.timestamp]], self.freq, self.timestamp)
+            forecast = tb.DataFrame(y_pred, columns=self.target)
+            forecast = tb.concat_df([date_index, forecast], axis=1)
+            forecast = tb.join_df(X[[self.timestamp]], forecast, on=self.timestamp)
+
+            return forecast
+        else:
+            y_pred = self.sk_pipeline.predict(X)
+            return y_pred
+
+    def predict_proba(self, X):
+        """Predicts target probabilities for sequences in X for classification task.
+
+        Parameters
+        ----------
+        X: 'DataFrame'.
+            X.columns = [variate_1, variate_2,...].
+        """
+        if self.task in consts.TASK_LIST_CLASSIFICATION:
+            y_proba = self.sk_pipeline.predict_proba(X)
+        else:
+            raise ValueError('predict_proba is used for classification only.')
+        return y_proba
+
+    def evaluate(self, y_true, y_pred, y_proba=None, metrics=None):
+        """Evaluates model performance.
+
+        Parameters
+        ----------
+        y_true: 'np.arrray'.
+        y_pred: 'pd.DataFrame' or 'np.arrray'.
+            For forecast task, 'pd.DataFrame', X.columns could be ['timestamp', (covariate_1),
+            (covariate_2),..., variate_1, variate_2,...].
+            (covariate_1) indicates that it may not exist.
+            For classification and regression tasks, 'np.arrray'.
+        y_proba: 'np.arrray' or None, some metrics should be given, such as AUC.
+        metrics: list, tuple or None. If None,
+            For forecast or regression tasks, metrics = ['mae', 'mse', 'rmse', 'mape', 'smape'],
+            For classification task, metrics = ['accuracy', 'f1', 'precision', 'recall'].
+        """
+
+        import pandas as pd
+        from hyperts.utils.metrics import calc_score
+
+        pd.set_option('display.max_columns', 10,
+                      'display.max_rows', 10,
+                      'display.float_format', lambda x: '%.4f' % x)
+
+        if self.task in consts.TASK_LIST_FORECAST and metrics is None:
+            metrics = ['mae', 'mse', 'rmse', 'mape', 'smape']
+        else:
+            metrics = ['accuracy', 'f1', 'precision', 'recall']
+
+        if self.task in consts.TASK_LIST_FORECAST:
+            tb = get_tool_box(y_pred)
+            y_pred = tb.df_to_array(y_pred[self.target])
+
+        scores = calc_score(y_true, y_pred, y_proba=y_proba, metrics=metrics, task=self.task)
+
+        scores = pd.DataFrame.from_dict(scores, orient='index', columns=['Score'])
+        scores = scores.reset_index().rename(columns={'index': 'Metirc'})
+
+        return scores
+
+    def plot(self, forecast, actual=None, history=None, var_id=0, show_forecast_interval=True):
+        """Plots forecast trend curves for the forecst task.
+
+        Notes
+        ----------
+        1. This function can plot the curve of only one target variable. If not specified,
+        index 0 is ploted by default.
+
+        2. This function supports ploting of historical observations, future actual values,
+        and forecast intervals.
+
+        Parameters
+        ----------
+        forecast: 'DataFrame'. The columns need to include the timestamp column
+            and the target columns.
+        actual: 'DataFrame' or None. If it is not None, the column needs to include
+            the time column and the target column.
+        var_id: 'int' or 'str'. If int, it is the index of the target column. If str,
+            it is the name of the target column. default 0.
+        show_forecast_interval: 'bool'. Whether to show the forecast intervals.
+            Default True.
+
+        Returns
+        ----------
+        fig : 'plotly.graph_objects.Figure'.
+        """
+        tb = get_tool_box(forecast)
+        forecast_interval = tb.infer_forecast_interval(forecast[self.target], *self.prior)
+        history = history if history is not None else self.history
+
+        plot_unvariate(forecast,
+                       timestamp_col=self.timestamp,
+                       target_col=self.target,
+                       actual=actual,
+                       var_id=var_id,
+                       history=history,
+                       forecast_interval=forecast_interval,
+                       show_forecast_interval=show_forecast_interval,
+                       include_history=False if history is None else True)
+
+    def split_X_y(self, data, smooth=False, impute=False):
+        """Splits the data into X and y.
+
+        Parameters
+        ----------
+        data: 'DataFrame', including X and y.
+        smooth: Whether to smooth missed time series rows. Default False.
+            Example:
+                TimeStamp      y
+                2021-03-01    3.4
+                2021-03-02    5.2
+                2021-03-04    6.7
+                2021-03-05    2.3
+                >>
+                TimeStamp      y
+                2021-03-01    3.4
+                2021-03-02    5.2
+                2021-03-03    NaN
+                2021-03-04    6.7
+                2021-03-05    2.3
+        impute: Whether to impute in missing values. Default False.
+            Example:
+                TimeStamp      y
+                2021-03-01    3.4
+                2021-03-02    5.2
+                2021-03-03    NaN
+                2021-03-04    6.7
+                2021-03-05    2.3
+                >>
+                TimeStamp      y
+                2021-03-01    3.4
+                2021-03-02    5.2
+                2021-03-03    3.4
+                2021-03-04    6.7
+                2021-03-05    2.3
+        Returns
+        -------
+        X, y.
+        """
+        if self.task in consts.TASK_LIST_FORECAST:
+            if self.covariables is not None:
+                excluded_variables = [self.timestamp] + self.covariables
+            else:
+                excluded_variables = [self.timestamp]
+            tb = get_tool_box(data)
+            data = tb.drop_duplicated_ts_rows(data, ts_name=self.timestamp)
+
+            if smooth is not False:
+                data = tb.smooth_missed_ts_rows(data, ts_name=self.timestamp, freq=self.freq)
+
+            if impute is not False:
+                data[self.target] = tb.multi_period_loop_imputer(data[self.target], freq=self.freq)
+
+            X, y = data[excluded_variables], data[self.target]
+        else:
+            X = data
+            y = X.pop(self.target)
+        return X, y
+
+    @property
+    def get_params(self):
+        """Gets sklearn pipeline parameters.
+
+        """
+        return self.sk_pipeline.get_params
+
+    def _preprocess_forecast_start(self, forecast_start):
+        """Performs data preprocessing for the external forecast_start.
+
+        Parameters
+        ----------
+        forecast_start : 'DataFrame'. This parameter applies only to 'dl' mode.
+            Forecast the start fragment, if None, by default the last window fragment of the
+            train data.
+            forecast_start.columns = ['timestamp', (covariate_1), (covariate_2),...].
+            (covariate_1) indicates that it may not exist.
+        """
+
+        # 1. transform
+        tb = get_tool_box(forecast_start)
+        X, y = self.split_X_y(forecast_start, smooth=True, impute=True)
+        X = self.sk_pipeline.named_steps.data_preprocessing.transform(X)
+        X = self.sk_pipeline.named_steps.estimator.data_pipeline.transform(X)
+        y = self.sk_pipeline.named_steps.estimator.model.transform(y)
+        X, y = self.sk_pipeline.named_steps.estimator.model.model.mata.transform(X, y)
+        forecast_start = tb.concat_df([X, y], axis=1)
+
+        # 2. perprocessing
+        estimator = self.sk_pipeline.named_steps.estimator
+        window = estimator.model.init_kwargs['window']
+        cont_column_names = estimator.model.model.mata.cont_column_names
+        cat_column_names = estimator.model.model.mata.cat_column_names
+        continuous_length = len(cont_column_names)
+        categorical_length = len(cat_column_names)
+        column_names = cont_column_names + cat_column_names
+        data = forecast_start.drop([self.timestamp], axis=1)
+        data = tb.df_to_array(data[column_names]).astype(consts.DATATYPE_TENSOR_FLOAT)
+        forecast_start = data[-window:].reshape(1, window, data.shape[1])
+        if categorical_length != 0:
+            X_cont_start = forecast_start[:, :, :continuous_length]
+            X_cat_start = forecast_start[:, :, continuous_length:]
+            forecast_start = [X_cont_start, X_cat_start]
+
+        return forecast_start
+
+
 class TSCompeteExperiment(SteppedExperiment):
     """A powerful experiment strategy for Automatic Time Series with a set of advanced features.
 
@@ -327,7 +616,7 @@ class TSCompeteExperiment(SteppedExperiment):
         test samples. If None, the value is set to the complement of the train size.
     freq: 'str', DateOffset or None, default None.
     target_col: 'str' or list[str], default None.
-    timestamp_col: list[str] or None, default None.
+    timestamp_col: str or None, default None.
     covariate_cols: list[str] or None, default None.
     covariate_data_cleaner_args: 'dict' or None, default None. Suitable for forecast task.
         Dictionary of parameters to initialize the `DataCleaner` instance. If None, `DataCleaner` will initialized
@@ -342,6 +631,11 @@ class TSCompeteExperiment(SteppedExperiment):
     task: 'str' or None, default None.
         Task could be 'univariate-forecast', 'multivariate-forecast', and 'univariate-binaryclass', etc.
         See consts.py for details.
+    mode : str, default 'stats'. Optional {'stats', 'dl', 'nas'}, where,
+        'stats' indicates that all the models selected in the execution experiment are statistical models.
+        'dl' indicates that all the models selected in the execution experiment are deep learning models.
+        'nas' indicates that the selected model of the execution experiment will be a deep network model
+        for neural architecture search, which is not currently supported.
     id: trial id, default None.
     callbacks: list of callback functions or None, default None.
         List of callback functions that are applied at each experiment step. See `hypernets.experiment.ExperimentCallback`
@@ -380,13 +674,23 @@ class TSCompeteExperiment(SteppedExperiment):
                  cv=False,
                  num_folds=3,
                  task=None,
+                 mode='stats',
                  id=None,
                  callbacks=None,
                  log_level=None,
                  random_state=None,
                  scorer=None,
+                 optimize_direction=None,
                  ensemble_size=10,
                  **kwargs):
+
+        self.freq = freq
+        self.task = task
+        self.mode = mode
+        self.target = target_col
+        self.timestamp = timestamp_col
+        self.covariables = covariate_cols
+        self.history = None
 
         if random_state is None:
             random_state = np.random.randint(0, 65535)
@@ -398,8 +702,8 @@ class TSCompeteExperiment(SteppedExperiment):
             task = hyper_model.task
 
         if scorer is None:
-            scorer = metrics.metric_to_scoring(hyper_model.reward_metric,
-                                                  task=task, pos_label=kwargs.get('pos_label'))
+            scorer = tb.metrics.metric_to_scorer(hyper_model.reward_metric, task=task,
+                     pos_label=kwargs.get('pos_label'), optimize_direction=optimize_direction)
 
         steps = []
 
@@ -443,6 +747,26 @@ class TSCompeteExperiment(SteppedExperiment):
     def run(self, **kwargs):
         run_kwargs = {**self.run_kwargs, **kwargs}
         return super().run(**run_kwargs)
+
+    def to_estimator(self, X_train, y_train, X_test, X_eval, y_eval, steps):
+        sk_pipeline = super(TSCompeteExperiment, self).to_estimator(
+                            X_train, y_train, X_test, X_eval, y_eval, steps)
+
+        tb = get_tool_box(X_eval, y_eval)
+
+        if self.task in consts.TASK_LIST_FORECAST:
+            history = tb.concat_df([X_eval[self.timestamp], y_eval], axis=1)
+        else:
+            history = None
+
+        return TSPipeline(sk_pipeline,
+                          freq=self.freq,
+                          task=self.task,
+                          mode=self.mode,
+                          timestamp=self.timestamp,
+                          covariables=self.covariables,
+                          target=self.target,
+                          history=history)
 
     def _repr_html_(self):
         try:
