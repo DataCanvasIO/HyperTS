@@ -7,5 +7,3 @@ pandas>=0.25.3
 scikit-learn>=0.22.1
 tensorflow>=2.0.0
 plotly>=4.12.0
-pyparsing==2.4.7
-pystan~=2.19.1.1
