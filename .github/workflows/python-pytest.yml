@@ -30,6 +30,7 @@ jobs:
         auto-update-conda: true
         python-version: ${{ matrix.python-version }}
     - name: Show conda
+      shell: bash -l {0}
       run: conda activate base && conda info
     - name: Conda list pre
       run: conda activate base && conda list
