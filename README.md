@@ -56,9 +56,9 @@ HyperTS supports the following features:
 
 **Probabilistic intervals Support:** Time series forecsting visualization can show confidence intervals.
 
-**Abundant Metrics:** From ```MSE```,``` SMAPE```, ```Accuracy``` to ```F1-Score```, a variety of performance metrics to evaluate results and guide models optimization.
+**Abundant Metrics:** From MSE, SMAPE, Accuracy to F1-Score, a variety of performance metrics to evaluate results and guide models optimization.
 
-**Powerful search strategies:** Adapting Grid Search, Monte Carlo Tree Search, Evolution Algorithm combined with a meta-learner to learn a powerful and effective pipeline.
+**Powerful search strategies:** Adapting Grid Search, Monte Carlo Tree Search, Evolution Algorithm combined with a meta-learner to learn a powerful and effective TS pipeline.
 
 ## Communication
 If you wish to contribute to this project, please refer to [CONTRIBUTING](CONTRIBUTING.md).
