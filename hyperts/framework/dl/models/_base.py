@@ -744,7 +744,7 @@ class BaseDeepEstimator(object):
         import h5py, io
         try:
             from tensorflow.python import keras
-            from hyperts.framework.dl.dl_utils.savemodels import compile_args_from_training_config
+            from hyperts.framework.dl.dl_utils.saveconfig import compile_args_from_training_config
             keras.saving.saving_utils.compile_args_from_training_config = compile_args_from_training_config
         except:
             raise ValueError('Perhaps updating version Tensorflow above 2.3.0 will solve the issue.')

@@ -8,7 +8,9 @@ from hypernets.pipeline.base import HyperTransformer
 
 ##################################### Define sklearn Transformer #####################################
 class TimeSeriesTransformer:
+    """Scale time series features.
 
+    """
     def __init__(self, time_series_col=None):
         self.time_series_col = time_series_col
 
@@ -22,7 +24,9 @@ class TimeSeriesTransformer:
 
 
 class LogXplus1Transformer(BaseEstimator, TransformerMixin):
+    """Scale each feature by log(x+1).
 
+    """
     def __init__(self):
         super(LogXplus1Transformer, self).__init__()
 
@@ -44,7 +48,9 @@ class LogXplus1Transformer(BaseEstimator, TransformerMixin):
 
 
 class IdentityTransformer(BaseEstimator, TransformerMixin):
+    """Identity transformer.
 
+    """
     def __init__(self):
         super(IdentityTransformer, self).__init__()
 
@@ -59,7 +65,30 @@ class IdentityTransformer(BaseEstimator, TransformerMixin):
 
 
 class StandardTransformer(BaseEstimator, TransformerMixin):
+    """Standardize features by removing the mean and scaling to unit variance.
 
+    Notes
+    ----------
+    Unlike scikit-learn, it can process 3D time series - (nb_samples, series_length, nb_dims).
+
+    The transformation is given by::
+
+        X_scaled = (X - X.mean) / (X.var + eps),
+
+    where, for 2D features:
+        mean = X.mean(axis=0),
+        var  = ((X - mean) ** 2).mean(axis=0)
+    for 3D features:
+        mean = X.mean(axis=0, keepdims=True).mean(axis=1, keepdims=True),
+        var  = ((X - mean) ** 2).mean(axis=0, keepdims=True).mean(axis=1, keepdims=True).
+
+    Parameters
+    ----------
+    eps  : float, default=1e-8.
+        To prevent the division by 0.
+    copy : bool, default=True.
+        Set to False to perform inplace row normalization and avoid a copy.
+    """
     def __init__(self, eps=1e-8, copy=True):
         super(StandardTransformer, self).__init__()
         self.eps = eps
@@ -99,7 +128,30 @@ class StandardTransformer(BaseEstimator, TransformerMixin):
 
 
 class MinMaxTransformer(BaseEstimator, TransformerMixin):
+    """Transform features by scaling each feature to a given range.
 
+    Notes
+    ----------
+    Unlike scikit-learn, it can process 3D time series - (nb_samples, series_length, nb_dims).
+
+    The transformation is given by::
+
+        X_scaled = (X - X.min) / (X.max - X.min + eps),
+
+    where, for 2D features:
+        min = X.min(axis=0, initial=None),
+        max = X.max(axis=0, initial=None),
+    for 3D features:
+        min = X.min(axis=0, keepdims=True, initial=None).min(axis=1, keepdims=True),
+        max = X.max(axis=0, keepdims=True, initial=None).max(axis=1, keepdims=True).
+
+    Parameters
+    ----------
+    eps  : float, default=1e-8.
+        To prevent the division by 0.
+    copy : bool, default=True.
+        Set to False to perform inplace row normalization and avoid a copy.
+    """
     def __init__(self, eps=1e-8, copy=True):
         super(MinMaxTransformer, self).__init__()
         self.eps = eps
@@ -139,7 +191,28 @@ class MinMaxTransformer(BaseEstimator, TransformerMixin):
 
 
 class MaxAbsTransformer(BaseEstimator, TransformerMixin):
+    """Scale each feature by its maximum absolute value.
 
+    Notes
+    ----------
+    Unlike scikit-learn, it can process 3D time series - (nb_samples, series_length, nb_dims).
+
+    The transformation is given by::
+
+        X_scaled = X / (X.max_abs + eps),
+
+    where, for 2D features:
+        max_abs = np.max(np.abs(X), axis=0),
+    for 3D features:
+        max_abs = np.abs(X).max(axis=0, keepdims=True).max(axis=1, keepdims=True)
+
+    Parameters
+    ----------
+    eps  : float, default=1e-8.
+        To prevent the division by 0.
+    copy : bool, default=True.
+        Set to False to perform inplace row normalization and avoid a copy.
+    """
     def __init__(self, eps=1e-8, copy=True):
         super(MaxAbsTransformer, self).__init__()
         self.eps = eps
@@ -152,7 +225,7 @@ class MaxAbsTransformer(BaseEstimator, TransformerMixin):
         if not isinstance(X, np.ndarray):
             X = np.array(X)
         if len(X.shape) == 2:
-            self.max_abs = np.nanmax(np.abs(X), axis=0)
+            self.max_abs = np.max(np.abs(X), axis=0)
         else:
             X = np.abs(X)
             self.max_abs = X.max(axis=0, keepdims=True).max(axis=1, keepdims=True)
@@ -177,6 +250,15 @@ class MaxAbsTransformer(BaseEstimator, TransformerMixin):
 
 
 class CategoricalTransformer(BaseEstimator, TransformerMixin):
+    """Transform categorical labels to one hot labels.
+
+    Parameters
+    ----------
+    label_encoder : An existing Label encoder, default=None.
+    onehot_encoder : An existing OneHot encoder, default=None.
+    copy : bool, default=True.
+        Set to False to perform inplace row normalization and avoid a copy.
+    """
     def __init__(self, label_encoder=None, onehot_encoder=None, copy=True):
         super(CategoricalTransformer, self).__init__()
         self.copy = copy

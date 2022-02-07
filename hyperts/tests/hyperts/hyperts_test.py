@@ -38,8 +38,3 @@ class Test_HyperTS():
         estimator = ht.final_train(best_trial.space_sample, X_train, y_train)
         result = estimator.evaluate(X_test, y_test)
         assert result[reward_metric] > 0
-
-
-
-
-
