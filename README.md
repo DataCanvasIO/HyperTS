@@ -35,10 +35,10 @@ y_pred = model.predict(X_test)
 
 scores = model.evaluate(y_test, y_pred)
 
-model.plot(forecast=y_pred, actual=test_data, var_id=0)
+model.plot(forecast=y_pred, actual=test_data)
 ```
 
-<div align="center"><img src="docs/static/images/Actual_vs_Forecast.jpg" width="800"/></div>
+![Forecast_Figure](docs/static/images/Actual_vs_Forecast.jpg)
 
 - More detailed guides: [EXAMPLES.](https://github.com/DataCanvasIO/HyperTS/tree/main/examples)
 
