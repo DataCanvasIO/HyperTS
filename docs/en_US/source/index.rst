@@ -1,6 +1,6 @@
-DataCanvas
+Welcome to HyperTS
 ==================
-HyperGBM is an open source project created by `DataCanvas <https://www.datacanvas.com>`_ .
+HyperTS is an open source project created by `DataCanvas <https://www.datacanvas.com>`_ . It provides a full pipleline automated machine learning (AutoML) toolkit for time series datasets. 
 
 
 
@@ -8,15 +8,17 @@ HyperGBM is an open source project created by `DataCanvas <https://www.datacanva
     :maxdepth: 2
 
     Overview<overview.rst>
-    Installation<installation.md>
+    Installation<installation.rst>
+    Dataformat<dataformat.rst>
     Quick Start<quick_start.rst>
     Examples<example.rst>
-    How-To<how_to.rst>
+    Customized<user_defined.rst>
+    Models<models.rst>
     Released Notes<release_note.rst>
 
 
 
-ces and tables
+Indices and tables
 ==================
 
 * :ref:`genindex`
