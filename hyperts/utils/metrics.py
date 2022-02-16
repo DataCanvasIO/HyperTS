@@ -197,13 +197,22 @@ def calc_score(y_true, y_preds, y_proba=None, metrics=('accuracy',), task=const.
 
     for metric in metrics:
         if callable(metric):
-            try:
-                score[metric.__name__] = metric(y_true, y_preds)
-            except:
-                score[metric.__name__] = metric(y_true, y_preds, **recall_options)
+            if metric.__name__ in ['auc', 'roc_auc_score']:
+                if len(y_proba.shape) == 2:
+                    if 'multiclass' in task:
+                        score[metric.__name__] = metric(y_true, y_proba, multi_class='ovo', labels=classes)
+                    else:
+                        score[metric] = metric(y_true, y_proba[:, 1])
+                else:
+                    score[metric] = metric(y_true, y_proba)
+            else:
+                try:
+                    score[metric.__name__] = metric(y_true, y_preds)
+                except:
+                    score[metric.__name__] = metric(y_true, y_preds, **recall_options)
         else:
             metric_lower = metric.lower()
-            if metric_lower == 'auc':
+            if metric_lower in ['auc', 'roc_auc_score']:
                 if len(y_proba.shape) == 2:
                     if 'multiclass' in task:
                         score[metric] = roc_auc_score(y_true, y_proba, multi_class='ovo', labels=classes)
