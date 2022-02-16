@@ -12,7 +12,7 @@ HyperTS is an open source project created by `DataCanvas <https://www.datacanvas
     Dataformat<dataformat.rst>
     Quick Start<quick_start.rst>
     Examples<example.rst>
-    Customized Functions<user_defined.rst>
+    Custom Functions<user_defined.rst>
     Models<models.rst>
     Released Notes<release_note.rst>
 
