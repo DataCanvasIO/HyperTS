@@ -115,8 +115,8 @@ class ProphetForecastEstimator(HyperEstimator):
             kwargs['n_changepoints'] = n_changepoints
         if changepoint_range is not None and changepoint_range != 0.8:
             kwargs['changepoint_range'] = changepoint_range
-        if yearly_seasonality is not None and changepoint_range != 'auto':
-            kwargs['changepoint_range'] = changepoint_range
+        if yearly_seasonality is not None and yearly_seasonality != 'auto':
+            kwargs['yearly_seasonality'] = yearly_seasonality
         if weekly_seasonality is not None and weekly_seasonality != 'auto':
             kwargs['weekly_seasonality'] = weekly_seasonality
         if daily_seasonality is not None and daily_seasonality != 'auto':
@@ -595,7 +595,7 @@ class HybirdRNNGeneralEstimator(HyperEstimator):
                  workers=1, use_multiprocessing=False,
                  space=None, name=None, **kwargs):
 
-        if task in consts.TASK_LIST_FORECAST and rnn_type is None:
+        if task in consts.TASK_LIST_FORECAST and timestamp is None:
             raise ValueError('Timestamp need to be given for forecast task.')
         else:
             kwargs['timestamp'] = timestamp
