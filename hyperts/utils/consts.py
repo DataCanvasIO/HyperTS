@@ -46,6 +46,10 @@ StepName_FINAL_TRAINING            = 'final_training'
 OptimizeDirection_MINIMIZE         = 'min'
 OptimizeDirection_MAXIMIZE         = 'max'
 
+Searcher_RONDOM                    = 'random'
+Searcher_EVOLUTION                 = 'evolution'
+Searcher_MCTS                      = 'mcts'
+
 Metric_MSE                         = 'mse'
 Metric_RMSE                        = 'rmse'
 Metric_MAE                         = 'mae'
