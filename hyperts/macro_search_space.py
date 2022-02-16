@@ -211,7 +211,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
                  enable_var=True,
                  **kwargs):
         kwargs['timestamp'] = timestamp
-        logger.info("Tip: If other parameters exist, set them directly. For example, covariables=['is_holiday'].")
+        logger.warning("Tip: If other parameters exist, set them directly. For example, covariables=['is_holiday'].")
 
         super(StatsForecastSearchSpace, self).__init__(task, **kwargs)
 
@@ -225,9 +225,9 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
     def default_prophet_init_kwargs(self):
         return {
             # 'seasonality_prior_scale': Choice([True, False]),
-            # 'yearly_seasonality': Choice([True, False]),
-            # 'weekly_seasonality': Choice([True, False]),
             # 'daily_seasonality': Choice([True, False]),
+            # 'weekly_seasonality': Choice([True, False]),
+            'yearly_seasonality': Choice([True, False]),
             'seasonality_mode': Choice(['additive', 'multiplicative']),
             'n_changepoints': Choice([25, 35, 45]),
             'interval_width': Choice([0.6, 0.7, 0.8])
@@ -305,7 +305,7 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
                  **kwargs):
         if hasattr(kwargs, 'covariables'):
             kwargs.pop('covariables', None)
-        logger.info("Tip: If other parameters exist, set them directly. For example, n_estimators=200.")
+        logger.warning("Tip: If other parameters exist, set them directly. For example, n_estimators=200.")
 
         super(StatsClassificationSearchSpace, self).__init__(task, **kwargs)
 
@@ -374,7 +374,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
                  enable_lstnet=True,
                  **kwargs):
         kwargs['timestamp'] = timestamp
-        logger.info("Tip: If other parameters exist, set them directly. For example, covariables=['is_holiday'].")
+        logger.warning("Tip: If other parameters exist, set them directly. For example, covariables=['is_holiday'].")
 
         super(DLForecastSearchSpace, self).__init__(task, **kwargs)
 
@@ -515,7 +515,7 @@ class DLClassificationSearchSpace(BaseSearchSpaceGenerator):
                  **kwargs):
         if hasattr(kwargs, 'covariables'):
             kwargs.pop('covariables', None)
-        logger.info("Tip: If other parameters exist, set them directly. For example, n_estimators=200.")
+        logger.warning("Tip: If other parameters exist, set them directly. For example, n_estimators=200.")
 
         super(DLClassificationSearchSpace, self).__init__(task, **kwargs)
 
