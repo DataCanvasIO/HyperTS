@@ -13,8 +13,8 @@ from hypernets.experiment.compete import SteppedExperiment, ExperimentStep, \
 
 from hypernets.utils import logging
 
-from hyperts.utils import consts, metrics, get_tool_box
-from hyperts.utils.plot import plot_unvariate
+from hyperts.utils import consts, get_tool_box
+from hyperts.utils.plot import plot_plotly, plot_mpl, enable_plotly, enable_mpl
 
 logger = logging.get_logger(__name__)
 
@@ -431,9 +431,9 @@ class TSPipeline:
                       'display.max_rows', 10,
                       'display.float_format', lambda x: '%.4f' % x)
 
-        if self.task in consts.TASK_LIST_FORECAST and metrics is None:
+        if self.task in consts.TASK_LIST_FORECAST+consts.TASK_LIST_REGRESSION and metrics is None:
             metrics = ['mae', 'mse', 'rmse', 'mape', 'smape']
-        else:
+        elif self.task in consts.TASK_LIST_CLASSIFICATION and metrics is None:
             metrics = ['accuracy', 'f1', 'precision', 'recall']
 
         if self.task in consts.TASK_LIST_FORECAST:
@@ -447,7 +447,14 @@ class TSPipeline:
 
         return scores
 
-    def plot(self, forecast, actual=None, history=None, var_id=0, show_forecast_interval=True):
+    def plot(self,
+             forecast,
+             actual=None,
+             history=None,
+             var_id=0,
+             show_forecast_interval=True,
+             interactive=True,
+             figsize=None):
         """Plots forecast trend curves for the forecst task.
 
         Notes
@@ -477,15 +484,29 @@ class TSPipeline:
         forecast_interval = tb.infer_forecast_interval(forecast[self.target], *self.prior)
         history = history if history is not None else self.history
 
-        plot_unvariate(forecast,
-                       timestamp_col=self.timestamp,
-                       target_col=self.target,
-                       actual=actual,
-                       var_id=var_id,
-                       history=history,
-                       forecast_interval=forecast_interval,
-                       show_forecast_interval=show_forecast_interval,
-                       include_history=False if history is None else True)
+        if interactive and enable_plotly:
+            plot_plotly(forecast,
+                        timestamp_col=self.timestamp,
+                        target_col=self.target,
+                        actual=actual,
+                        var_id=var_id,
+                        history=history,
+                        forecast_interval=forecast_interval,
+                        show_forecast_interval=show_forecast_interval,
+                        include_history=False if history is None else True)
+        elif not interactive and enable_mpl:
+            plot_mpl(forecast,
+                     timestamp_col=self.timestamp,
+                     target_col=self.target,
+                     actual=actual,
+                     var_id=var_id,
+                     history=history,
+                     forecast_interval=forecast_interval,
+                     show_forecast_interval=show_forecast_interval,
+                     include_history=False if history is None else True,
+                     figsize=figsize)
+        else:
+            raise ValueError('No install matplotlib or plotly.')
 
     def split_X_y(self, data, smooth=False, impute=False):
         """Splits the data into X and y.
