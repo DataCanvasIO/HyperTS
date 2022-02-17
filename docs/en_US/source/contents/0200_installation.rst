@@ -1,36 +1,38 @@
-安装指南
+Installation
 ########
 
 
-版本需求
+Software environment  
 ========
-Python 3: HyperTS需要Python版本为3.7或者3.8。
-Tensorflow >=2.0.0, HyperTS的深度学习模式基于Tensorflow2实现。
+* Python 3.7 or 3.8
 
------------
+* Tensorflow >=2.0.0, (Deep learning models require Tensorflow2)
 
-pip安装
+
+
+Install with ``pip``
 ========
 
 .. code-block:: sh
 
     pip install hyperts
 
------------
 
-conda安装
+
+Install with ``conda``
 ==========
 
 .. code-block:: sh
 
     conda install hyperts
 
------------
 
-注意事项
+
+
+Notice
 ==========
 
-1. 如果您使用时选择到统计模型模式, 安装sktime或者prophet显示失败, 建议您使用conda而非pip来安装:
+1. If you are failed to install ``sktime`` or ``prophet`` when using the STAT mode, suggest to install with ``conda`` instead of ``pip``:
 
 .. code-block:: sh
 
@@ -40,12 +42,11 @@ conda安装
 
     conda install -c conda-forge prophet==1.0.1
 
-2. 如果您使用时使用到深度学习模式, 并安装了tensorflow, 运行出现错误:
+2. If you meet the error shown below when using the DL mode, please check and change the ``pyparsing`` version to 2.4.7. 
 
 .. code-block:: none
 
     Frappe installation error "AttributeError: module 'pyparsing' has no attribute 'downcaseTokens'".
 
-建议您控制pyparsing版本在2.4.7。
 
-3. 在使用tensorflow时, 也许会遇到一些问题, 您可以注意一下numpy版本和正在使用的tensorflow版本的兼容性, 适当降低numpy版本, 也许会避免不必要的调试。
+3. If you meet other problems when using ``tensorflow``, please first check the compatibility of  ``numpy`` and ``tensorflow``. Sometimes, select lower ``numpy`` versions would help to solve the problems.
