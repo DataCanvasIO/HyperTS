@@ -1,17 +1,16 @@
-数据格式
+Getting the correct time series data format
 ########
 
-古语有云: “兵马未动, 粮草先行”。在人工智能时代, 当我们面对各种各样的问题场景, 选对算法对于成功建立模型十分的重要。此外, 向算法注入正确合规的数据也很重要。在本章, 为了可以快速且正确地掌握并使用HyperTS, 我们将详细地介绍HyperTS在各类时序任务中所需的数据规范格式。
+Time series data, or Time-stamped data, is a sequence of measurement data with respect to their time of occurrence. For any types of machine learning time series tasks, getting the correct data format is important. Below, we will introduce what and how to generate the correct time series data format based on different tasks.  
 
--------------
 
-时序预测任务
+Time series forecasting 
 ============
 
-预测数据格式
+Required format
 ************
 
-在预测任务中, 输入数据应该是一个含有时间列(TimeStamp)和变量列的 ``pandas.DataFrame`` 格式的二维数据表, 形式如下所示:
+The required input data format is a two-dimensional structure (pandas.DataFrame), which should contain a TimeStamp column (``time_col``) and one or more variable columns (``var_col_0``, ``var_col_1``, ``var_col_2``,...``var_col_n``,). See example below: 
 
 .. code-block:: none 
 
@@ -31,19 +30,19 @@
           -                  -                -                -                    -
   xxxx-xx-xx xx:xx:xx        x                x                x                    x
 
-其中, xxxx-xx-xx xx:xx:xx表示时间 (理想情况下, ``YYYY-MM-DD`` 格式的日期或者 ``YYYY-MM-DD HH:MM:SS`` 格式的时间戳), (x)表示某个时刻某个变量值, (-)表示缺失值。
+where *xxxx-xx-xx xx:xx:xx* stands for datetime. Preferably, the date format is ``YYYY-MM-DD`` and the time is ``HH:MM:SS``. In variable columns, (*x*) represents a certain value and (*-*) means the value is missing. 
 
 .. note::
 
   - 在预测任务中的数据中, HyperTS期待也必须含有时间列, 列名称不作规范, 无论是ds,  ts,  timestamp,  TimeStamp还是其他。
-  - 时间列可以具有 ``pandas.to_datetime`` 可以识别的任何格式。
-  - 时间可以是无序的, HyperTS可以自动转化为有序数列。
-  - 输入数据的频率满足多种时间粒度, 秒(S)、分钟(T)、小时(H)、日(D)、周(W)、月(M)、每年(Y)等等。
-  - 输入数据允许存在缺失值, 缺失点与缺失时间片段,  HyperTS将会在数据预处理过程被填充。
-  - 输入数据允许存在重复行, 重复的时间片段,  HyperTS将会在被在数据预处理过程被裁剪。
+  - The datetime can be any format as long as it can be identified by ``pandas.to_datetime``.  
+  - HyperTS could sort the data in time sequence if the time is random. 
+  - HyperTS supports input data with various time frequencies. For example, second(S)、minute(T)、hour(H)、day(D)、week(W)、month(M)、year(Y),etc.
+  - HyperTS could interpolate the missing time points and segments during the preprocessing stage.输入数据允许存在缺失值, 缺失点与缺失时间片段,  HyperTS将会在数据预处理过程被填充。
+  - HyperTS could dropout the repeated rows during the preprocessing stage.
 
 
-当所解决任务中有辅助建模的数据, 我们称之为协变量, 它仅需跟附在上述数据的DataFrame中, 形式如下所示:
+Sometimes, there are extra variables generated during the processing, which are called covariates. They will be added parallel to the input variables. See example below:  
 
 .. code-block:: none 
 
@@ -63,17 +62,18 @@
           -                  -          -              -            -              -               -
   xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x
 
-其中, covar_col_i (i=1, 2, .., m)表示协变量。
+where *covar_col_i (i=1, 2, .., m)* stand for covariates。
 
 .. note::
 
-  - 协变量可以是数值型(连续变量)也可以是类别型(离散变量)。
-  - 协变量也允许存在缺失值和重复值, 不需要自己处理。
+  - Covariates can be continuous values or discrete values. 
+  - Covariates can contain repeated and missing values.
 
-预测数据示例
+
+Examples
 ************
 
-- 没有协变量
+1. Let's generate a random dataset without covariates. 
 
 .. code-block:: python
 
@@ -94,15 +94,17 @@
 .. image:: /figures/dataframe/forecast_example_0.png
     :width: 350
 
-我们随机生成一个不含协变量的时序预测数据集, 信息解析如下:
+The output shows that:
 
-  - 时间列名称: 'timestamp';
-  - 目标列名称: 'var_0',  'var_1',  'var_2';
-  - 时间频率: 'H';
-  - 含有部分缺失值;
-  - 多变量预测。
+- The name of the timestamp column is 'timestamp';
+- The names of the target columns are 'var_0',  'var_1',  'var_2';
+- The time frequency is per hour: 'H';
+- The dataset contain missing values;
+- It's a multivariate timeseries forecasting task.
 
-- 有协变量
+
+
+2. Let's generate a random dataset with covariates.
 
 .. code-block:: python
 
@@ -121,16 +123,16 @@
 .. image:: /figures/dataframe/forecast_example_1.png
     :width: 450
 
-我们随机生成一个含有协变量的时序预测数据集, 信息解析如下:
+The output shows that:
 
-  - 时间列名称: 'timestamp';
-  - 目标列名称: 'var_0',  'var_1',  'var_2';
-  - 协变量列名称: 'covar_0',  'covar_1',  'covar_2';(新增)
-  - 时间频率: 'D';
-  - 含有部分缺失值;
-  - 多变量预测。
+- The name of the timestamp column is 'timestamp';
+- The names of the target columns are 'var_0',  'var_1',  'var_2';
+- The names of the covariates columns are 'covar_0',  'covar_1',  'covar_2';
+- The time frequency is per day: 'D';
+- The dataset contain missing values;
+- It's a multivariate timeseries forecasting task.
+  
 
--------------
 
 时序分类及回归任务
 ==================
