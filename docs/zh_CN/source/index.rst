@@ -1,28 +1,18 @@
-HyperGBM
-=====================
+HyperTS
+=======
+
+欢迎来到HyperTS开启您的时序之旅！
 
 
-DataCanvas
------------
-HyperGBM is an open source project created by `DataCanvas <https://www.datacanvas.com>`_ .
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :glob:
+   
+   contents/*
 
-
-内容:
-------
-
-..  toctree::
-    :maxdepth: 2
-
-    概览<overview.rst>
-    安装<installation.md>
-    快速开始<quick_start.rst>
-    使用示例<example.rst>
-    How-To<how_to.rst>
-    Release Notes<release_note.rst>
-
-
-		
-ces and tables
+   
+Indices and tables
 ==================
 
 * :ref:`genindex`
