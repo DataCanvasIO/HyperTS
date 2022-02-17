@@ -1,35 +1,40 @@
-概览信息
+Overview
 ########
 
-HyperTS是由数据科学平台领导厂商 `DataCanvas <https://www.datacanvas.com>`_ 创建的开源项目。
+HyperTS is an open source project created by the automatic data science platform provider `DataCanvas <https://www.datacanvas.com>`_ .
 
-------------------
 
-什么是HyperTS?
+
+About HyperTS
 ===============
-HyperTS是 **DataCanvas Automatic Toolkits(DAT)** 针对于 **时间序列** 任务推出了一款涵盖 **自动机器学习(AutoML)** 与 **自动深度学习(AutoDL)** 的全Pipeline学习工具。它涵盖了数据清洗、数据预处理、特征工程、模型选择、超参数优化、模型评估、预测可视化等一系列自动化的操作, 轻松几行代码便可以完全 **端到端** 地处理多种场景下的时间序列任务。
+HyperTS is an automated machine learning (AutoML) and deep learning (AutoDL) tool which focuses on processing time series datasets. HyperTS belongs to the big family **DataCanvas AutoML Toolkits(DAT)** . It completely covers the full machine learning processing pipeline, consisting of data cleaning, preprocessing, feature engineering, model selection, hyperparameter optimization, result evalation and visalization. 
 
----------------
 
-为什么选择HyperTS?
+
+Why HyperTS
 ==================
 
-在如今层出不穷的时间序列工具中, 为什么要选择使用HyerTS而非其他?
+HyperTS supports the following features: 
 
-- **HyerTS提供了统一的接口对于多种时间序列任务, 包括时序预测, 时序分类以及时序回归等。**
-  
-  大部分的时间序列工具主要解决时序预测问题, 当问题发生转化或者场景转变时, 便会陷入窘境而束手无策。用户要么重新学习其他的工具, 要么自己根据专家经验搭建模型。费时费力, 效果却差强人意。而HyperTS面对如此情景, 便可以凭借统一化接口的特性, 使您无感知切换多种场景进行时序建模分析。
+- **Multi-task support**
 
-- **HyerTS支持多种时序变量。**
-  
-  无论数据是单变量时序, 多变量时序, 亦或是包含辅助建模的协变量, 均可以满足您轻松建模。
+  HyerTS provides an uniform interface for various time series tasks, including forcasting, classification and regression.   
 
-- **HyperTS内置了丰富的算法空间, 实现多模驱动, 轻重结合。**
-  
-  面对小规模的简单任务, 希望快速建模分析时序特性, 您可以选择开启统计模型模式(STATS)。HyperTS可以在Prophet, ARIMA, VAR等统计模型搜索空间中优化出最优秀的模型拿来分析数据。
-  面对大规模的复杂任务, 希望获得高精度的模型指导决策, 您可以选择开启深度学习模式(DL)。在此模式下, HyperTS将从DeepAR, RNN, GRU, LSTM, LSTNet等深度模型中搜索搭建出更鲁棒的神经网络架构。此外, DL内置对GPU的支持, 从而加快建模速度。
+- **Multi-(co)variate support** 
 
-- **HyperTS采用极简的操作而输入丰富的分析结果。**
+  HyperTS supports both univariate and multivariate as input features for time series forecasting, as well as the covariates in the deep learning models.
+
+- **Multi-mode support**
   
-  仅需几行代码便可执行起强大的实验搜索工作。它不仅解决了算法的超参数优化问题,而且从数据清洗到算法优化的整个建模过程统一化的放入了同一个搜索空间中,在 `Hypernets <https://github.com/DataCanvasIO/Hypernets>`_ 提供的蒙特卡洛树搜索、进化算法、强化学习并结合元学习器搜索的支持下, HyperTS有效且高效地解决了全Pipeline的时间序列优化问题。
-  实验建模结束, ``predict()``, ``evaluate()``, ``plot()`` 每一小步, 都将输出丰富的结果分析信息。 
+  STATS mode: For samll-scale datasets, HyperTS is able to quickly search optimal model and perform analysis by selecting the STATS mode, which contains several statistic models, like Prophet, ARIMA, and VAR.
+  
+  DL mode: For large-scale or complex datasets, users could select the DL mode, which provides several deep learning models (DeepAR, RNN, GRU, LSTM, LSTNet) to help build more robust neural network. Besides, the build-in GPU function significantly improves the time efficiency.
+
+- **Powerful search strategies**
+  
+  HyperTS innovatively solves the hyperparameters optimization problem by collecting all hyperparameters over the full modeling process into one search space. The fundamental framework `Hypernets <https://github.com/DataCanvasIO/Hypernets>`_ of DAT provides multiple search algorithms (Adapting Grid Search, Monte Carlo Tree Search, Evolution Algorithm and Meta-learner) to ensure high efficiency search and optimization.
+  
+- **Abundant evaluation methods**
+
+  To evaluate the trained model, HyperTS provides several performance matrics, including MSE, SMAPE, F1-score, accuracy and so on. Besides, forcasting curve with confidence intervals and controllable time scaling plot make the result more informative and better visualized. 
+
