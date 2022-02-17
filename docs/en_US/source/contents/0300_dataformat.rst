@@ -10,7 +10,7 @@ Time series forecasting
 Required format
 ************
 
-The required input data format is a two-dimensional structure (pandas.DataFrame), which should contain a TimeStamp column (``time_col``) and one or more variable columns (``var_col_0``, ``var_col_1``, ``var_col_2``,...``var_col_n``,). See example below: 
+The required input data format is a two-dimensional structure (``pandas.DataFrame``), which should contain a TimeStamp column (``time_col``) and one or more variable columns (``var_col_0``, ``var_col_1``, ``var_col_2``,... ``var_col_n``,). See example below: 
 
 .. code-block:: none 
 
@@ -134,13 +134,13 @@ The output shows that:
   
 
 
-时序分类及回归任务
+Time series classification and regression
 ==================
 
-分类及回归数据格式
+Required format 
 ******************
 
-在分类及回归任务中, 它们与预测任务的数据形式有所差别。具体表现在输入数据的形式为含有目标列(target)及特征列的嵌套(nested) ``pandas DataFrame`` 格式的二维数据表, 形式如下所示:
+Different from the forecasting tasks, the input data for classification and regression tasks are nested DataFrame, which means the variations over a time segment are located in one cell. See example below.  
 
 .. code-block:: none
 
@@ -155,16 +155,18 @@ The output shows that:
     x, x, x, ..., x     x, x, x, ..., x     x, x, x, ..., x         x, x, x, ..., x      y
     x, x, x, ..., x     x, x, x, ..., x     x, x, x, ..., x         x, x, x, ..., x      y
 
-其中, x, x, x, ..., x表示某个样本在len(x, x, x, ..., x)长度的时间片段某变量随时间的波动情况。(x)表示某个时刻某个变量值。(y)表示该行样本的标签, 离散值(分类)或者连续值(回归)。
+Every row stands for one sample data, which has *n+1* feature variables. The observations *x, x, x, ..., x* of one variable （``var_col_0``） over a time period are placed in the top-left cell. Target *y* represents the label of the sample. 
 
 .. note::
 
-  - 分类或者回归任务是针对一个样本判断其行为, 故与预测任务的数据形式不同, 预测数据每一行表示一个时间点各个变量的值, 而分类或预测数据每一行表示一个样本, 而每一个cell,  即 **x, x, x, ..., x** 表示某样本在 len(x, x, x, ..., x) 长度的时间片段某变量随时间波动的情况。每个样本根据各个变量的序列行为判别 ``target`` 的类别(分类)或者数值(回归)。
-  - 直觉上, ``pandas DadaFrame`` 是一二维数据表, 每一个cell储存一个数值, 现在我们储存一个序列, 从而将三维数据嵌套在二维数据表中, 这也是我们称之为 **nested DataFrame** 的原因。
+  - The main difference between the forecasting and classification/regression data format is the reprsentation of time sequence. For forecasting task, data measured in every time index is listed in every row. However, for classification/regression, the time sequences are listed in one cell. The dataframe could contain more samples (in row). The target variable y is category. 分类或者回归任务是针对一个样本判断其行为, 故与预测任务的数据形式不同, 预测数据每一行表示一个时间点各个变量的值, 而分类或预测数据每一行表示一个样本, 而每一个cell,  即 **x, x, x, ..., x** 表示某样本在 len(x, x, x, ..., x) 长度的时间片段某变量随时间波动的情况。每个样本根据各个变量的序列行为判别 ``target`` 的类别(分类)或者数值(回归)。
+  - 直觉上, ``pandas DataFrame`` 是一二维数据表, 每一个cell储存一个数值, 现在我们储存一个序列, 从而将三维数据嵌套在二维数据表中, 这也是我们称之为 **nested DataFrame** 的原因。
   - 分类或回归任务的目标是判别每一个样本的类别或者行为, 故数据的走势是关键特质, 所以为了简单起见, 我们在存储时省略去TimeStamp的信息。
 
-分类数据示例
+Example
 ************
+
+Let's generate a random dataset for time series classification.
 
 .. code-block:: python
 
@@ -191,18 +193,18 @@ The output shows that:
 .. image:: /figures/dataframe/classification_example_0.png
     :width: 800
 
-我们随机生成一个时序分类的数据集, 信息解析如下:
+The output shows that:
 
-  - 目标变量名称:'y';
-  - 特征变量名称:'var_0',  'var_1',  'var_2';
-  - 多变量分类。
+- The name of the target variable is 'y'; 
+- The names of the feature variables are 'var_0',  'var_1',  'var_2';
+- It's a multivariate classification task.
 
 
-嵌套Dataframe转换
+
+Convert array to nested dataframe
 ******************
 
-当拿到的原始数据是 ``numpy.array`` 形式时, 我们如何将其转化为嵌套的 ``pandas.DataFrame`` 数据呢? 例如如下数据: 
-
+Normally, the acquired data is in the form of ``numpy.array``. We need to convert them to the nested ``pandas.DataFrame``. For example, we have the numpy data as below: 
 
 .. code-block:: python
 
@@ -244,9 +246,9 @@ The output shows that:
           2,  1,  2,  0,  0,  1,  3,  1,  1,  3,  2,  1,  1,  3,  2,  1,  2,  2,  3,  0,  2,  2, 
           3,  1,  0,  2,  2,  1,  1,  1,  0,  0,  1,  1])
 
-通过以上信息可知, 该数据包含了100个样本, 每个样本有6个变量, 而每个变量是长度为72的时间序列。y共有4个类别。
+This dataset contains 100 samples. Each sample has 6 feature variables. And each variable has measurement data taken at 72 time indices. The target variable *y* has 4 categories.
 
-面对这样的情况, HyperTS为您提供了相关变换的工具函数 ``from_3d_array_to_nested_df``:
+HyperTS porvides a function ``from_3d_array_to_nested_df``, that could automaticlly convert 3d array to required nested dataframe. See example below:
 
 .. code-block:: python
 
