@@ -1,7 +1,7 @@
 Getting the correct time series data format
 ########
 
-Time series data, or Time-stamped data, is a sequence of measurement data with respect to their time of occurrence. For any types of machine learning time series tasks, getting the correct data format is important. Below, we will introduce what and how to generate the correct time series data format based on different tasks.  
+Time series data, or Time-stamped data, is a sequence of measurement data with respect to their time of occurrence. For any types of machine learning time series tasks, getting the correct data format is important. Below, we will introduce how to generate the correct time series data format based on different tasks.  
 
 
 Time series forecasting 
@@ -10,7 +10,7 @@ Time series forecasting
 Required format
 ************
 
-The required input data format is a two-dimensional structure (``pandas.DataFrame``), which should contain a TimeStamp column (``time_col``) and one or more variable columns (``var_col_0``, ``var_col_1``, ``var_col_2``,... ``var_col_n``,). See example below: 
+The required input data format is a two-dimensional structure (``pandas.DataFrame``), which should contain a timestamp column (``time_col``) and one or more variable columns (``var_col_0``, ``var_col_1``, ``var_col_2``,... ``var_col_n``,). See example below: 
 
 .. code-block:: none 
 
@@ -30,15 +30,15 @@ The required input data format is a two-dimensional structure (``pandas.DataFram
           -                  -                -                -                    -
   xxxx-xx-xx xx:xx:xx        x                x                x                    x
 
-where *xxxx-xx-xx xx:xx:xx* stands for datetime. Preferably, the date format is ``YYYY-MM-DD`` and the time is ``HH:MM:SS``. In variable columns, (*x*) represents a certain value and (*-*) means the value is missing. 
+where *xxxx-xx-xx xx:xx:xx* stands for the datetime. Preferably, the date format is ``YYYY-MM-DD`` and the time is ``HH:MM:SS``. In variable columns, (*x*) represents a certain value and (*-*) means the value is missing. 
 
 .. note::
 
-  - 在预测任务中的数据中, HyperTS期待也必须含有时间列, 列名称不作规范, 无论是ds,  ts,  timestamp,  TimeStamp还是其他。
+  - The timestamp column is mandatory for forecasting task. However, the column name is free to define.
   - The datetime can be any format as long as it can be identified by ``pandas.to_datetime``.  
-  - HyperTS could sort the data in time sequence if the time is random. 
-  - HyperTS supports input data with various time frequencies. For example, second(S)、minute(T)、hour(H)、day(D)、week(W)、month(M)、year(Y),etc.
-  - HyperTS could interpolate the missing time points and segments during the preprocessing stage.输入数据允许存在缺失值, 缺失点与缺失时间片段,  HyperTS将会在数据预处理过程被填充。
+  - HyperTS could sort the data in time sequence if the timestamps of original input data are random. 
+  - HyperTS supports input data with various time frequencies. For example, second(S)、minute(T)、hour(H)、day(D)、week(W)、month(M)、year(Y), etc.
+  - HyperTS could interpolate the missing time segments and missing values during the preprocessing stage.
   - HyperTS could dropout the repeated rows during the preprocessing stage.
 
 
@@ -62,12 +62,12 @@ Sometimes, there are extra variables generated during the processing, which are 
           -                  -          -              -            -              -               -
   xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x
 
-where *covar_col_i (i=1, 2, .., m)* stand for covariates。
+where ``covar_col_1``,..., ``covar_col_m`` are covariates.
 
 .. note::
 
-  - Covariates can be continuous values or discrete values. 
-  - Covariates can contain repeated and missing values.
+  - Covariates could be continuous or discrete values. 
+  - Covariates could contain repeated or missing values.
 
 
 Examples
@@ -99,7 +99,7 @@ The output shows that:
 - The name of the timestamp column is 'timestamp';
 - The names of the target columns are 'var_0',  'var_1',  'var_2';
 - The time frequency is per hour: 'H';
-- The dataset contain missing values;
+- The dataset contains missing values;
 - It's a multivariate timeseries forecasting task.
 
 
@@ -129,7 +129,7 @@ The output shows that:
 - The names of the target columns are 'var_0',  'var_1',  'var_2';
 - The names of the covariates columns are 'covar_0',  'covar_1',  'covar_2';
 - The time frequency is per day: 'D';
-- The dataset contain missing values;
+- The dataset contains missing values;
 - It's a multivariate timeseries forecasting task.
   
 
@@ -140,7 +140,7 @@ Time series classification and regression
 Required format 
 ******************
 
-Different from the forecasting tasks, the input data for classification and regression tasks are nested DataFrame, which means the variations over a time segment are located in one cell. See example below.  
+Differing from the forecasting tasks, the input data for classification and regression tasks are nested DataFrame, which means the variations over a time segment are listed in one cell. See example below.  
 
 .. code-block:: none
 
@@ -155,14 +155,14 @@ Different from the forecasting tasks, the input data for classification and regr
     x, x, x, ..., x     x, x, x, ..., x     x, x, x, ..., x         x, x, x, ..., x      y
     x, x, x, ..., x     x, x, x, ..., x     x, x, x, ..., x         x, x, x, ..., x      y
 
-Every row stands for one sample data, which has *n+1* feature variables. The observations *x, x, x, ..., x* of one variable （``var_col_0``） over a time period are placed in the top-left cell. Target *y* represents the label of the sample. 
+Every row stands for one sample data, which has *n+1* feature variables. The observations *x, x, x, ..., x* of one variable （``var_col_0``） over a time period are listed in one cell (the top-left). Target *y* represents the label of the sample. 
 
 .. note::
 
-  - The main difference between the forecasting and classification/regression data format is the reprsentation of time sequence. For forecasting task, data measured in every time index is listed in every row. However, for classification/regression, the time sequences are listed in one cell. The dataframe could contain more samples (in row). The target variable y is category. 分类或者回归任务是针对一个样本判断其行为, 故与预测任务的数据形式不同, 预测数据每一行表示一个时间点各个变量的值, 而分类或预测数据每一行表示一个样本, 而每一个cell,  即 **x, x, x, ..., x** 表示某样本在 len(x, x, x, ..., x) 长度的时间片段某变量随时间波动的情况。每个样本根据各个变量的序列行为判别 ``target`` 的类别(分类)或者数值(回归)。
-  - 直觉上, ``pandas DataFrame`` 是一二维数据表, 每一个cell储存一个数值, 现在我们储存一个序列, 从而将三维数据嵌套在二维数据表中, 这也是我们称之为 **nested DataFrame** 的原因。
-  - 分类或回归任务的目标是判别每一个样本的类别或者行为, 故数据的走势是关键特质, 所以为了简单起见, 我们在存储时省略去TimeStamp的信息。
-
+  - The main difference between the forecasting and classification/regression data format is the representation of time sequence. For forecasting task, the time-stamped data are listed in one column. However, for classification/regression, the time-stamped data are squeezed in one cell. By doing this, the DataFrame could contain more samples in rows. And the sample labels *y* are listed in the ``target`` column. 
+  - The ``pandas.DataFrame`` is apparently a two-dimensional table. However, it's actually a three-dimensional data, since each cell stores a time series data. That's why we called it as **nested DataFrame**.
+  - For classification/regression tasks, the trends between samples are key features. Therefore, the TimeStamp information are ignored to simplify the process.
+  
 Example
 ************
 
@@ -248,7 +248,7 @@ Normally, the acquired data is in the form of ``numpy.array``. We need to conver
 
 This dataset contains 100 samples. Each sample has 6 feature variables. And each variable has measurement data taken at 72 time indices. The target variable *y* has 4 categories.
 
-HyperTS porvides a function ``from_3d_array_to_nested_df``, that could automaticlly convert 3d array to required nested dataframe. See example below:
+HyperTS provides a function ``from_3d_array_to_nested_df``, that could automatically convert 3d array to required nested dataframe. See example below:
 
 .. code-block:: python
 
