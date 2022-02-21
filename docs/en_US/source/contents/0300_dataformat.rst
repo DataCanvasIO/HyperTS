@@ -1,4 +1,4 @@
-Getting the correct time series data format
+Expected data format
 ########
 
 Time series data, or Time-stamped data, is a sequence of measurement data with respect to their time of occurrence. For any types of machine learning time series tasks, getting the correct data format is important. Below, we will introduce how to generate the correct time series data format based on different tasks.  
