@@ -1,9 +1,10 @@
-快速开始
+Quick Start
+
 ########
 
-HyperTS是 DataCanvas Automatic Toolkit (DAT) 工具链中, 依托 `Hypernets <https://github.com/DataCanvasIO/Hypernets>`_ 衍生的关于时间序列的全Pipeline的自动化工具包。它遵循了 **make_expriment** 的使用习惯(类似于 `HyperGBM <https://github.com/DataCanvasIO/HyperGBM>`_ 的API, 一个针对于结构化表格数据的AutoML工具), 也符合 ``scikit-learn`` 中model API的使用规范。我们可以创造一个 ``make_expriment``, ``run`` 之后获得pipeline_model, 即一个最终优化完毕的estimator, 然后使用它的 ``predict``, ``evaluate``, ``plot`` 去分析未知的数据。
+HyperTS is a subtool of DataCanvas AutoML Toolkit(DAT), which is based on the general frameowrk  `Hypernets <https://github.com/DataCanvasIO/Hypernets>`_.  Similar to HyperGBM (another subtool for structured tabular data), HyperTS follows the same rules of both ``make_experiment`` API and ``scikit-learn`` model API. In general, an experiment is created after the data is ready. Then a trained model can be simply obtained by command ``.run()``. To analyze the model, HyperTS also supports the functions like ``.predict()``, ``.evaluate()`` and ``.plot()``.   
 
-通过 ``make_experiment`` 训练模型的基本步骤如下图所示:
+The figure below shows the ``make_experiment`` workflow of HyperTS:
 
 .. image:: /figures/images/workflow.png
     :alt: workflow
@@ -14,7 +15,7 @@ HyperTS可以被用来解决时序预测、分类及回归任务, 它们公用�
 
 -----------
 
-准备数据
+Data Preparation
 ========
 
 可以根据实际业务情况通过pandas加载数据, 得到用于模型训练的DataFrame, 本例将加载HyperTS内置的数据集。
