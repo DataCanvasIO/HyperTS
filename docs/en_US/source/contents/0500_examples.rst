@@ -1,4 +1,4 @@
-Examples
+Advanced configurations
 ########
 
 在 :doc:`快速开始 </contents/0400_quick_start>`, HyperTS展示了基本的应用方式:
