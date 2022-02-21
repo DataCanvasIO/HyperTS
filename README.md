@@ -1,6 +1,6 @@
 # Welcome to HyperTS
 
-Easy-to-use, powerful, unified full pipeline automated time series toolkit. Supports forecasting, classification, regression and others.
+Easy-to-use, powerful, unified full pipeline automated time series toolkit. Supports forecasting, classification and regression.
 
 ## Overview
 HyperTS is a Python package that provides an end-to-end time series (TS) analysis toolkit. It covers complete and flexible AutoML workflows for TS, including data clearning, preprocessing, feature engineering, model selection, hyperparamter optimization, result evaluation, and visualization.
@@ -12,7 +12,7 @@ Easy-to-use and lower-level API. Users can get a model after simply running the 
 
 ## Examples
 
-Users can quickly create and ```run()``` an experiment with ```make_experiment()```, where ```train_data```, and ```task``` as required input parameters. In the forecast task in the following example, we tell the experiment that it is a multivariate-forecast ```task```, using stats ```mode```, since the data contains timestamp and covariable columns, ```timestamp``` and ```covariables``` parameters might inform the experiment.
+Users can quickly create and ```run()``` an experiment with ```make_experiment()```, where ```train_data```, and ```task``` as required input parameters. In the following forecast example, we tell the experiment that it is a multivariate-forecast ```task```, using stats ```mode```, since the data contains timestamp and covariable columns, ```timestamp``` and ```covariables``` parameters might inform the experiment.
 
 ```python
 from hyperts.experiment import make_experiment

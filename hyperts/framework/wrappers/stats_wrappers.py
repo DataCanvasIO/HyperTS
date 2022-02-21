@@ -144,6 +144,10 @@ class TSForestWrapper(EstimatorWrapper, WrapperMixin):
     def predict_proba(self, X, **kwargs):
         return self.model.predict_proba(X)
 
+    @property
+    def classes_(self):
+        return self.model.classes_
+
 
 class KNeighborsWrapper(EstimatorWrapper, WrapperMixin):
     """
@@ -165,3 +169,7 @@ class KNeighborsWrapper(EstimatorWrapper, WrapperMixin):
     def predict_proba(self, X, **kwargs):
         X = self.transform(X)
         return self.model.predict_proba(X)
+
+    @property
+    def classes_(self):
+        return self.model.classes_

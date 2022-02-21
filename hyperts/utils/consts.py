@@ -42,6 +42,7 @@ DATATYPE_TENSOR_FLOAT              = 'float32'
 StepName_DATA_PREPROCESSING        = 'data_preprocessing'
 StepName_SPACE_SEARCHING           = 'space_searching'
 StepName_FINAL_TRAINING            = 'final_training'
+StepName_FINAL_ENSEMBLE            = 'final_ensemble'
 
 OptimizeDirection_MINIMIZE         = 'min'
 OptimizeDirection_MAXIMIZE         = 'max'

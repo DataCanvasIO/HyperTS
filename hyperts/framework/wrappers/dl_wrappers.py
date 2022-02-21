@@ -31,6 +31,13 @@ class DeepARWrapper(EstimatorWrapper, WrapperMixin):
             X = self.transform(X)
             return self.model.predict_proba(X)
 
+    @property
+    def classes_(self):
+        if self.init_kwargs.get('task') in consts.TASK_LIST_CLASSIFICATION:
+            return self.model.mata.labels_
+        else:
+            return None
+
 
 class HybirdRNNWrapper(EstimatorWrapper, WrapperMixin):
     """
@@ -65,6 +72,13 @@ class HybirdRNNWrapper(EstimatorWrapper, WrapperMixin):
         X = self.transform(X)
         return self.model.predict_proba(X)
 
+    @property
+    def classes_(self):
+        if self.init_kwargs.get('task') in consts.TASK_LIST_CLASSIFICATION:
+            return self.model.mata.labels_
+        else:
+            return None
+
 
 class LSTNetWrapper(EstimatorWrapper, WrapperMixin):
     """
@@ -98,3 +112,10 @@ class LSTNetWrapper(EstimatorWrapper, WrapperMixin):
     def predict_proba(self, X, **kwargs):
         X = self.transform(X)
         return self.model.predict_proba(X)
+
+    @property
+    def classes_(self):
+        if self.init_kwargs.get('task') in consts.TASK_LIST_CLASSIFICATION:
+            return self.model.mata.labels_
+        else:
+            return None

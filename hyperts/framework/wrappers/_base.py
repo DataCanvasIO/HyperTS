@@ -86,6 +86,10 @@ class WrapperMixin:
             'max_abs': MaxAbsTransformer()
         }
 
+    @property
+    def classes_(self):
+        return None
+
     def fit_transform(self, X):
         tb = get_tool_box(X)
         if self.is_log is not None:

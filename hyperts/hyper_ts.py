@@ -121,6 +121,9 @@ class HyperTSEstimator(Estimator):
             tb = get_tool_box(y)
             self.history_prior = tb.df_mean_std(y)
 
+        if self.classes_ is None and hasattr(self.model, 'classes_'):
+            self.classes_ = self.model.classes_
+
         if verbose > 0:
             logger.info(f'taken {time.time() - starttime}s')
 
@@ -137,8 +140,7 @@ class HyperTSEstimator(Estimator):
             X_transformed = X
 
         if self.cv_models_ is not None:
-            preds = None
-            NotImplementedError('The current version does not support CV.')
+            raise NotImplementedError('The current version does not support CV.')
         else:
             preds = self.model.predict(X_transformed, **kwargs)
 
@@ -165,8 +167,7 @@ class HyperTSEstimator(Estimator):
             method = 'predict'
 
         if self.cv_models_ is not None:
-            proba = None
-            NotImplementedError('The current version does not support CV.')
+            raise  NotImplementedError('The current version does not support CV.')
         else:
             proba = getattr(self.model, method)(X_transformed, **kwargs)
 

@@ -9,7 +9,7 @@ import pandas as pd
 
 from hypernets.core import set_random_state
 from hypernets.experiment.compete import SteppedExperiment, ExperimentStep, \
-                                         EnsembleStep, FinalTrainStep
+                                         SpaceSearchStep, EnsembleStep, FinalTrainStep
 
 from hypernets.utils import logging
 
@@ -171,7 +171,7 @@ class TSCDataPreprocessStep(ExperimentStep):
         self.cv = cv
 
         # fitted
-        self.data_cleaner_ = None
+        self.data_cleaner_ = get_tool_box(pd.DataFrame).data_cleaner(**self.data_cleaner_args)
 
     def fit_transform(self, hyper_model, X_train, y_train, X_test=None, X_eval=None, y_eval=None, **kwargs):
         super().fit_transform(hyper_model, X_train, y_train, X_test=X_test, X_eval=X_eval, y_eval=y_eval, **kwargs)
@@ -240,67 +240,71 @@ class TSCDataPreprocessStep(ExperimentStep):
         else:
             return X, y
 
-    def get_fitted_params(self):
+    def get_params(self, deep=True):
+        params = super(TSCDataPreprocessStep, self).get_params()
+        params['data_cleaner_args'] = self.data_cleaner_.get_params()
+        return params
 
+    def get_fitted_params(self):
         params = super().get_fitted_params()
         data_shapes = self.data_shapes_ if self.data_shapes_ is not None else {}
 
         return {**params, **data_shapes}
 
 
-class TSSpaceSearchStep(ExperimentStep):
+class TSSpaceSearchStep(SpaceSearchStep):
     """Time Series Space Searching.
 
     """
-    def __init__(self, experiment, name):
-        super().__init__(experiment, name)
-        # fitted
-        self.dataset_id = None
-        self.model = None
-        self.history_ = None
-        self.best_reward_ = None
+    def __init__(self, experiment, name, cv=False, num_folds=3):
+        super().__init__(experiment, name, cv=cv, num_folds=num_folds)
 
-    def fit_transform(self, hyper_model, X_train, y_train, X_test=None, X_eval=None, y_eval=None, **kwargs):
-        super().fit_transform(hyper_model, X_train, y_train, X_test=X_test, X_eval=X_eval, y_eval=y_eval)
+    def search(self, X_train, y_train, X_test=None, X_eval=None, y_eval=None, **kwargs):
         if X_eval is not None:
             kwargs['eval_set'] = (X_eval, y_eval)
-        model = copy.deepcopy(self.experiment.hyper_model)  # copy from original hyper_model instance
-        model.search(X_train, y_train, X_eval, y_eval, **kwargs)
-
-        if model.get_best_trial() is None or model.get_best_trial().reward == 0:
-            raise RuntimeError('Not found available trial, change experiment settings and try again pls.')
-
-        self.dataset_id = 'abc'  # fixme
-        self.model = model
-        self.history_ = model.history
-        self.best_reward_ = model.get_best_trial().reward
-
-        logger.info(f'{self.name} best_reward: {self.best_reward_}')
-
-        return self.model, X_train, y_train, X_test, X_eval, y_eval
-
-    def transform(self, X, y=None, **kwargs):
-        return X
-
-    def is_transform_skipped(self):
-        return True
-
-    def get_fitted_params(self):
-        return {**super().get_fitted_params(),
-                'best_reward': self.best_reward_,
-                'history': self.history_,
-                }
+        model = copy.deepcopy(self.experiment.hyper_model)
+        es = self.find_early_stopping_callback(model.callbacks)
+        if es is not None and es.time_limit is not None and es.time_limit > 0:
+            es.time_limit = self.estimate_time_limit(es.time_limit)
+        model.search(X_train, y_train, X_eval, y_eval, cv=self.cv, num_folds=self.num_folds, **kwargs)
+        return model
 
 
 class TSEnsembleStep(EnsembleStep):
+    """Time Series Ensemble.
+
+    """
+    def __init__(self, experiment, name, scorer=None, ensemble_size=7):
+        super().__init__(experiment, name, scorer=scorer, ensemble_size=ensemble_size)
+
+    def build_estimator(self, hyper_model, X_train, y_train, X_eval=None, y_eval=None, **kwargs):
+        trials = self.select_trials(hyper_model)
+        estimators = [hyper_model.load_estimator(trial.model_file) for trial in trials]
+        ensemble = self.get_ensemble(estimators, X_train, y_train)
+
+        if all(['oof' in trial.memo.keys() for trial in trials]):
+            logger.info('ensemble with oofs')
+            oofs = self.get_ensemble_predictions(trials, ensemble)
+            assert oofs is not None
+            if hasattr(oofs, 'shape'):
+                tb = get_tool_box(y_train, oofs)
+                y_, oofs_ = tb.select_valid_oof(y_train, oofs)
+                ensemble.fit(None, y_, oofs_)
+            else:
+                ensemble.fit(None, y_train, oofs)
+        else:
+            ensemble.fit(X_eval, y_eval)
+
+        return ensemble
 
     def get_ensemble(self, estimators, X_train, y_train):
-        # return GreedyEnsemble(self.task, estimators, scoring=self.scorer, ensemble_size=self.ensemble_size)
         tb = get_tool_box(X_train, y_train)
-        if self.task in ['forecast', "multivariate-forecast"]:
+        if self.task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_REGRESSION:
             ensemble_task = 'regression'
+        elif 'binary' in self.task:
+            ensemble_task = 'binary'
         else:
-            ensemble_task = self.task
+            ensemble_task = 'multiclass'
         return tb.greedy_ensemble(ensemble_task, estimators, scoring=self.scorer, ensemble_size=self.ensemble_size)
 
 
@@ -337,8 +341,8 @@ class TSPipeline:
         self.covariables = covariables
 
         self.sk_pipeline = sk_pipeline
-        self.prior = sk_pipeline.named_steps.estimator.history_prior
         if self.task in consts.TASK_LIST_FORECAST:
+            self.prior = sk_pipeline.named_steps.estimator.history_prior
             if mode == consts.Mode_STATS:
                 self.history = history
             else:
@@ -717,37 +721,41 @@ class TSCompeteExperiment(SteppedExperiment):
             random_state = np.random.randint(0, 65535)
         set_random_state(random_state)
 
-        tb = get_tool_box(X_train, y_train)
-
         if task is None:
             task = hyper_model.task
-
-        if scorer is None:
-            scorer = tb.metrics.metric_to_scorer(hyper_model.reward_metric, task=task,
-                     pos_label=kwargs.get('pos_label'), optimize_direction=optimize_direction)
 
         steps = []
 
         # data clean
         if task in consts.TASK_LIST_FORECAST:
             steps.append(TSFDataPreprocessStep(self, consts.StepName_DATA_PREPROCESSING,
-                                             freq=freq,
-                                             timestamp_col=timestamp_col,
-                                             covariate_cols=covariate_cols,
-                                             covariate_data_cleaner_args=covariate_data_cleaner_args))
+                                               freq=freq,
+                                               timestamp_col=timestamp_col,
+                                               covariate_cols=covariate_cols,
+                                               covariate_data_cleaner_args=covariate_data_cleaner_args))
         else:
             if data_cleaner_args is None:
                 data_cleaner_args = {'drop_label_nan_rows': True}
             steps.append(TSCDataPreprocessStep(self, consts.StepName_DATA_PREPROCESSING,
-                                             cv=cv,
-                                             data_cleaner_args=data_cleaner_args))
+                                               cv=cv,
+                                               data_cleaner_args=data_cleaner_args))
 
         # search step
-        steps.append(TSSpaceSearchStep(self, consts.StepName_SPACE_SEARCHING))
+        steps.append(TSSpaceSearchStep(self, consts.StepName_SPACE_SEARCHING,
+                                       cv=cv,
+                                       num_folds=num_folds))
 
-        # ensemble step
-        # steps.append(TSEnsembleStep(self, StepNames.FINAL_ENSEMBLE, scorer=scorer, ensemble_size=ensemble_size))
-
+        # if ensemble_size is not None and ensemble_size > 1:
+        #     # ensemble step
+        #     tb = get_tool_box(X_train, y_train)
+        #     if scorer is None:
+        #         scorer = tb.metrics.metric_to_scorer(hyper_model.reward_metric, task=task,
+        #                  pos_label=kwargs.get('pos_label'), optimize_direction=optimize_direction)
+        #     steps.append(TSEnsembleStep(self, consts.StepName_FINAL_ENSEMBLE,
+        #                                 scorer=scorer,
+        #                                 ensemble_size=ensemble_size))
+        # else:
+        # final train step
         steps.append(FinalTrainStep(self, consts.StepName_FINAL_TRAINING, retrain_on_wholedata=False))
 
         # ignore warnings
@@ -790,9 +798,4 @@ class TSCompeteExperiment(SteppedExperiment):
                           history=history)
 
     def _repr_html_(self):
-        try:
-            from hypernets.hn_widget.hn_widget.widget import ExperimentSummary
-            from IPython.display import display
-            display(ExperimentSummary(self))
-        except:
-            return self.__repr__()
+        return self.__repr__()
