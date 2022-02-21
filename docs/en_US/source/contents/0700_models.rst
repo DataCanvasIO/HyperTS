@@ -1,4 +1,4 @@
-模式模型
+Model references
 ########
 
 HyperTS在时间序列分析上平行地支持统计模型模式, 深度学习模式以及神经架构搜索模式(暂时未开放)。三种模式内置了多种优秀的模型, 例如Prophet, ARIMA, DeepAR, LSTNet等。在未来, 我们将继续丰富更多的模型, 例如Transformer, N-Beats等。
