@@ -1,7 +1,7 @@
-Advanced configurations
+Advanced Configurations
 ########
 
-在 :doc:`快速开始 </contents/0400_quick_start>`, HyperTS展示了基本的应用方式:
+:doc:`Quick Start </contents/0400_quick_start>` presents the most basic application of HyperTS. It's repeated as below. 
 
 .. code-block:: python
 
@@ -23,45 +23,38 @@ Advanced configurations
   scores = model.evaluate(y_true=y_test, y_pred=forecast)
   ...
 
-为了您更好的掌握HyperTS的使用技巧, 本节将展开详细地讲解, 以期您可以发掘出它更加鲁棒的性能表现。
+This section will introduce some advanced configurations of ``make_experience`` to help to achieve more robust and better performance. 
 
--------------
 
-以缺省配置创建一个实验(default)
+
+Default settings
 ===============================
 
-首先, 我们必须告诉实验将做一个什么类型的任务, 即给参数 ``task`` 赋值;
+Firstly, load the input data and define the ``task`` type. The related data information is `here <https://github.com/DataCanvasIO/HyperTS/blob/main/hyperts/datasets/base.py>`_。
+Secondly, define the related variables according to different task types. For forecasting task, the required variables are the ``timestampe``, and ``covariables`` if have. For classification task, the required avariable is the ``target``. 
 
-其次, 在预测任务中, 我们必须向 ``make_experiment`` 传入参数 ``timestamp`` 的列名。如果存在协变量, 也需要传入 ``covariables`` 的列名。在分类任务中, 数据的目标列如果不是 *y* 或者 *target* 的话, 需要通过参数 ``target`` 的设置。
-
-示例代码:
+Example codes:
 
 .. code-block:: python
 
-  #预测
+  #Forecasting task
   experiment = make_experiment(train_data, 
                               task='forecast',
                               timestamp='TimeStamp',
                               covariables=['HourSin', 'WeekCos', 'CBWD'])
-  #分类
+  #Classification task
   experiment = make_experiment(train_data, task='classification', target='y')                            
 
-数据集相关信息请参考 `这里 <https://github.com/DataCanvasIO/HyperTS/blob/main/hyperts/datasets/base.py>`_。
 
 .. note::
 
-  对于时序预测任务, 按照预测变量的数量可能划分为单变量预测和多变量预测。对于时序分类任务, 按照特征变量的数量及类别的数据可划分为单变量二分类, 单变量多分类, 多变量二分类及多变量多分类。如果我们在拿到数据后已经清楚数据及所解决任务的基本情况, 建议在配置 ``task`` 传入以下参数:
-
-  - 单变量预测: task='unvariate-forecast';
-  - 多变量预测: task='multivariate-forecast';
-  - 单变量二分类: task='univariate-binaryclass';
-  - 单变量多分类: task='univariate-multiclass';
-  - 多变量二分类: task='multivariate-binaryclass';
-  - 多变量多分类: task='multivariate-multiclass'.
+  The time series forecasting task could be further divided into ``univariate-forecast`` and ``multivariate-forecast`` depending on the number of the forecast variables.
   
-当然, 也可以简单配置 task='forecast', task='classification'及task='regression', 这样HyperTS将从数据中结合其他已知列信息进行详细的任务类型推断。
+  For claasification task, it could be divided into ``univariate-binaryclass``, ``univariate-multiclass``, ``multivariate-binaryclass`` and ``multivariate-multiclass``, according to the number of features and the target categories. 
+  
+  If the exact task type is known, the specific name is recommended to assign to the function argument. For example, ``task='univariate-forecast'``. If not, using the general type name, ``task='classification'``, also work. 
 
-----------------
+
 
 选择运行模式(mode)
 ==================
