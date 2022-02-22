@@ -56,10 +56,10 @@ Example codes:
 
 
 
-选择运行模式(mode)
+Select the processing method
 ==================
 
-HyperTS内置了三种运行模式, 分别为统计模型模式('stats'), 深度学习模式('dl')以及神经架构搜索模式('nas', 未开放)。缺省情况下, 默认选择统计模型模式, 您也可以更改为其他模式:
+HyperTS includes three types of processing methods: Statistical (default)， Deep Learning and Neural Architecture Search, which are abbreviated as ``stats``, ``dl`` and ``nas`` respectively. Users could select the methods by setting augument ``mode``.
 
 .. code-block:: python
 
@@ -67,7 +67,11 @@ HyperTS内置了三种运行模式, 分别为统计模型模式('stats'), 深度
                               mode='dl',
                               ...)                            
 
-深度学习模式基于Tensorflow可支持GPU, 缺省情况下, 默认实验将在CPU环境下运行。如果您的设备支持GPU并安装了gpu版本的tensorflow-gpu, 可以更改参数 ``dl_gpu_usage_strategy```:
+The deep learning method is based on the Tensorfolw framework, which processes in CPU by default and also supports GPU after installing tensorflow-gpu. There are three usage stratrges: 
+- 0: processing in CPU;
+- 1: processing in GPU with increasing memory according to the data scale;  
+- 2: processing in GPU with limited memory (2048M). Change the memory limit by the argument ``dl_memory_limit``.
+
 
 .. code-block:: python
 
@@ -76,45 +80,39 @@ HyperTS内置了三种运行模式, 分别为统计模型模式('stats'), 深度
                               dl_gpu_usage_strategy=1,
                               ...)                            
 
-其中, ``dl_gpu_usage_strategy`` 支持三种配置策略, 分别为:
 
-- 0: CPU下运行;
-- 1: GPU内存容量依据模型规模及运行情况增长;
-- 2: GPU内存容量限制最大容量, 默认为2048M, 参数 ``dl_memory_limit`` 支持自定义配置。
 
-------------------
-
-指定模型的评估指标(reward_metric)
+Set the evaluation criterion
 =================================
 
-当使用 ``make_experiment`` 创建实验时, 缺省情况下, 预测任务默认的模型评估指标是'mae', 分类任务是'accuracy', 回归任务默认是'rmse'。您可以通过参数 ``reward_metric`` 重新指定评估指标, 可以是'str'也可以是 ``sklearn.metrics`` 内置函数, 示例如下:
+By default, the evaluation criterion for forecasting task is 'mae', for classification task 'accuracy' and for regression task 'rmse'. Users could also set other evaluation criterion by argument ``reward-metric`` in both string format or importing from ``sklearn.metrics``.
 
 .. code-block:: python
 
-  # str
+  # string format
   experiment = make_experiment(train_data, 
                               task='univariate-binaryclass',
                               reward_metric='auc',
                               ...)  
 
-  # sklearn.metrics
+  # from sklearn.metrics
   from sklearn.metrics import auc
   experiment = make_experiment(train_data, 
                               task='univariate-binaryclass',
-                              reward_metric=auc,
+                              reward_metric= auc,
                               ...)                                                        
 
-目前, ``reward_metric`` 可以支持多种评估指标, 具体如下: 
+Currently, ``reward_metric`` supports the following criterion: 
 
-- 分类: accuracy, auc, f1, precision, recall, logloss。
-- 预测及回归: mae, mse, rmse, mape, smape, msle, r2。
+- classification: accuracy, auc, f1, precision, recall, logloss。
+- forecasting and regression: mae, mse, rmse, mape, smape, msle, r2。
 
-------------------
 
-指定优化方向(optimize_direction)
+
+Define the optimization direction
 ================================
 
-在模型搜索阶段, 需要给搜索者指定搜索方向, 在缺省情况下, 默认将从 ``reward_metric`` 中检测。您也可以通过参数 ``optimize_direction`` 进行指定('min'或者'max'):
+The searcher needs an indication of the optimization direction ('min' or 'max'). By default, the system will detect from ``reward_metric``.
 
 .. code-block:: python
 
@@ -126,10 +124,10 @@ HyperTS内置了三种运行模式, 分别为统计模型模式('stats'), 深度
 
 ------------------
 
-设置最大搜索次数(max_trials)
+Set the max search trials value
 ============================
 
-缺省情况下, ``make_experiment`` 所创建的实验搜索3种参数模型便停止搜索。实际使用中, 建议将最大搜索次数设置为30以上, 时间充裕的话, 更大的搜索次数将有更高的机率获得更加优秀的模型:
+The default search trial is three to obtain quick results. In practice, to achieve better performace, the search trails value is recommended more than 30. The higher the ``max_trials`` value is, the better performace would obtain if the time is sufficient.
 
 .. code-block:: python
 
@@ -137,29 +135,26 @@ HyperTS内置了三种运行模式, 分别为统计模型模式('stats'), 深度
                               max_trials=100,
                               ...)                     
 
-------------------
 
-设置早停策略(early_stopping)
+
+Set the early stopping strategy
 ============================
 
-当 ``max_trials`` 设置比较大时, 可能需要更多的时间等待实验运行完毕。为了把控工作的节奏, 您可以通过 ``make_experiment`` 的早停机制(Early Stopping)进行控制:
+The early stopping strategy could define three different criterions to stop the processing to save time. The three strategies are:
+- ``early_stopping_time_limit``:  unit is second.
+- ``early_stopping_round``: limit is the times of search trials (priority to max_trials).
+- ``early_stopping_reward``: defines the threshold value of certain reward.
 
 .. code-block:: python
 
   experiment = make_experiment(train_data, 
                               max_trials=100,
-                              early_stopping_time_limit=3600 * 3,  # 将搜索时间设置为最多3个小时
+                              early_stopping_time_limit=3600 * 3,  # set the max search time is three hours
                               ...)    
                         
-其中, ``make_experiment`` 共包含了三种早停机制, 分别为:
 
-- early_stopping_time_limit: 限制实验的运行时间, 粒度为秒。
-- early_stopping_round: 限制实验的搜索轮数, 粒度为次。
-- early_stopping_reward: 指定一个奖励得分的界限。
 
-------------------
-
-指定验证数据集(eval_data)
+Define the evaluation dataset
 =========================
 
 模型训练除了需要训练数据集, 还需要评估数据集, 缺省情况下将从训练数据集中以一定比例切分一部分评估数据集。您也可在 ``make_experiment`` 时通过eval_data指定评估集, 如:
