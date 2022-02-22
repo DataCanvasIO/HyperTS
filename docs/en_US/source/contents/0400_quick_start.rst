@@ -1,9 +1,7 @@
 Quick Start
-
 ########
 
-HyperTS is a subtool of DataCanvas AutoML Toolkit(DAT), which is based on the general frameowrk  `Hypernets <https://github.com/DataCanvasIO/Hypernets>`_.  Similar to HyperGBM (another subtool for structured tabular data), HyperTS follows the same rules of both ``make_experiment`` API and ``scikit-learn`` model API. In general, an experiment is created after the data is ready. Then a trained model can be simply obtained by command ``.run()``. To analyze the model, HyperTS also supports the functions like ``.predict()``, ``.evaluate()`` and ``.plot()``.   
-
+HyperTS is a subtool of DataCanvas AutoML Toolkit(DAT), which is based on the general frameowrk  `Hypernets <https://github.com/DataCanvasIO/Hypernets>`_.  Similar to HyperGBM (another subtool for structured tabular data), HyperTS follows the same rules of both ``make_experiment`` API and ``scikit-learn`` model API. In general, an experiment is created after the data is ready. Then a trained model can be simply obtained by command ``run()``. To analyze the model, HyperTS also supports the functions like ``predict()``, ``evaluate()`` and ``plot()``.  
 The figure below shows the ``make_experiment`` workflow of HyperTS:
 
 .. image:: /figures/images/workflow.png
@@ -11,21 +9,20 @@ The figure below shows the ``make_experiment`` workflow of HyperTS:
     :align: center
     :width: 400
 
-HyperTS可以被用来解决时序预测、分类及回归任务, 它们公用统一的API。接下来, 我们将分为快速演示关于时序预测与分类任务的使用方法。
+HyperTS provides the unified API for different tasks, like time series forecasting, classification and regression. An example of how to perform the forecasting task is illustrated as follows. 
 
------------
 
-Data Preparation
+Data preparation
 ========
 
-可以根据实际业务情况通过pandas加载数据, 得到用于模型训练的DataFrame, 本例将加载HyperTS内置的数据集。
+This example uses the built-in dataset in HyperTS. Users could load their own datasets by ``pandas.Dataframe``. 
 
 .. code-block:: python
 
     from hyperts.datasets import load_network_traffic
     from sklearn.model_selection import train_test_split
 
-对于划分训练集和测试集, 由于数据存在时间上的先后顺序, 因此为防止信息泄露, 我们从整体数据集的后边切分一部分, 故 ``shuffle=False``。
+The data split is based on time sequences to avoid the loss of time information. Therefore, the test data is the end part of the whole dataset with setting ``shuffle=False``.
 
 .. code-block:: python
 
@@ -40,22 +37,22 @@ Data Preparation
     :width: 700
 
 
-该数据集的一些基本信息具体如下:
+The detail information of this dataset:
 
-- 时间列名称: 'TimeStamp';
-- 目标列名称: ['Var_1', 'Var_2', 'Var_3', 'Var_4', 'Var_5', 'Var_6'];
-- 协变量列名称: ['HourSin', 'WeekCos', 'CBWD'];
-- 时间频率: 'H'。
+- The name of the timestampe column is 'TimeStamp';
+- The names of the target columns are 'Var_1', 'Var_2', 'Var_3', 'Var_4', 'Var_5', 'Var_6';
+- The names of the covariates columns are 'HourSin', 'WeekCos', 'CBWD';
+- The time frequency is per hour: 'H'.
 
 .. tip::
-    如果您对HyperTS的数据格式不了解或者存有疑惑, 请回看 :doc:`快速开始 </contents/0300_dataformat>` 。
+    If you have any questions about the data format, please refer to the section :doc:`Expected Data Format </contents/0300_dataformat>` 。
 
------------
 
-创建实验并训练
+
+Model training
 ==============
 
-我们通过创建实验 ``make_experiment`` 搜索一个时序模型, 并调用 ``run()`` 方法来执行实验。
+An experiment is firsty created by ``make_experiment`` with several user-defined parameters. Then the optimal model is simply obtained by using command ``run()``, which integrates the search, training and optimazation processes.
 
 .. code-block:: python
 
@@ -69,28 +66,29 @@ Data Preparation
                                 covariables=['HourSin', 'WeekCos', 'CBWD'])
     model = experiment.run()
 
-其中, model 就是本次 ``run()`` 搜索并训练所得到的最优的模型。
 
 .. note::
 
-    在预测任务中, 我们必须向 ``make_experiment`` 传入参数 ``timestamp`` 列名。如果存在协变量, 也需要传入 ``covariables`` 列名。因此, 在本案例中, 我们需要向 ``make_experiment`` 传入以下参数:
+    The required parameters for ``make_experiment`` are the ``train_data``, ``task`` and ``timestamp``, as well as ``covariables`` if have. In this case: 
+    
+    - The train_data is defined as ``train_data=train_data.copy()``;
 
-    - 时序预测任务, 即 ``task='forecast'``;
+    - The task is time series forecasting： ``task='forecast'``;
 
-    - 数据集的时间列名称, 即 ``timestamp='TimeStamp'``;
+    - The name of timestamp column is TimeStamp： ``timestamp='TimeStamp'``;
 
-    - 数据集中协变量列的名称, 即 ``covariables=['HourSin', 'WeekCos', 'CBWD']``;
+    - The names of the covariates columns are  ``covariables=['HourSin', 'WeekCos', 'CBWD']``;
 
 .. tip::
 
-    如果想要获得强大的性能表现, 还可以修改其他默认的参数, 具体可以参考 ``make_experiment`` 的参数介绍。
+    For more advanced performance, you could modify other parameters. Please refer to the instructions of ``make_experiment``.
 
------------
 
-未知数据预测
+
+Data prediction
 ============
 
-对test data切分X与y, 调用 ``predict()`` 方法执行结果预测。
+Function ``split_X_y()`` is to separate the test data into X (the timestamp) and y (the target variables). Then perform ``predict()`` to obtain the forecast results.
 
 .. code-block:: python
 
@@ -101,15 +99,12 @@ Data Preparation
 .. image:: /figures/dataframe/quickstart_1.png
     :width: 600
 
------------
 
-结果评估
+
+Result evaluation
 ========
 
-调用 ``evaluate()`` 方法执行结果评估, 便可以观测到各个评估指标下的得分情况。
-
-这里会返回一些默认的指标评分, 如果想观测指定指标的评分, 可以设置参数 ``metrics``,  例如metrics=['mae', 'mse', mape_func]。
-其中, mape_func可以是自定义的评估函数或者来自于sklearn的评估函数。
+To evaluate the forecast results, use function ``evaluate()`` to get the scores of different evaluation indicators. The example below shows the default indicators. Apart from this, users could set the parameter ``merics`` to define specific indicators. For instance, ``metrics=['mae', 'mse', mape_func]``, where ``mape_func`` could be a custom evaluation function or evaluation function from sklearn.
 
 .. code-block:: python
 
@@ -119,13 +114,12 @@ Data Preparation
 .. image:: /figures/dataframe/quickstart_2.png
     :width: 120
 
------------
 
-可视化
+
+Result visualization
 ======
 
-调用 ``plot()`` 方法可视化, 观测预测曲线, 并与实际的曲线做对比分析。这里会显示某一个变量的预测曲线, 默认为第一个目标变量。
-如果为多变量预测, 想要观测其他的变量曲线变化的情况, 可以修改参数```var_id```, 例如: var_id='Var_3'或var_id=3。
+Use function ``plot()`` to draw the forecast curve of the first target variable by default. For multivariable forecasting task, user could set the parameter ``var_id`` to plot other target variables. For example, ``var_id='Var_3'`` or ``var_id=3``. The actural result is also shown in the graph for comparison.
 
 .. code-block:: python
 
@@ -136,4 +130,4 @@ Data Preparation
     :width: 850
 
 .. tip::
-    预测曲线由plotly工具绘制, 通过点击可以交互式观测每个时刻的数值信息。
+    The forecasting curve graph is made by plotly library. Users could observe each point value by clicking on the curve. 
