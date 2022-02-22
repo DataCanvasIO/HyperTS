@@ -12,13 +12,15 @@
 #
 import os
 import sys
+from datetime import datetime
 sys.path.insert(0, os.path.abspath('./.'))
 
 # -- Project information -----------------------------------------------------
 
+now = datetime.now()
 project = 'HyperTS'
-copyright = '2022, Zetyun.com'
-author = 'Zetyun.com'
+copyright = '{now.year}, DataCanvas.com'
+author = 'DataCanvas.com'
 
 # The full version, including alpha/beta/rc tags
 release = '0.1.0'

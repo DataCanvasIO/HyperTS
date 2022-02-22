@@ -1,6 +1,12 @@
 # Welcome to HyperTS
+:dizzy: Easy-to-use, powerful, unified full pipeline automated time series toolkit. Supports forecasting, classification and regression.
 
-Easy-to-use, powerful, unified full pipeline automated time series toolkit. Supports forecasting, classification and regression.
+
+[![Python Versions](https://img.shields.io/pypi/pyversions/hypernets.svg)](https://pypi.org/project/hypernets)
+
+## We Are Hiring！
+Dear folks, we are offering challenging opportunities located in Beijing for both professionals and students who are keen on AutoML/NAS. Come be a part of DataCanvas! Please send your CV to yangjian@zetyun.com. (Application deadline: TBD.) 
+
 
 ## Overview
 HyperTS is a Python package that provides an end-to-end time series (TS) analysis toolkit. It covers complete and flexible AutoML workflows for TS, including data clearning, preprocessing, feature engineering, model selection, hyperparamter optimization, result evaluation, and visualization.
@@ -8,6 +14,16 @@ HyperTS is a Python package that provides an end-to-end time series (TS) analysi
 Multi-mode drive, light-heavy combination is the highlight feature of HyperTS. Therefore, statistical models (STATS), deep learning (DL), and neural architecture search (NAS) can be switched arbitrarily to get a powerful TS estimator.
 
 Easy-to-use and lower-level API. Users can get a model after simply running the experiment, and then execute ```.predict()```, ```.predict_proba()```, ```.evalute()```, ```.plot()``` for various time series analysis.
+
+
+## Tutorial
+
+|[English Docs](https://hyperts.readthedocs.io/en/latest/)|[中文教程](https://hyperts.readthedocs.io/zh_CN/latest) |
+| --------------------------------- | --------------------------------- |
+[Expected Data Format](https://hyperts.readthedocs.io/en/latest/contents/0300_dataformat.html)|What data formats do HyperTS expect?|
+|[Quick Start](https://hyperts.readthedocs.io/en/latest/contents/0400_quick_start.html)| How to get started quickly with HyperTS?|
+|[Advanced Ladder](https://hyperts.readthedocs.io/en/latest/contents/0500_examples.html)|How to realize the potential of HyprTS?|
+|[Custom Functions](https://hyperts.readthedocs.io/en/latest/contents/0600_custom_functions.html)|How to customize the functions of HyprTS?|
 
 
 ## Examples
@@ -62,6 +78,15 @@ HyperTS supports the following features:
 
 ## Communication
 If you wish to contribute to this project, please refer to [CONTRIBUTING](CONTRIBUTING.md).
+
+## HyperTS related projects
+* [Hypernets](https://github.com/DataCanvasIO/Hypernets): A general automated machine learning (AutoML) framework.
+* [HyperGBM](https://github.com/DataCanvasIO/HyperGBM): A full pipeline AutoML tool integrated various GBM models.
+* [HyperDT/DeepTables](https://github.com/DataCanvasIO/DeepTables): An AutoDL tool for tabular data.
+* [HyperKeras](https://github.com/DataCanvasIO/HyperKeras): An AutoDL tool for Neural Architecture Search and Hyperparameter Optimization on Tensorflow and Keras.
+* [Cooka](https://github.com/DataCanvasIO/Cooka): Lightweight interactive AutoML system.
+
+![DataCanvas AutoML Toolkit](docs/static/images/datacanvas_automl_toolkit.png)
 
 ## DataCanvas
 

@@ -46,7 +46,7 @@ HyperTS除了使用内置的算法外, 还支持用户自定义部分功能, 以
 
 .. note::
 
-    当采用这种方式自定评估指标时，需指定优化方向optimize_direction。
+    当采用这种方式自定评估指标时, 需指定优化方向optimize_direction。
 
 方式二:
 
@@ -89,7 +89,7 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
 - DLForecastSearchSpace: 预测任务深度模型搜索空间, 内置DeepAR、RNN、GPU、LSTM及LSTNet等深度模型;
 - DLClassificationSearchSpace: 分类任务深度模型搜索空间, 内置RNN、GPU、LSTM及LSTNet等深度模型。
   
-以上建模算法均设计了各自默认的超参数搜索空间。如果您想在此基础上定制化自己的搜索空间, 则可以在调用 ``make_experiment`` 时通过参数search_space指定自定义的搜索空间。
+以上建模算法均设计了各自默认的超参数搜索空间。如果您想在此基础上定制化自己的搜索空间, 则可以在调用 ``make_experiment`` 时通过参数 ``search_space`` 指定自定义的搜索空间。
 
 假如现在我们想修改预测任务下的统计模式的搜索空间, 即 ``StatsForecastSearchSpace``, 您可以做如下操作:
 

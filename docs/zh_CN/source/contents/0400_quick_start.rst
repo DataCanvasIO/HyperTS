@@ -47,14 +47,14 @@ HyperTS可以被用来解决时序预测、分类及回归任务, 它们公用�
 - 时间频率: 'H'。
 
 .. tip::
-    如果您对HyperTS的数据格式不了解或者存有疑惑, 请回看 :doc:`快速开始 </contents/0300_dataformat>` 。
+    如果您对HyperTS的数据格式不了解或者存有疑惑, 请参看 :doc:`数据规范 </contents/0300_dataformat>` 。
 
 -----------
 
 创建实验并训练
 ==============
 
-我们通过创建实验 ``make_experiment`` 搜索一个时序模型, 并调用 ``run()`` 方法来执行实验。
+我们通过 ``make_experiment`` 创建实验, 然后调用 ``run()`` 方法来执行实验去搜索一个时序模型。
 
 .. code-block:: python
 
@@ -123,16 +123,25 @@ HyperTS可以被用来解决时序预测、分类及回归任务, 它们公用�
 可视化
 ======
 
-调用 ``plot()`` 方法可视化, 观测预测曲线, 并与实际的曲线做对比分析。这里会显示某一个变量的预测曲线, 默认为第一个目标变量。
-如果为多变量预测, 想要观测其他的变量曲线变化的情况, 可以修改参数```var_id```, 例如: var_id='Var_3'或var_id=3。
+调用 ``plot()`` 方法可视化, 观测预测曲线, 并与实际的曲线做对比分析。
 
 .. code-block:: python
 
-    model.plot(forecast=forecast, actual=test_data)
+    model.plot(forecast=forecast, actual=test_data, var_id='Var_3', interactive=False)
 
 .. image:: /figures/images/Actual_vs_Forecast.jpg
     :align: left
     :width: 850
 
+.. note::
+
+    - 这里会显示某一个变量的预测曲线, 默认为第一个目标变量;
+    - 如果为多变量预测, 想要观测其他的变量曲线变化的情况, 可以修改参数var_id, 例如: ``var_id=2`` 或者 ``var_id='Var_3'``;
+    - plot可支持交互式可视化通过设置 ``interactive=False`` (默认交互, 需安装plotly);
+    - 绘制更长期的历史信息, 设置参数 ``history=sub_train_data``;
+    - 当 ``actual=None`` (默认), 则只绘制预测曲线;
+    - 当 ``show_forecast_interval=True`` (默认), 则利用贝叶斯推断预测置信区间. 
+
 .. tip::
-    预测曲线由plotly工具绘制, 通过点击可以交互式观测每个时刻的数值信息。
+
+    预测曲线由plotly工具绘制时, 通过点击可以交互式观测每个时刻的数值信息。

@@ -1,4 +1,4 @@
-实验拓展
+高级应用
 ########
 
 在 :doc:`快速开始 </contents/0400_quick_start>`, HyperTS展示了基本的应用方式:
@@ -59,14 +59,14 @@
   - 多变量二分类: task='multivariate-binaryclass';
   - 多变量多分类: task='multivariate-multiclass'.
   
-当然, 也可以简单配置 task='forecast', task='classification'及task='regression', 这样HyperTS将从数据中结合其他已知列信息进行详细的任务类型推断。
+当然, 也可以简单配置 ``task='forecast'``, ``task='classification'`` 及 ``task='regression'``, 这样HyperTS将从数据中结合其他已知列信息进行详细的任务类型推断。
 
 ----------------
 
 选择运行模式(mode)
 ==================
 
-HyperTS内置了三种运行模式, 分别为统计模型模式('stats'), 深度学习模式('dl')以及神经架构搜索模式('nas', 未开放)。缺省情况下, 默认选择统计模型模式, 您也可以更改为其他模式:
+HyperTS内置了三种运行模式, 分别为 统计模型模式('stats'), 深度学习模式('dl')以及神经架构搜索模式('nas', 未开放)。缺省情况下, 默认选择统计模型模式, 您也可以更改为其他模式:
 
 .. code-block:: python
 
