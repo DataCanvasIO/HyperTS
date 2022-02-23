@@ -110,7 +110,7 @@ Currently, ``reward_metric`` supports the following criterion:
 
 
 
-Define the optimization direction
+Set the optimization direction
 ================================
 
 The searcher needs an indication of the optimization direction ('min' or 'max'). By default, the system will detect from ``reward_metric``.
@@ -123,7 +123,7 @@ The searcher needs an indication of the optimization direction ('min' or 'max').
                               optimize_direction='max',
                               ...)                            
 
-------------------
+
 
 Set the max search trials value
 ============================
@@ -192,7 +192,7 @@ For more details of the search algorithms, please refer to the section `Search A
 
 
 
-Define the time frequency
+Set the time frequency
 ==================
 
 For time series forecasting task, users could set the desired time frequency by the argument``freq``. The provided options are second (`S`), minute('T')、hour('H')、day('D')、week('W')、month('M') and year('Y'). If the frequency information is missing, it will adjust according to ``timestamp``.
@@ -208,7 +208,7 @@ For time series forecasting task, users could set the desired time frequency by 
 
 
 
-Define the time window
+Set the time window
 =============================
 
 When selecting the deep learning mode, users could set argument ``forecast_window`` to define the size of moving time window. The unit is per hour.
@@ -237,7 +237,7 @@ Sometimes, the codes need to be re-executed. In order to keep the random numbers
 
 
 
-Set log level
+Set the log level
 =======================
 
 The progress messages during training can be printed by the argument ``log_level``. Foe more information, please refer to the python package ``logging``. Besides, more comprehensive messages will be printed when setting ``verbose = 1``.
