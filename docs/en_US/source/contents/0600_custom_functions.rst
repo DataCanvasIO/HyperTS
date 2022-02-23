@@ -1,12 +1,12 @@
-Custom Functions
+User-defined Functions
 ########
-HyperTS除了使用内置的算法外, 还支持用户自定义部分功能, 以增强其扩展性。
+HyperTS supports several user-defined extension functions in addition to the built-in algorithms. 
 
 
-自定义评估指标
+User-defined evaluation criterion
 ==============
 
-当使用 ``make_experiment`` 创建实验时, 您可以通过参数 ``reward_metric`` 重新指定评估指标, 示例如下:
+When creating an experiment, the evaluation criterion could be set by the argument ``reward_metric``. See example below:
 
 .. code-block:: python
 
@@ -18,9 +18,9 @@ HyperTS除了使用内置的算法外, 还支持用户自定义部分功能, 以
                                 reward_metric='mae',
                                 ...) 
 
-除了传入内置支持的评估指标, 您也可以自定义评估指标来满足特定场景下的需求, 例如:
+Except these built-in criterions, users could define their own criterion. Two approaches are introduced below: 
 
-方式一:
+Approach one:
 
 .. code-block:: python
 
@@ -46,9 +46,9 @@ HyperTS除了使用内置的算法外, 还支持用户自定义部分功能, 以
 
 .. note::
 
-    当采用这种方式自定评估指标时，需指定优化方向optimize_direction。
+    In this case, the ``optimize_direction`` is required.
 
-方式二:
+Approach two:
 
 .. code-block:: python
 
@@ -75,33 +75,31 @@ HyperTS除了使用内置的算法外, 还支持用户自定义部分功能, 以
 
 .. note::
 
-    当采用这种方式自定评估指标时, 需设置参数scorer。
+    In this case, the ``scorer`` is required. 
 
-----------------
 
-自定义搜索空间
+
+User-defined search space
 ==============
 
-HyperTS针对不同的模式内置了丰富的建模算法, 例如:
+HyperTS provides various algorithms with default search space for every processing mode. Most of them are listed below:
 
-- StatsForecastSearchSpace: 预测任务统计模型搜索空间, 内置了Prophet、ARIMA及VAR等统计模型;
-- StatsClassificationSearchSpace: 分类任务统计模型搜索空间, 内置了TSForest, k-NNs等统计模型;
-- DLForecastSearchSpace: 预测任务深度模型搜索空间, 内置DeepAR、RNN、GPU、LSTM及LSTNet等深度模型;
-- DLClassificationSearchSpace: 分类任务深度模型搜索空间, 内置RNN、GPU、LSTM及LSTNet等深度模型。
+- 'StatsForecastSearchSpace' includes the search space for statistical models (Prophet, ARIMA, VAR);
+- 'StatsClassificationSearchSpace' includes the search space for statistical models (TSForest, k-NNs);
+- 'DLForecastSearchSpace' includes the search space for deep learning models (DeepAR, RNN, GPU, LSTM, LSNet);
+- 'DLClassificationSearchSpace' includes the search space for deep learning models (RNN, GPU, LSTM, LSNet).
   
-以上建模算法均设计了各自默认的超参数搜索空间。如果您想在此基础上定制化自己的搜索空间, 则可以在调用 ``make_experiment`` 时通过参数search_space指定自定义的搜索空间。
+By setting the argument ``search_space``, users could define their own search space. The instructions and an example are given below to modify the ``StatsForecastSearchSpace``. 
 
-假如现在我们想修改预测任务下的统计模式的搜索空间, 即 ``StatsForecastSearchSpace``, 您可以做如下操作:
+- Mandatory! Describe the exact name of the task. For instance, ``task='univariate-forecast'``;
+- Mandatory! Assign the name of the 'timestamp' column;
+- Mandatory! If have the covariables, describe them clearly. For instance, ``covariables={xxx: xxx, ...}``;
+- Set the argument as false to disable a certain algorithm. For instance, ``enable_arima=False``;
+- Change the initial parameters of a certain algorithm by function ``prophet_init_kwargs={xxx:xxx, ...}``;
+- Import the argument ``Choice``, ``Int`` ``Real`` from ``hypernets.core.search_space`` could define the parameters with specific options. For instance, ``Choice`` supports the boolean data type. ``Real`` supports the floating data type.
+- For more information, please refer to `Search Space <https://github.com/DataCanvasIO/Hypernets/blob/master/hypernets/core/search_space.py>`_.
 
-- 详细指定任务类型 ``task``, 否则无法判断是单变量预测还是多变量预测任务;
-- 指定 ``timestamp`` 列名;
-- 如果数据存在协变量, 请设置参数 ``covariables={xxx: xxx, ...}``;
-- **以上三步请严格遵守, 否则自定义失败!**
-- 如果想禁止某个算法, 不进行搜索, 可以设置参数为False, 例如 ``enable_arima=False``;
-- 如果想更改某个算法的搜索空间参数初始化,可以传递参数 ``xxx_init_kwargs={xxx:xxx, ...}``;
-- 如果希望自定义的参数是可搜索的, 您可以使用 ``hypernets.core.search_space`` 中的 ``Choice``, ``Int`` 及 ``Real``。其中, ``Choice`` 支持离散值, ``Int`` 支持整数连续值, ``Real`` 支持浮点数连续值。详情可参考 `Search Space <https://github.com/DataCanvasIO/Hypernets/blob/master/hypernets/core/search_space.py>`_。
-
-代码示例:
+Code example:
 
 .. code-block:: python
 
@@ -126,23 +124,23 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
                                 search_space=custom_search_space,
                                 ...) 
 
---------------
 
-自定义建模算法
+
+User defined modeling algorithm
 ==============
 
-在自定义搜索空间中, 我们提到HyperTS针对不同的模式内置了丰富的建模算法, 如果您需要增加对其他算法的支持, 可以通过如下步骤进行自定义建模算法:
+In addition to the built-in modeling algorithms as mentioned above, users could also define new algorithms. The instructions and an example are given below to build a modified neural network model 'Transformer' inside 'DLForecastSearchSpace':
 
-- 将自定义算法封装为 ``HyperEstimator`` 的子类;
-- 将封装后的算法增加到特定任务的SearchSpace中, 并定义其搜索参数;
-- 在 ``make_experiment`` 中使用自定义的search_space。
+- Package the user-modified algorithm as a subclass of ``HyperEstimator``;
+- Add the subclass to the specific search space and define the search parameters; 
+- Assign the search space to the argument of function ``make_experiment``.
 
-假如现在我们想在 **DLForecastSearchSpace** 中增加自己的神经网络模型 **Transformer**, 示例如下:
+Code example
 
-构建自定义模型
+1. Build the model structure
 **************
 
-我们基于tensorflow构建一个 *Transformer Encoder*, 该结构参看自 `Keras官方教程 <https://keras.io/examples/timeseries/timeseries_classification_transformer/>`_。
+The example is to build a *Transformer Encoder* based on tensorflow. See `Keras tutorial <https://keras.io/examples/timeseries/timeseries_classification_transformer/>`_.
 
 .. code-block:: python
 
@@ -162,10 +160,10 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
         x = layers.LayerNormalization(epsilon=1e-6)(x)
         return x + res
  
-构建自定义算法
+2. Build the algorithm 
 **************
 
-为了方便起见, 我们可以直接继承HyperTS中已存在的算法, 这样除了必要的init部分外, 我们只完成 ``_build_estimator`` 中的backbone部分即可, 即:
+To make it sample, this example uses a template of an existing algorithm in HyperTS. Only a small part of ``_init_`` and ``_build_estimator`` are modified. 
 
 .. code-block:: python
 
@@ -242,10 +240,10 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
             model.summary()
             return model
 
-构建算法估计器
+3. Build the estimator
 **************
 
-估计器将是连接算法模型与搜索空间的桥梁与纽带, 它可以规定哪些超参数将能够被搜索优化。
+Estimator connectes the algorithm model and search space. It defines the hyperparameters for optimization.
 
 .. code-block:: python
 
@@ -312,10 +310,10 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
                 raise ValueError('Check whether the task type meets specifications.')
             return transformer
 
-重构搜索空间
+4.  Build the search space
 ************
 
-将估计器添加到搜索空间中就大功告成啦! 在这里, 我们可以设置自定义算法中一些超参数的搜索空间, 这一步将是发挥算法性能的关键:
+Add the estimator to the search space, in which the hyperparameters also could be defined properly to ensure the performance.  
 
 .. code-block:: python
 
@@ -363,10 +361,8 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
             return r
 
 
-使用新搜索空间执行实验
+5. Execute the experiment with custom search space
 **********************
-
-这里将和前面介绍的自定义搜索空间的操作一致。
 
 .. code-block:: python
 
