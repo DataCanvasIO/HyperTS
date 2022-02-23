@@ -1,7 +1,7 @@
 Advanced Configurations
 ########
 
-:doc:`Quick Start </contents/0400_quick_start>` presents the most basic application of HyperTS. It's repeated as below. 
+The :doc:`Quick Start </contents/0400_quick_start>` section presents the most basic application of HyperTS. The example is repeated as below. 
 
 .. code-block:: python
 
@@ -30,7 +30,7 @@ This section will introduce some advanced configurations of ``make_experience`` 
 Default settings
 ===============================
 
-Firstly, load the input data and define the ``task`` type. The related data information is `here <https://github.com/DataCanvasIO/HyperTS/blob/main/hyperts/datasets/base.py>`_。
+Firstly, load the input data and define the ``task`` type. The dataset information are collected `here <https://github.com/DataCanvasIO/HyperTS/blob/main/hyperts/datasets/base.py>`_。
 Secondly, define the related variables according to different task types. For forecasting task, the required variables are the ``timestampe``, and ``covariables`` if have. For classification task, the required avariable is the ``target``. 
 
 Example codes:
@@ -59,7 +59,7 @@ Example codes:
 Select the processing method
 ==================
 
-HyperTS includes three types of processing methods: Statistical (default)， Deep Learning and Neural Architecture Search, which are abbreviated as ``stats``, ``dl`` and ``nas`` respectively. Users could select the methods by setting augument ``mode``.
+HyperTS includes three types of processing methods: Statistical (default)，Deep Learning and Neural Architecture Search, which are abbreviated as ``stats``, ``dl`` and ``nas`` respectively. Users could select the methods by setting argument ``mode``. 
 
 .. code-block:: python
 
@@ -67,7 +67,8 @@ HyperTS includes three types of processing methods: Statistical (default)， Dee
                               mode='dl',
                               ...)                            
 
-The deep learning method is based on the Tensorfolw framework, which processes in CPU by default and also supports GPU after installing tensorflow-gpu. There are three usage stratrges: 
+The deep learning method is based on the Tensorfolw framework, which processes in CPU by default and also supports GPU after installing tensorflow-gpu. There are in total three usage strategies: 
+
 - 0: processing in CPU;
 - 1: processing in GPU with increasing memory according to the data scale;  
 - 2: processing in GPU with limited memory (2048M). Change the memory limit by the argument ``dl_memory_limit``.
@@ -104,8 +105,8 @@ By default, the evaluation criterion for forecasting task is 'mae', for classifi
 
 Currently, ``reward_metric`` supports the following criterion: 
 
-- classification: accuracy, auc, f1, precision, recall, logloss。
-- forecasting and regression: mae, mse, rmse, mape, smape, msle, r2。
+- Classification: accuracy, auc, f1, precision, recall, logloss。
+- Forecasting and regression: mae, mse, rmse, mape, smape, msle, r2。
 
 
 
@@ -127,7 +128,7 @@ The searcher needs an indication of the optimization direction ('min' or 'max').
 Set the max search trials value
 ============================
 
-The default search trial is three to obtain quick results. In practice, to achieve better performace, the search trails value is recommended more than 30. The higher the ``max_trials`` value is, the better performace would obtain if the time is sufficient.
+The default search trials is only three to obtain quick results. In practice, to achieve better performace, the search trails value is recommended more than 30. The higher the ``max_trials`` value is, the better performace would obtain if the time is sufficient.
 
 .. code-block:: python
 
@@ -141,6 +142,7 @@ Set the early stopping strategy
 ============================
 
 The early stopping strategy could define three different criterions to stop the processing to save time. The three strategies are:
+
 - ``early_stopping_time_limit``:  unit is second.
 - ``early_stopping_round``: limit is the times of search trials (priority to max_trials).
 - ``early_stopping_reward``: defines the threshold value of certain reward.
@@ -157,28 +159,28 @@ The early stopping strategy could define three different criterions to stop the 
 Define the evaluation dataset
 =========================
 
-模型训练除了需要训练数据集, 还需要评估数据集, 缺省情况下将从训练数据集中以一定比例切分一部分评估数据集。您也可在 ``make_experiment`` 时通过eval_data指定评估集, 如:
-
-.. code-block:: python
-
-  experiment = make_experiment(train_data, 
-                              eval_data=eval_data,
-                              ...)                           
-
-当然, 您也可以通过设置 ``eval_size`` 自己指定评估数据集的大小:
+The evaluation dataset is split from the training dataset by default. Users could adjust ``eval_size`` to set the percentage. 
 
 .. code-block:: python
 
   experiment = make_experiment(train_data, 
                               eval_size=0.3,
+                              ...)                           
+
+Besides, users could define a certain dataset as evaluation dataset by setting the argument ``eval_data``. 
+
+.. code-block:: python
+
+  experiment = make_experiment(train_data, 
+                              eval_data=eval_data,
                               ...)                            
 
-------------------
 
-指定搜索算法(searcher)
+
+Define a searcher
 ======================
 
-HyperTS通过 `Hypernets <https://github.com/DataCanvasIO/Hypernets>`_ 中内置的搜索算法进行模型选择和超参数优化, 其中包括EvolutionSearcher(缺省, 'evolution')、MCTSSearcher('mcts')、RandomSearch('random')以及GridSearch('grid')等。在使用 ``make_experiment`` 时, 可通过参数 ``searcher`` 指定, 指定搜索算法的类名(class)或者搜索算法的名称(str):
+HyperTS performs the model selection and hyperparameter search by the built-in search algorithms in `Hypernets <https://github.com/DataCanvasIO/Hypernets>`_, which includes EvolutionSearch(default, 'evalution'), MCTSSearcher('mcts'), RandomSearcher('random') and GridSearch('grid'). Users could define a specific search by setting the argument ``searcher``. It could be a class name or a string of the name.
 
 .. code-block:: python
 
@@ -186,14 +188,14 @@ HyperTS通过 `Hypernets <https://github.com/DataCanvasIO/Hypernets>`_ 中内置
                               searcher='random',
                               ...)                            
 
-各种搜索算法详细介绍可参考 `搜索算法 <https://hypernets.readthedocs.io/en/latest/searchers.html>`_。
+For more details of the search algorithms, please refer to the section `Search Algorithm <https://hypernets.readthedocs.io/en/latest/searchers.html>`_.
 
-------------------
 
-指定时间频率(freq)
+
+Define the time frequency
 ==================
 
-在时序预测任务中, 如果我们已知数据集的时间频率, 您可以通过参数 ``freq`` 来精确化指定:
+For time series forecasting task, users could set the desired time frequency by the argument``freq``. The provided options are second (`S`), minute('T')、hour('H')、day('D')、week('W')、month('M') and year('Y'). If the frequency information is missing, it will adjust according to ``timestamp``.
 
 .. code-block:: python
 
@@ -203,14 +205,13 @@ HyperTS通过 `Hypernets <https://github.com/DataCanvasIO/Hypernets>`_ 中内置
                               freq='H',
                               ...) 
 
-缺省情况下, 频率将依据 ``timestamp`` 进行推断。                              
 
-------------------
 
-指定预测窗口(forecast_window)
+
+Define the time window
 =============================
 
-当使用深度学习模式进行时序预测时, 您可以结合经验对数据的实际情况分析后, 通过参数 ``forecast_window`` 指定滑动窗口的大小:
+When selecting the deep learning mode, users could set argument ``forecast_window`` to define the size of moving time window. The unit is per hour.
 
 .. code-block:: python
 
@@ -221,12 +222,12 @@ HyperTS通过 `Hypernets <https://github.com/DataCanvasIO/Hypernets>`_ 中内置
                               forecast_window=24*7,
                               ...)                            
 
-------------------
 
-固定随机种子(random_state)
+
+Fix the random seed
 ==========================
 
-有时为了保证实验结果可以复现, 我们需要保持相同的初始化, 此时, 您可以通过参数 ``random_state`` 固定随机种子:
+Sometimes, the codes need to be re-executed. In order to keep the random numbers fixed, users could set the argument``random_state``. 
 
 .. code-block:: python
 
@@ -234,12 +235,12 @@ HyperTS通过 `Hypernets <https://github.com/DataCanvasIO/Hypernets>`_ 中内置
                               random_state=0,
                               ...)                            
 
-------------------
 
-调整日志级别(log_level)
+
+Set log level
 =======================
 
-如果希望在训练过程中看到使用进度信息的话, 可通过log_level指定日志级别。关于日志级别的详细定义可参考python的logging包。 另外, 如果将verbose设置为1的话, 可以得到更详细的信息。例如, 将日志级别设置为'INFO':
+The progress messages during training can be printed by the argument ``log_level``. Foe more information, please refer to the python package ``logging``. Besides, more comprehensive messages will be printed when setting ``verbose = 1``.
 
 .. code-block:: python
 
