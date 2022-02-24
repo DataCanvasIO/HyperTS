@@ -204,15 +204,16 @@ class BaseSearchSpaceGenerator:
 ##################################### Define Specific Search Space Generator #####################################
 
 class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
-
+    """
+    Note:
+        If other parameters exist, set them directly. For example, covariables=['is_holiday'].
+    """
     def __init__(self, task, timestamp=None,
                  enable_prophet=True,
                  enable_arima=True,
                  enable_var=True,
                  **kwargs):
         kwargs['timestamp'] = timestamp
-        logger.warning("Tip: If other parameters exist, set them directly. For example, covariables=['is_holiday'].")
-
         super(StatsForecastSearchSpace, self).__init__(task, **kwargs)
 
         self.task = task
@@ -298,15 +299,16 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
 
 
 class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
-
+    """
+    Note:
+    If other parameters exist, set them directly. For example, n_estimators=200.
+    """
     def __init__(self, task, timestamp=None,
                  enable_tsf=True,
                  enable_knn=True,
                  **kwargs):
         if hasattr(kwargs, 'covariables'):
             kwargs.pop('covariables', None)
-        logger.warning("Tip: If other parameters exist, set them directly. For example, n_estimators=200.")
-
         super(StatsClassificationSearchSpace, self).__init__(task, **kwargs)
 
         self.task = task
@@ -367,14 +369,17 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
 
 
 class DLForecastSearchSpace(BaseSearchSpaceGenerator):
-
-    def __init__(self, task, timestamp=None, metrics=None, window=None,
+    """
+    Note:
+    If other parameters exist, set them directly. For example, covariables=['is_holiday'].
+    """
+    def __init__(self, task, timestamp=None, metrics=None,
+                 window=None, horizon=1,
                  enable_deepar=True,
                  enable_hybirdrnn=True,
                  enable_lstnet=True,
                  **kwargs):
         kwargs['timestamp'] = timestamp
-        logger.warning("Tip: If other parameters exist, set them directly. For example, covariables=['is_holiday'].")
 
         super(DLForecastSearchSpace, self).__init__(task, **kwargs)
 
@@ -382,6 +387,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
         self.timestamp = timestamp
         self.metrics = metrics
         self.window = window
+        self.horizon = horizon
         self.enable_deepar = enable_deepar
         self.enable_hybirdrnn = enable_hybirdrnn
         self.enable_lstnet = enable_lstnet
@@ -392,6 +398,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'timestamp': self.timestamp,
             'task': self.task,
             'metrics': self.metrics,
+            'horizon': self.horizon,
             'reducelr_patience': 5,
             'earlystop_patience': 10,
             'summary': True,
@@ -400,7 +407,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'rnn_units': Choice([8, 16, 32, 64, 128]),
             'rnn_layers': Choice([1, 2, 3]),
             'drop_rate': Choice([0., 0.1, 0.2]),
-            'window': self.window if self.window is not None else Choice([12, 24, 48]),
+            'window': Choice(self.window),
 
             'y_log': Choice(['logx', 'log-none']),
             'y_scale': Choice(['min_max', 'max_abs'])
@@ -429,7 +436,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'rnn_layers': Choice([1, 2, 3]),
             'out_activation': Choice(['linear', 'sigmoid']),
             'drop_rate': Choice([0., 0.1, 0.2]),
-            'window': self.window if self.window is not None else Choice([12, 24, 48]),
+            'window': Choice(self.window),
 
             'y_log': Choice(['logx', 'log-none']),
             'y_scale': Choice(['min_max', 'max_abs'])
@@ -463,9 +470,9 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'skip_rnn_layers': Choice([1, 2, 3]),
             'out_activation': Choice(['linear', 'sigmoid']),
             'drop_rate': Choice([0., 0.1, 0.2]),
-            'skip_period': Choice([3, 5, 7]),
-            'ar_order': Choice([1, 3, 5, 7]),
-            'window': self.window if self.window is not None else Choice([12, 24, 48]),
+            'skip_period': Choice([1, 3, 5]),
+            'ar_order': Choice([1, 3, 5]),
+            'window': Choice(self.window),
 
             'y_log': Choice(['logx', 'log-none']),
             'y_scale': Choice(['min_max', 'max_abs'])
@@ -508,7 +515,10 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
 
 
 class DLClassificationSearchSpace(BaseSearchSpaceGenerator):
-
+    """
+    Note:
+    If other parameters exist, set them directly. For example, n_estimators=200.
+    """
     def __init__(self, task, timestamp=None, metrics=None,
                  enable_hybirdrnn=True,
                  enable_lstnet=True,

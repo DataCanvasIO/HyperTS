@@ -44,8 +44,8 @@ class Test_DL_Wrappers():
         print('rmse:', score_rmse)
         print('mape:', score_mape)
 
-        assert score_rmse > 0
-        assert score_mape > 0
+        assert score_rmse >= 0
+        assert score_mape >= 0
 
 
     def test_univariate_forecast_rnn(self):
@@ -83,8 +83,8 @@ class Test_DL_Wrappers():
         print('rmse:', score_rmse)
         print('mape:', score_mape)
 
-        assert score_rmse > 0
-        assert score_mape > 0
+        assert score_rmse >= 0
+        assert score_mape >= 0
 
 
     def test_multivariate_forecast_with_covariables_rnn(self):
@@ -123,8 +123,8 @@ class Test_DL_Wrappers():
         print('rmse:', score_rmse)
         print('mape:', score_mape)
 
-        assert score_rmse > 0
-        assert score_mape > 0
+        assert score_rmse >= 0
+        assert score_mape >= 0
 
 
     def test_multivariate_forecast_no_covariables_rnn(self):
@@ -163,8 +163,8 @@ class Test_DL_Wrappers():
         print('rmse:', score_rmse)
         print('mape:', score_mape)
 
-        assert score_rmse > 0
-        assert score_mape > 0
+        assert score_rmse >= 0
+        assert score_mape >= 0
 
 
     def test_univariate_classification_rnn(self):
@@ -198,7 +198,7 @@ class Test_DL_Wrappers():
 
         print('accuracy:', acc)
 
-        assert acc > 0
+        assert acc >= 0
 
 
     def test_multivariate_classification_rnn(self):
@@ -230,7 +230,7 @@ class Test_DL_Wrappers():
 
         print('accuracy:', acc)
 
-        assert acc > 0
+        assert acc >= 0
 
 
     def test_univariate_forecast_lstnet(self):
@@ -275,8 +275,8 @@ class Test_DL_Wrappers():
         print('rmse:', score_rmse)
         print('mape:', score_mape)
 
-        assert score_rmse > 0
-        assert score_mape > 0
+        assert score_rmse >= 0
+        assert score_mape >= 0
 
 
     def test_multivariate_forecast_with_covariables_lstnet(self):
@@ -321,8 +321,8 @@ class Test_DL_Wrappers():
         print('rmse:', score_rmse)
         print('mape:', score_mape)
 
-        assert score_rmse > 0
-        assert score_mape > 0
+        assert score_rmse >= 0
+        assert score_mape >= 0
 
 
     def test_multivariate_forecast_no_covariables_lstnet(self):
@@ -368,8 +368,8 @@ class Test_DL_Wrappers():
         print('rmse:', score_rmse)
         print('mape:', score_mape)
 
-        assert score_rmse > 0
-        assert score_mape > 0
+        assert score_rmse >= 0
+        assert score_mape >= 0
 
 
 def test_univariate_classification_lstnet():
@@ -402,7 +402,7 @@ def test_univariate_classification_lstnet():
 
     print('accuracy:', acc)
 
-    assert acc > 0
+    assert acc >= 0
 
 
 def test_multivariate_classification_lstnet():
@@ -442,4 +442,4 @@ def test_multivariate_classification_lstnet():
 
     print('accuracy:', acc)
 
-    assert acc > 0
+    assert acc >= 0

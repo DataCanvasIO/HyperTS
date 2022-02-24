@@ -3,13 +3,14 @@ from hypernets.utils.const import *
 
 TIMESTAMP                          = 'timestamp'
 DEFAULT_EVAL_SIZE                  = 0.2
+NAN_DROP_SIZE                      = 0.6
 
-Task_UNIVARIATE_FORECAST          = 'univariate-forecast'
-Task_MULTIVARIATE_FORECAST        = 'multivariate-forecast'
-Task_UNIVARIATE_BINARYCLASS       = 'univariate-binaryclass'
-Task_MULTIVARIATE_BINARYCLASS     = 'multivariate-binaryclass'
-Task_UNIVARIATE_MULTICALSS        = 'univariate-multiclass'
-Task_MULTIVARIATE_MULTICALSS      = 'multivariate-multiclass'
+Task_UNIVARIATE_FORECAST           = 'univariate-forecast'
+Task_MULTIVARIATE_FORECAST         = 'multivariate-forecast'
+Task_UNIVARIATE_BINARYCLASS        = 'univariate-binaryclass'
+Task_MULTIVARIATE_BINARYCLASS      = 'multivariate-binaryclass'
+Task_UNIVARIATE_MULTICALSS         = 'univariate-multiclass'
+Task_MULTIVARIATE_MULTICALSS       = 'multivariate-multiclass'
 Task_FORECAST                      = 'forecast'
 Task_CLASSIFICATION                = 'classification'
 Task_REGRESSION                    = 'regression'

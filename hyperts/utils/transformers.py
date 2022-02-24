@@ -3,6 +3,8 @@ import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 
+from hyperts.utils import consts
+from hyperts.utils._base import get_tool_box
 from hypernets.pipeline.base import HyperTransformer
 
 
@@ -299,6 +301,63 @@ class CategoricalTransformer(BaseEstimator, TransformerMixin):
             X = self.onehot_encoder.inverse_transform(X)
         inverse_X = self.label_encoder.inverse_transform(X)
         return inverse_X
+
+
+class CovariateTransformer(BaseEstimator, TransformerMixin):
+    """Transform covariates by 'drop_constant_columns', 'drop_duplicated_columns',
+        'drop_idness_columns', 'replace_inf_values' and so on.
+
+    Parameters
+    ----------
+    covariables: list[n*str], if the data contains covariables, specify the
+        covariable column names, (default=None).
+    data_cleaner_args : dict or None, (default=None).
+        If not None, the definition example is as follows:
+            data_cleaner_args = {
+                'correct_object_dtype': False,
+                'int_convert_to': 'str',
+                'drop_constant_columns': True,
+                'drop_duplicated_columns': True,
+                'drop_idness_columns': True,
+                'replace_inf_values': np.nan,
+                ...
+            }
+    Reference for details: https://github.com/DataCanvasIO/Hypernets/blob/master/hypernets/tabular/data_cleaner.py
+    """
+    def __init__(self, covariables, data_cleaner_args=None):
+        super(CovariateTransformer, self).__init__()
+        self.covariables = covariables
+        if data_cleaner_args is None:
+            self.data_cleaner_args = {'correct_object_dtype': False,
+                                      'int_convert_to': 'str'}
+        else:
+            self.data_cleaner_args = data_cleaner_args
+
+        self.cleaner = None
+        self.covariables_ = None
+        self.dorp_nan_columns = []
+
+    def fit(self, X, y=None, **kwargs):
+        tb = get_tool_box(X)
+        null_num = X[self.covariables].isnull().sum().to_dict()
+        for k, v in null_num.items():
+            if v > len(X)*consts.NAN_DROP_SIZE:
+                self.dorp_nan_columns.append(k)
+        X = X.drop(columns=self.dorp_nan_columns)
+        self.covariables = tb.list_diff(self.covariables, self.dorp_nan_columns)
+        self.cleaner = tb.data_cleaner(**self.data_cleaner_args)
+        covariates, _ = self.cleaner.fit_transform(X[self.covariables])
+        self.covariables_ = covariates.columns.to_list()
+        return self
+
+    def transform(self, X, y=None, **kwargs):
+        tb = get_tool_box(X)
+        X = X.drop(columns=self.dorp_nan_columns)
+        covariates = self.cleaner.transform(X[self.covariables])
+        X = X.drop(columns=self.covariables_ if self.dorp_nan_columns else self.covariables)
+        X = tb.concat_df([X, covariates], axis=1)
+        return X
+
 
 ##################################### Define Hyper Transformer #####################################
 class TimeSeriesHyperTransformer(HyperTransformer):

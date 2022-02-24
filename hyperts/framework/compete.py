@@ -28,8 +28,7 @@ class TSFDataPreprocessStep(ExperimentStep):
 
     """
 
-    def __init__(self, experiment, name, timestamp_col=None, freq=None,
-                 covariate_cols=None, covariate_data_cleaner_args=None):
+    def __init__(self, experiment, name, timestamp_col=None, freq=None, covariate_cols=None, covariate_cleaner=None):
         super().__init__(experiment, name)
 
         timestamp_col = [timestamp_col] if isinstance(timestamp_col, str) else timestamp_col
@@ -38,25 +37,20 @@ class TSFDataPreprocessStep(ExperimentStep):
         self.freq = freq
         self.target_cols = None
         self.covariate_cols = covariate_cols
+        self.covariate_cleaner = covariate_cleaner
         self.timestamp_col = timestamp_col if timestamp_col is not None else consts.TIMESTAMP
-        self.covariate_data_cleaner_args = covariate_data_cleaner_args if covariate_data_cleaner_args is not None else {}
-        self.covariate_data_cleaner_args.update({'correct_object_dtype': False})
-
-        # fitted
-        self.covariate_data_cleaner_ = get_tool_box(pd.DataFrame).data_cleaner(**self.covariate_data_cleaner_args)
 
     def fit_transform(self, hyper_model, X_train, y_train, X_test=None, X_eval=None, y_eval=None, **kwargs):
         super().fit_transform(hyper_model, X_train, y_train, X_test=X_test, X_eval=X_eval, y_eval=y_eval)
 
         tb = get_tool_box(X_train, y_train)
 
-        # 1. covariate variables data clean procsss
+        # 1. covariates data clean procsss
         if self.covariate_cols is not None and len(self.covariate_cols) > 0:
-            self.covariate_data_cleaner_ = tb.data_cleaner(**self.covariate_data_cleaner_args)
-            X_train = self.covariate_transform(X_train, training=True)
-        self.step_progress('fit_transform covariate variables')
+            X_train = self.covariate_transform(X_train)
+        self.step_progress('transform covariate variables')
 
-        # 2. target plus covariable process
+        # 2. target plus covariates process
         train_Xy = tb.concat_df([X_train, y_train], axis=1)
         variable_cols = tb.list_diff(train_Xy.columns, self.timestamp_col)
         target_cols = tb.list_diff(variable_cols, self.covariate_cols)
@@ -65,7 +59,7 @@ class TSFDataPreprocessStep(ExperimentStep):
         X_train, y_train = train_Xy[excluded_cols], train_Xy[target_cols]
         self.step_progress('fit_transform train set')
 
-        # 3. eval variables data process
+        # 4. eval variables data process
         if X_eval is None or y_eval is None:
             eval_size = self.experiment.eval_size
             if self.task in consts.TASK_LIST_FORECAST:
@@ -74,7 +68,7 @@ class TSFDataPreprocessStep(ExperimentStep):
                 self.step_progress('split into train set and eval set')
         else:
             if self.covariate_cols is not None and len(self.covariate_cols) > 0:
-                X_eval = self.covariate_transform(X_eval, training=False)
+                X_eval = self.covariate_transform(X_eval)
             eval_Xy = tb.concat_df([X_eval, y_eval], axis=1)
             eval_Xy = self.series_transform(eval_Xy, target_cols)
             X_eval, y_eval = eval_Xy[excluded_cols], eval_Xy[target_cols]
@@ -96,24 +90,15 @@ class TSFDataPreprocessStep(ExperimentStep):
 
     def transform(self, X, y=None, **kwargs):
         if self.covariate_cols is not None and len(self.covariate_cols) > 0:
-            X_transform = self.covariate_transform(X, training=False)
+            X_transform = self.covariate_transform(X)
             X_transform = self.series_transform(X_transform)
         else:
             X_transform = self.series_transform(X)
         return X_transform
 
-    def covariate_transform(self, X, training=False):
+    def covariate_transform(self, X):
         X = copy.deepcopy(X)
-        tb = get_tool_box(X)
-
-        df_timestamp = X[self.timestamp_col]
-        if training:
-            df_covariate, _ = self.covariate_data_cleaner_.fit_transform(X[self.covariate_cols])
-        else:
-            df_covariate = self.covariate_data_cleaner_.transform(X[self.covariate_cols])
-        assert df_covariate.shape[0] == X.shape[0], \
-            'The row of clearned covariable is not equal the row of X_train.'
-        X = tb.concat_df([df_timestamp, df_covariate], axis=1)
+        X = self.covariate_cleaner.transform(X)
         return X
 
     def series_transform(self, X, target_cols=None):
@@ -149,7 +134,6 @@ class TSFDataPreprocessStep(ExperimentStep):
 
     def get_params(self, deep=True):
         params = super(TSFDataPreprocessStep, self).get_params()
-        params['covariate_data_clean_args'] = self.covariate_data_cleaner_.get_params()
         return params
 
     def get_fitted_params(self):
@@ -164,14 +148,10 @@ class TSCDataPreprocessStep(ExperimentStep):
 
     """
 
-    def __init__(self, experiment, name, data_cleaner_args=None, cv=False):
+    def __init__(self, experiment, name, cv=False):
         super().__init__(experiment, name)
 
-        self.data_cleaner_args = data_cleaner_args if data_cleaner_args is not None else {}
         self.cv = cv
-
-        # fitted
-        self.data_cleaner_ = get_tool_box(pd.DataFrame).data_cleaner(**self.data_cleaner_args)
 
     def fit_transform(self, hyper_model, X_train, y_train, X_test=None, X_eval=None, y_eval=None, **kwargs):
         super().fit_transform(hyper_model, X_train, y_train, X_test=X_test, X_eval=X_eval, y_eval=y_eval, **kwargs)
@@ -222,7 +202,6 @@ class TSCDataPreprocessStep(ExperimentStep):
 
     def panel_transform(self, X, y=None):
         y_name = '__tabular-toolbox__Y__'
-        kwargs = self.data_cleaner_args
         X = copy.deepcopy(X)
         if y is not None:
             y = copy.deepcopy(y)
@@ -230,9 +209,8 @@ class TSCDataPreprocessStep(ExperimentStep):
             X[y_name] = y
 
         if y is not None:
-            if kwargs['drop_label_nan_rows']:
-                logger.debug('clean the rows which label is NaN')
-                X = X.dropna(subset=[y_name])
+            logger.debug('clean the rows which label is NaN')
+            X = X.dropna(subset=[y_name])
             y = X.pop(y_name)
 
         if y is None:
@@ -242,7 +220,6 @@ class TSCDataPreprocessStep(ExperimentStep):
 
     def get_params(self, deep=True):
         params = super(TSCDataPreprocessStep, self).get_params()
-        params['data_cleaner_args'] = self.data_cleaner_.get_params()
         return params
 
     def get_fitted_params(self):
@@ -377,7 +354,10 @@ class TSPipeline:
             elif self.mode == consts.Mode_DL and forecast_start is None:
                 estimator = self.sk_pipeline.named_steps.estimator
                 forecast_start = estimator.model.model.forecast_start
-                history = forecast_start[0][0, :, :len(self.target)]
+                if self.covariables is None:
+                    history = forecast_start[0, :, :]
+                else:
+                    history = forecast_start[0][0, :, :len(self.target)]
                 history = estimator.model.inverse_transform(history)
                 history = tb.DataFrame(history, columns=self.target)
                 time_df = tb.reset_index(self.history.iloc[-len(history):])
@@ -642,7 +622,8 @@ class TSCompeteExperiment(SteppedExperiment):
     freq: 'str', DateOffset or None, default None.
     target_col: 'str' or list[str], default None.
     timestamp_col: str or None, default None.
-    covariate_cols: list[str] or None, default None.
+    covariate_cols: list[list or None, list or None] or None, default None. covariate_cols needs to contain
+        a list of original covariates and a list of cleaned covariates.
     covariate_data_cleaner_args: 'dict' or None, default None. Suitable for forecast task.
         Dictionary of parameters to initialize the `DataCleaner` instance. If None, `DataCleaner` will initialized
         with default values.
@@ -694,7 +675,7 @@ class TSCompeteExperiment(SteppedExperiment):
                  target_col=None,
                  timestamp_col=None,
                  covariate_cols=None,
-                 covariate_data_cleaner_args=None,
+                 covariate_cleaner=None,
                  data_cleaner_args=None,
                  cv=False,
                  num_folds=3,
@@ -714,7 +695,6 @@ class TSCompeteExperiment(SteppedExperiment):
         self.mode = mode
         self.target = target_col
         self.timestamp = timestamp_col
-        self.covariables = covariate_cols
         self.history = None
 
         if random_state is None:
@@ -724,6 +704,16 @@ class TSCompeteExperiment(SteppedExperiment):
         if task is None:
             task = hyper_model.task
 
+        if covariate_cols is not None and len(covariate_cols) == 2:
+            self.covariables = covariate_cols[0]
+            cleaned_covariables = covariate_cols[1]
+        elif covariate_cols is not None and len(covariate_cols) != 2:
+            raise ValueError('covariate_cols needs to contain a list of original '
+                             'covariates and a list of cleaned covariates.')
+        else:
+            self.covariables = None
+            cleaned_covariables = None
+
         steps = []
 
         # data clean
@@ -731,14 +721,11 @@ class TSCompeteExperiment(SteppedExperiment):
             steps.append(TSFDataPreprocessStep(self, consts.StepName_DATA_PREPROCESSING,
                                                freq=freq,
                                                timestamp_col=timestamp_col,
-                                               covariate_cols=covariate_cols,
-                                               covariate_data_cleaner_args=covariate_data_cleaner_args))
+                                               covariate_cols=cleaned_covariables,
+                                               covariate_cleaner=covariate_cleaner))
         else:
-            if data_cleaner_args is None:
-                data_cleaner_args = {'drop_label_nan_rows': True}
             steps.append(TSCDataPreprocessStep(self, consts.StepName_DATA_PREPROCESSING,
-                                               cv=cv,
-                                               data_cleaner_args=data_cleaner_args))
+                                               cv=cv))
 
         # search step
         steps.append(TSSpaceSearchStep(self, consts.StepName_SPACE_SEARCHING,

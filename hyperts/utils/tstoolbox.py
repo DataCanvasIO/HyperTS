@@ -168,7 +168,7 @@ class TSToolBox(ToolBox):
         return drop_df
 
     @staticmethod
-    def smooth_missed_ts_rows( df: pd.DataFrame, freq: str = None, ts_name: str = consts.TIMESTAMP):
+    def smooth_missed_ts_rows(df: pd.DataFrame, freq: str = None, ts_name: str = consts.TIMESTAMP):
         """Returns full time series.
         Example:
             TimeStamp      y
@@ -229,6 +229,26 @@ class TSToolBox(ToolBox):
         df_outlier = df_outlier.mask(outlier_indices, other=np.nan)
 
         return df_outlier
+
+    @staticmethod
+    def infer_window_size(max_size: int, freq: str):
+        if freq in ['S', 'T', 'min']:
+            return list(filter(lambda x: x<=max_size, [1, 5, 10, 30, 60]))
+        elif freq in ['H', 'BH']:
+            return list(filter(lambda x: x<=max_size, [1, 6, 12, 24, 48]))
+        elif freq in ['C', 'B', 'D']:
+            return list(filter(lambda x: x<=max_size, [1, 5, 7, 15, 30]))
+        elif freq in ['W']:
+            return list(filter(lambda x: x<=max_size, [1, 4, 8, 12, 16]))
+        elif freq in ['SM', 'M', 'MS', 'SMS', 'BM', 'CBM', 'CBMS', 'Q']:
+            return list(filter(lambda x: x<=max_size, [1, 3, 6, 12, 24]))
+        elif freq in ['A', 'Y', 'A-JAN', 'AS-JAN', 'BA-JAN', 'BAS-JAN']:
+            return list(filter(lambda x: x<=max_size, [1, 3, 6, 12, 24]))
+        elif freq in ['L', 'U', 'N', 'ms']:
+            return list(filter(lambda x: x <= max_size, [1, 10, 100, 500, 1000]))
+        else:
+            return list(filter(lambda x: x <= max_size, [1, 3, 5, 12, 24]))
+
 
     @staticmethod
     def generate_ts_covariables(start_date, periods, freq='H'):

@@ -3,6 +3,8 @@
 
 
 [![Python Versions](https://img.shields.io/pypi/pyversions/hypernets.svg)](https://pypi.org/project/hypernets)
+[![TensorFlow Versions](https://img.shields.io/badge/TensorFlow-2.0+-blue.svg)](https://pypi.org/project/deeptables)
+[![License](https://img.shields.io/github/license/DataCanvasIO/deeptables.svg)](https://github.com/DataCanvasIO/deeptables/blob/master/LICENSE)
 
 ## We Are Hiring！
 Dear folks, we are offering challenging opportunities located in Beijing for both professionals and students who are keen on AutoML/NAS. Come be a part of DataCanvas! Please send your CV to yangjian@zetyun.com. (Application deadline: TBD.) 
@@ -18,7 +20,7 @@ Easy-to-use and lower-level API. Users can get a model after simply running the 
 
 ## Tutorial
 
-|[English Docs](https://hyperts.readthedocs.io/en/latest/)|[中文教程](https://hyperts.readthedocs.io/zh_CN/latest) |
+|[English Docs](https://hyperts.readthedocs.io/en/latest/) | [Chinese Docs](https://hyperts.readthedocs.io/zh_CN/latest)|
 | --------------------------------- | --------------------------------- |
 [Expected Data Format](https://hyperts.readthedocs.io/en/latest/contents/0300_dataformat.html)|What data formats do HyperTS expect?|
 |[Quick Start](https://hyperts.readthedocs.io/en/latest/contents/0400_quick_start.html)| How to get started quickly with HyperTS?|

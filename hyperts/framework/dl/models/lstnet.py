@@ -7,6 +7,9 @@ from hyperts.utils import consts
 from hyperts.framework.dl import layers
 from hyperts.framework.dl.models import Model, BaseDeepEstimator
 
+from hypernets.utils import logging
+logger = logging.get_logger(__name__)
+
 
 def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categorical_columns,
         cnn_filters, kernel_size, rnn_units, rnn_layers, skip_rnn_units, skip_rnn_layers, skip_period,
@@ -56,6 +59,16 @@ def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categ
         x = denses
 
     # backbone
+    if ar_order > window:
+        ar_order = 1
+        logger.warning('ar_order cannot be larger than window, so it is reset to 1.')
+
+    if kernel_size > window:
+        kernel_size = 1
+        logger.warning('kernel_size cannot be larger than window, so it is reset to 1.')
+
+    pt = int((window - kernel_size + 1) / skip_period) if skip_period > 0 else 0
+
     c = layers.SeparableConv1D(cnn_filters, kernel_size, activation='relu', name='conv1d')(x)
     c = layers.Dropout(rate=drop_rate, name='conv1d_dropout')(c)
 
@@ -63,8 +76,8 @@ def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categ
     r = layers.Lambda(lambda k: K.reshape(k, (-1, rnn_units)), name=f'lambda_{rnn_type}')(r)
     r = layers.Dropout(rate=drop_rate, name=f'lambda_{rnn_type}_dropout')(r)
 
-    if skip_period:
-        pt = min(int((window - kernel_size + 1) / skip_period), 1)
+    if skip_period*pt > 0:
+        pt = max(int((window - kernel_size + 1) / skip_period), 1)
         s = layers.Lambda(lambda k: k[:, int(-pt*skip_period):, :], name=f'lambda_skip_{rnn_type}_0')(c)
         s = layers.Lambda(lambda k: K.reshape(k, (-1, pt, skip_period, cnn_filters)), name=f'lambda_skip_{rnn_type}_1')(s)
         s = layers.Lambda(lambda k: K.permute_dimensions(k, (0, 2, 1, 3)), name=f'lambda_skip_{rnn_type}_2')(s)
@@ -78,7 +91,7 @@ def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categ
         r = layers.Concatenate(name=f'{rnn_type}_concat_skip_{rnn_type}')([r, s])
     outputs = layers.build_output_tail(r, task, nb_outputs, nb_steps)
 
-    if task in consts.TASK_LIST_FORECAST and nb_steps == 1 and ar_order > 0:
+    if task in consts.TASK_LIST_FORECAST and nb_steps == 1 and ar_order > 0 and ar_order < window:
         z = layers.Lambda(lambda k: k[:, :, :nb_outputs], name='lambda_ar_0')(denses)
         z = layers.AutoRegressive(order=ar_order, nb_variables=nb_outputs, name='ar')(z)
         z = layers.Lambda(lambda k: K.reshape(k, (-1, 1, nb_outputs)), name='lambda_ar_1')(z)
@@ -241,8 +254,9 @@ class LSTNet(BaseDeepEstimator):
                                             batch_size=kwargs['batch_size'],
                                             epochs=kwargs['epochs'],
                                             shuffle=True)
-        valid_ds = self._from_tensor_slices(valid_X, valid_y,
+        valid_ds = self._from_tensor_slices(X=valid_X, y=valid_y,
                                             batch_size=kwargs.pop('batch_size'),
+                                            epochs=kwargs['epochs'],
                                             shuffle=False)
         model = self._build_estimator()
 

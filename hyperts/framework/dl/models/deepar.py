@@ -173,8 +173,9 @@ class DeepAR(BaseDeepEstimator):
                                             batch_size=kwargs['batch_size'],
                                             epochs=kwargs['epochs'],
                                             shuffle=True)
-        valid_ds = self._from_tensor_slices(valid_X, valid_y,
+        valid_ds = self._from_tensor_slices(X=valid_X, y=valid_y,
                                             batch_size=kwargs.pop('batch_size'),
+                                            epochs=kwargs['epochs'],
                                             shuffle=False)
         model = self._bulid_estimator()
 

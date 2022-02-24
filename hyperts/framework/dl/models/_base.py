@@ -613,8 +613,11 @@ class BaseDeepEstimator(object):
                 X_batch, y_batch = batch
                 X_data.append(X_batch.numpy())
                 y_data.append(y_batch.numpy())
-            X_data = np.concatenate(X_data, axis=0)
-            y_data = np.concatenate(y_data, axis=0)[:, :, :target_length]
+            try:
+                X_data = np.concatenate(X_data, axis=0)
+                y_data = np.concatenate(y_data, axis=0)[:, :, :target_length]
+            except:
+                raise ValueError(f'Reset forecast_window, which should be less than {X//2}.')
             if not is_train:
                 self.forecast_start = data[-window:].reshape(1, window, data.shape[1])
             if categorical_length != 0:

@@ -386,6 +386,7 @@ class MetaTSCprocessor(MetaPreprocessor):
         self.auto_discard_unique = auto_discard_unique
         self.cat_remain_numeric = cat_remain_numeric
 
+        self.y_label_encoder = None
         self.categorical_columns = None
         self.continuous_columns = None
 

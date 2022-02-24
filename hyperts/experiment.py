@@ -8,11 +8,10 @@ from hypernets.experiment.cfg import ExperimentCfg as cfg
 from hypernets.tabular.cache import clear as _clear_cache
 from hypernets.utils import logging, isnotebook, load_module
 
-from hyperts.utils._base import get_tool_box
+from hyperts.utils import get_tool_box
 from hyperts.utils import consts, set_random_state
 from hyperts.hyper_ts import HyperTS as hyper_ts_cls
 from hyperts.framework.compete import TSCompeteExperiment
-
 
 logger = logging.get_logger(__name__)
 
@@ -28,7 +27,8 @@ def make_experiment(train_data,
                     timestamp=None,
                     timestamp_format='%Y-%m-%d %H:%M:%S',
                     covariables=None,
-                    forecast_window=None,
+                    dl_forecast_window=None,
+                    dl_forecast_horizon=1,
                     id=None,
                     searcher=None,
                     search_space=None,
@@ -56,8 +56,10 @@ def make_experiment(train_data,
         For str, it's should be the data path in file system, will be loaded as pnadas Dataframe.
         we'll detect data format from this path (only .csv and .parquet are supported now).
     task : str.
-        Task could be 'univariate-forecast', 'multivariate-forecast', and 'univariate-binaryclass', etc.
-        See consts.py for details.
+        Task could be 'univariate-forecast', 'multivariate-forecast', and 'univariate-binaryclass',
+        'univariate-multiclass', 'multivariate-binaryclass, and ’multivariate-multiclass’.
+        Notably, task can also configure 'forecast', 'classification', and 'regression'. At this point, HyprTS
+        will perform detailed task type inference from the data combined with other known column information.
     eval_data : str, Pandas or Dask or Cudf DataFrame, optional.
         Feature data for evaluation, should be None or have the same python type with 'train_data'.
     test_data : str, Pandas or Dask or Cudf DataFrame, optional.
@@ -76,8 +78,10 @@ def make_experiment(train_data,
     timestamp : str, forecast task 'timestamp' cannot be None, (default=None).
     timestamp_format : str, the date format of timestamp col for forecast task, (default='%Y-%m-%d %H:%M:%S').
     covariables : list[n*str], if the data contains covariables, specify the covariable column names, (default=None).
-    forecast_window : int or None, When selecting 'dl' mode, you can specify window, which is the sequence
+    dl_forecast_window : int or None. When selecting 'dl' mode, you can specify window, which is the sequence
         length of each sample, (default=None).
+    dl_forecast_horizon : int or None. When selecting 'dl' mode, you can specify horizon, which is the length of
+        the interval between the input and the target, (default=1).
     id : str or None, (default=None).
         The experiment id.
     callbacks: list of ExperimentCallback, optional.
@@ -173,7 +177,7 @@ def make_experiment(train_data,
 
         return searcher
 
-    def default_search_space(task, search_space=None, metrics=None):
+    def default_search_space(task, search_space=None, metrics=None, covariables=None):
         if search_space is not None:
             return search_space
 
@@ -199,8 +203,8 @@ def make_experiment(train_data,
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_FORECAST:
             from hyperts.macro_search_space import DLForecastSearchSpace
 
-            search_pace = DLForecastSearchSpace(task=task, timestamp=timestamp, metrics=metrics,
-                                                window=forecast_window, covariables=covariables)
+            search_pace = DLForecastSearchSpace(task=task, timestamp=timestamp, metrics=metrics, covariables=covariables,
+                                                window=dl_forecast_window, horizon=dl_forecast_horizon)
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_CLASSIFICATION:
             from hyperts.macro_search_space import DLClassificationSearchSpace
 
@@ -333,9 +337,6 @@ def make_experiment(train_data,
         X_train, y_train = train_data.drop(columns=[target]), train_data.pop(target)
         if eval_data is not None:
             X_eval, y_eval = eval_data.drop(columns=[target]), eval_data.pop(target)
-        else:
-            X_train, X_eval, y_train, y_eval = \
-                tb.random_train_test_split(X_train, y_train, test_size=consts.DEFAULT_EVAL_SIZE)
     elif task in consts.TASK_LIST_FORECAST:
         excluded_variables = [timestamp] + covariables if covariables is not None else [timestamp]
         if target is None:
@@ -345,11 +346,37 @@ def make_experiment(train_data,
         X_train, y_train = train_data[excluded_variables], train_data[target]
         if eval_data is not None:
             X_eval, y_eval = eval_data[excluded_variables], eval_data[target]
-        else:
-            X_train, X_eval, y_train, y_eval = \
-                tb.temporal_train_test_split(X_train, y_train, test_size=consts.DEFAULT_EVAL_SIZE)
 
-    # 7. Task Type Infering
+        if freq is None:
+            freq = tb.infer_ts_freq(X_train, ts_name=timestamp)
+
+    # 7. Covarite Transformer
+    if covariables is not None:
+        from hyperts.utils.transformers import CovariateTransformer
+        cs = CovariateTransformer(covariables=covariables).fit(X_train)
+        autual_covariables = cs.covariables_
+    else:
+        from hyperts.utils.transformers import IdentityTransformer
+        cs = IdentityTransformer().fit(X_train)
+        autual_covariables = covariables
+
+    # 8. Infer Forecast Window for DL Mode
+    if mode in [consts.Mode_DL, consts.Mode_NAS] and dl_forecast_window is None:
+        if eval_data is not None:
+            max_win_size= int(len(X_eval) // 2 - dl_forecast_horizon)
+        elif kwargs.get('eval_size') is not None:
+            max_win_size = int(len(X_train)*kwargs['eval_size'] // 2 - dl_forecast_horizon)
+        else:
+            max_win_size = int(len(X_train)*consts.DEFAULT_EVAL_SIZE // 2 - dl_forecast_horizon)
+
+        if max_win_size < 1:
+            logger.warning('The trian data is too short to start dl mode, '
+                           'stats mode has been automatically switched.')
+            mode = consts.Mode_STATS
+        else:
+            dl_forecast_window = tb.infer_window_size(max_size=max_win_size, freq=freq)
+
+    # 9. Task Type Infering
     if task == consts.Task_FORECAST and len(y_train.columns) == 1:
         task = consts.Task_UNIVARIATE_FORECAST
     elif task == consts.Task_FORECAST and len(y_train.columns) > 1:
@@ -368,7 +395,7 @@ def make_experiment(train_data,
                 task = consts.Task_MULTIVARIATE_MULTICALSS
     logger.info(f'Inference task type could be [{task}].')
 
-    # 8. Configuration
+    # 10. Configuration
     if reward_metric is None:
         if task in consts.TASK_LIST_FORECAST:
             reward_metric = 'mae'
@@ -382,7 +409,7 @@ def make_experiment(train_data,
     else:
         logger.info(f'Reward_metric is [{reward_metric.__name__}].')
 
-    # 9. Get scorer
+    # 11. Get scorer
     if kwargs.get('scorer') is None:
         scorer = tb.metrics.metric_to_scorer(reward_metric, task=task, pos_label=kwargs.get('pos_label'),
                                                                   optimize_direction=optimize_direction)
@@ -391,20 +418,21 @@ def make_experiment(train_data,
         if isinstance(scorer, str):
             raise ValueError('scorer should be a [make_scorer(metric, greater_is_better)] type.')
 
-    # 10. Specify optimization direction
+    # 12. Specify optimization direction
     if optimize_direction is None or len(optimize_direction) == 0:
         optimize_direction = 'max' if scorer._sign > 0 else 'min'
     logger.info(f'Optimize direction is [{optimize_direction}].')
 
-    # 11. Get search space
+    # 13. Get search space
     if (searcher is None or isinstance(searcher, str)) and search_space is None:
-        search_space = default_search_space(task=task, search_space=search_space, metrics=reward_metric)
+        search_space = default_search_space(task=task, search_space=search_space,
+                           metrics=reward_metric, covariables=autual_covariables)
 
-    # 12. Get searcher
+    # 14. Get searcher
     searcher = to_search_object(searcher, search_space)
     logger.info(f'Searcher is [{searcher.__class__.__name__}].')
 
-    # 13. Define callbacks
+    # 15. Define callbacks
     if search_callbacks is None:
         search_callbacks = default_search_callbacks()
     search_callbacks = append_early_stopping_callbacks(search_callbacks)
@@ -412,31 +440,33 @@ def make_experiment(train_data,
     if callbacks is None:
         callbacks = default_experiment_callbacks()
 
-    # 14. Define discriminator
+    # 16. Define discriminator
     if discriminator is None and cfg.experiment_discriminator is not None and len(cfg.experiment_discriminator) > 0:
         discriminator = make_discriminator(cfg.experiment_discriminator,
                                            optimize_direction=optimize_direction,
                                            **(cfg.experiment_discriminator_options or {}))
-    # 15. Define id
+    # 17. Define id
     if id is None:
         hasher = tb.data_hasher()
         id = hasher(dict(X_train=X_train, y_train=y_train, X_eval=X_eval, y_eval=y_eval,
                          eval_size=kwargs.get('eval_size'), target=target, task=task))
         id = f'{hyper_ts_cls.__name__}_{id}'
 
-    # 16. Define hyper_model
+    # 18. Define hyper_model
     if hyper_model_options is None:
         hyper_model_options = {}
     hyper_model = hyper_ts_cls(searcher, mode=mode, reward_metric=reward_metric, task=task,
             callbacks=search_callbacks, discriminator=discriminator, **hyper_model_options)
 
-    # 17. Experiment
+    # 19. Build Experiment
     experiment = TSCompeteExperiment(hyper_model, X_train=X_train, y_train=y_train, X_eval=X_eval, y_eval=y_eval,
-                                     timestamp_col=timestamp, covariate_cols=covariables, target_col=target,
+                                     task=task, mode=mode, timestamp_col=timestamp, target_col=target,
+                                     covariate_cols=[covariables, autual_covariables], covariate_cleaner=cs,
                                      freq=freq, log_level=log_level, random_state=random_state,
                                      optimize_direction=optimize_direction, scorer=scorer,
-                                     task=task, mode=mode, id=id, callbacks=callbacks, **kwargs)
+                                     id=id, callbacks=callbacks, **kwargs)
 
+    # 20. Clear Cache
     if clear_cache:
         _clear_cache()
 
