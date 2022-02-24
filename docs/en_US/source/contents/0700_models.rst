@@ -28,78 +28,88 @@ For more information, please check the `website <https://facebook.github.io/prop
 
 .. tip::
 
-    Prophet is applied to univariable times series forecasting.
+    Prophet is applied to univariate times series forecasting.
 
 
 
 ARIMA
 =====
-ARIMA全称为自回归集成移动平均模型(Autoregressive Integrated Moving Average Model), 也可以称之为差分自回归移动平均模型ARIMA(p, d, q)。其中, AR(p)是自回归项, 是指差分序列的滞后, MA(q)是移动平均项, 是指误差项的滞后,而I(d)是用于时间序列平稳的差分阶数。
-通常情况下, p阶AR模型可表示为:
+Autoregressive Integrated Moving Average (ARIMA) model, is a forecasting algorithm that is used to predict the future values of time series based on its own past values. An ARIMA model is characterized by 3 terms: p, d, q
+
+where,
+
+- p is the order of the AR term, referring to the number of lags,
+- q is the order of the MA term, referring to the number of lagged forecast errors,
+- d is the number of differencing required to make the time series stationary
+
+The AR part of ARIMA indicates that the time series is regressed on its own past data. The function of AR(p) is :
 
 .. math::
     X_{t}=\alpha _{1}X_{t-1}+\alpha _{2}X_{t-2}+...+\alpha _{p}X_{t-p}+\epsilon _{t},
 
-这里, :math:`\epsilon _{t}` 表示一个扰动的白噪声。自回归模型首先需要确定一个阶数 :math:`p`, 表示用几期的历史值来预测当前值。如果 :math:`\epsilon _{t}` 不是一个白噪声 :math:`u _{t}`, 通常认为它是一个q阶的移动平均,即:
+where, :math:`X_{t}` is the current value. :math:`\alpha_{}`is the coefficient. :math:`p` is the order. :math:`\epsilon _{t}` is the forecast error, which is considered as white noise.
+
+The MA part of ARIMA indicates that the forecast error is a linear combination of past respective errors. The function of MA(q) is: 
 
 .. math::
-    u _{t}=\varepsilon _{t}+\beta _{1}\varepsilon _{t-1}+...+\beta _{q}\varepsilon _{t-q},
+    X_{t}=\varepsilon _{t}+\beta _{1}\varepsilon _{t-1}+...+\beta _{q}\varepsilon _{t-q},
 
-其中, :math:`\varepsilon _{t}` 表示白噪声序列。特别地,当 :math:`u _{t}` 时, 即时间序列当前值与历史值无关, 而只依赖于历史白噪声的线性组合, 则得到MA模型:
+where, :math:`\varepsilon _{}` are the errors of the AR models of the respective lags. :math:`\beta_{}`is the coefficient. From the equation, we could see that the past errors impact the current value indirectly. 
 
-.. math::
-    X _{t}=\varepsilon _{t}+\beta _{1}\varepsilon _{t-1}+...+\beta _{q}\varepsilon _{t-q}.
-
-值得注意的是, AR模型中历史白噪声的影响是间接影响当前预测值的, 即通过历史时序值。
-
-而将AR(p)模型和MA(q)模型结合, 便可以得到一个一般化的自回归移动平均模型ARMA(p, q):
+The ARMA(p, q) model is combined with AR and MA models:
 
 .. math::
     X_{t}=\alpha _{1}X_{t-1}+\alpha _{2}X_{t-2}+...+\alpha _{p}X_{t-p}+\varepsilon _{t}+\beta _{1}\varepsilon _{t-1}+...+\beta _{q}\varepsilon _{t-q}.
 
-如果原数据不稳定(即 :math:`d\neq 0`), 那么就做差分, 通过ADF检验直到时间序列平稳。最后, 便可以得到ARIMA模型。
+The I part of ARIMA is to perform difference operation to make the time series stationary. Normally, the order of d is zero or one.
 
 .. tip::
    
-    ARIMA is applied to univariable times series forecasting.
+    ARIMA is applied to univariate times series forecasting.
 
 
 
 VAR
 ===
-VAR全称为向量自回归模型(Vector Autoregressive), 针对于多变量时序分析。在这个模型中, 一组向量里的每一个时间序列被模型化为决定于自己滞后项以及这组向量里所有其他变量的滞后项。例如, 两阶的VAR模型可以表示为:
+The Vector Autoregressive(VAR) model is a multivariate time series model that relates current observations of a variable with past observations of both itself and other variables in the system. That means, the VAR model requires at least two time series, which also influence each other. Each time series is modeled as a function of the past values, which is the same as the AR(p) model: 
 
 .. math::
-    x_{t}=\alpha _{1}x_{t-1}+\alpha _{2}x_{t-2}+...+\alpha _{p}x_{t-p}+\epsilon _{1t},\\
-    y_{t}=\alpha _{1}y_{t-1}+\alpha _{2}y_{t-2}+...+\alpha _{p}y_{t-p}+\epsilon _{2t}.
+    x_{t}=\alpha _{1}x_{t-1}+\alpha _{2}x_{t-2}+...+\alpha _{p}x_{t-p}+\epsilon _{t}
 
-VAR模型与AR模型相同, 一个核心问题是找到滞后项的阶数 :math:`p`, 从而获得好的预测效果。
+A second order VAR(2) model for two variables can be fomulated as below:
+
+.. math::
+   x_{1,t}=\alpha _{11,1}x_{1,t-1}+\alpha _{12,1}x_{2,t-1}+\alpha _{11,2}x_{1,t-2}+\alpha _{12,2}x_{2,t-2}+\epsilon _{1,t}
+   x_{2,t}=\alpha _{21,1}x_{1,t-1}+\alpha _{22,1}x_{2,t-1}+\alpha _{21,2}x_{1,t-2}+\alpha _{22,2}x_{2,t-2}+\epsilon _{2,t}
 
 .. tip::
     
-    VAR is applied to multivariable times series forecasting.
+    VAR is applied to multivariate times series forecasting.
 
 
 
 TSForest
 ========
-TSForest全称为时间序列森林(Time Series Forest), 是一种针对时间序列分类的集成树模型。时间序列森林将时间序列转化为子序列的均值、方差和协方差等统计特征,通过使用随机森林(以每个间隔的统计信息作为特征)克服间隔特征空间巨大的问题,利用熵增益和距离度量的组合,用于评估分割。
+TSForest is short for Time Series Forest. It's a tree-ensemble method proposed for time series classification. TSForest employs a combination of entropy gain
+and a distance measure, referred to as the Entrance (entropy and distance) gain, for evaluating the splits. In detail, it randomly samples features at each
+tree node and has computational complexity linear in the length of time series, and can be built using parallel computing techniques. The temporal
+importance curve is proposed to capture the temporal characteristics useful for classification. 
 
 For more information, please refer to the paper `A Time Series Forest for Classification and Feature Extraction <https://arxiv.org/pdf/1302.2277>`_
 
 .. tip::
 
-    TSForest is applied to univariable times series classification.
+    TSForest is applied to univariate times series classification.
 
 
 
 KNeighbors
 ==========
-KNeighbors是采用k近邻的方式对时间序列进行分类的方法。不同于传统的K近邻基于欧式距离进行度量,这里将采用 `动态时间弯曲距离 <https://en.wikipedia.org/wiki/Dynamic_time_warping>`_ (Dynamic Time Warping, DTW)作为一种新的相似性度量方法,通过调节时间点之间的对应关系,能够寻找两个任意长时间序列中数据之间的最佳匹配路径,对噪声有很强的鲁棒性,可以更有效地度量时间序列的相似性。由于DTW距离不要求两个时间序列中的点一一对应,因此具有更广的适用范围。除此之外,还可以采用微分动态时间弯曲距离(Derivative Dynamic Time Warping, DDTW), 加权动态时间弯曲距离(Weighted Dynamic Time Warping, WDTW)等变种或者 `最长公共子序列 <https://en.wikipedia.org/wiki/Longest_common_subsequence_problem>`_ (Longest Common Subsequence, LCSS)等时序距离度量。
+K-nearest-neighbor(KNN) classifiers with dynamic time warping `(DTW) <https://en.wikipedia.org/wiki/Dynamic_time_warping>`_ has been widely used for similarity measurement in time series classification, which is usually outperform kNN with Euclidean distance. DTW is robust to the distortion of the time axis and random noise. It allows non-linear alignments between two time series to accommodate sequences that are similar, but locally out of phase. Besides, it could adopt Derivative Dynamic Time Warping (DDTW), Weighted Dynamic Time Warping (WDTW) or `Longest Common Subsequence (LCSS) <https://en.wikipedia.org/wiki/Longest_common_subsequence_problem>`_ methods for distance measurement to further improve the performance.
 
 .. tip::
     
-    KNeighbour is applied to both univariable and multivariable times series classification.
+    KNeighbour is applied to both univariate and multivariate times series classification.
 
 
 -----------
@@ -110,35 +120,35 @@ Deep Learning Algorithms
 
 DeepAR
 ======
-DeepAR是基于深度学习的时间序列预测算法, 为升级版的自回归模型。与传统主流的利用循环神经网络来做时序预测的方法不同, DeepAR并不是直接简单地输出一个确定的预测值做点估计, 而是输出预测值的一个概率分布。这样预测可以带来两点好处: 一方面很多过程本身就具有随机属性, 因此输出一个概率分布更加贴近本质, 预测精确; 另一方面可以评估出预测的不确定性和相关等风险。
+DeepAR is a methodology for producing accurate probabilistic forecasts, based on training an auto-regressive recurrent network model(RNN) on time series. Differring from the conventional RNN model, DeepAR outputs probabilistic forecasts instead of point value forecasts. On one hand, this provides a better forecast accuracy since most process are random. On the other hand, it could indicate the uncertainty and risks of the output to enable optimal decision making.  
 
 For more information, please refer to the paper `DeepAR: Probabilistic Forecasting with Autoregressive Recurrent Networks <https://arxiv.org/abs/1704.04110>`_
 
 .. tip::
     
-    DeepAR is applied to univariable times series forecasting.
+    DeepAR is applied to univariate times series forecasting.
 
 
 
 HybirdRNN
 =========
-HybirdRNN模型是指朴素循环神经网络(Recurrent Neural Network, RNN), 门控循环单元网络(Gated Recurrent Unit, GRU)以及长短记忆网络(Long Short-term Memory, LSTM)三种循环神经网络的集合。众所周知, 循环神经网络是一类以序列数据为输入在序列的演进方向上捕获时间特性的深度学习模型。循环神经网络具有记忆性且参数共享, 为了预防深度网络的梯度消失或梯度爆炸等问题, LSTM分别引入了遗忘门, 输入门和输出门等门控机制来学习更长的序列信息。GRU与LSTM类似, 不过将三门减少重置门和更新门两个门控, 使得每个循环单元可以自适应的捕捉不同时间刻度下的依赖。GRU更容易训练, 不过二者的效果不分伯仲。
+HybirdRNN model is a combination of Recurrent Neural Network (RNN), Gated Recurrent Unit (GRU) and Long Short-term Memory (LSTM). 众所周知, 循环神经网络是一类以序列数据为输入在序列的演进方向上捕获时间特性的深度学习模型。循环神经网络具有记忆性且参数共享, 为了预防深度网络的梯度消失或梯度爆炸等问题, LSTM分别引入了遗忘门, 输入门和输出门等门控机制来学习更长的序列信息。GRU与LSTM类似, 不过将三门减少重置门和更新门两个门控, 使得每个循环单元可以自适应的捕捉不同时间刻度下的依赖。GRU更容易训练, 不过二者的效果不分伯仲。
 
 For more information, please refer to the paper `Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling <https://arxiv.org/abs/1412.3555>`_
 
 .. tip::
-    HybirdRNN is applied to all tasks: uni/multi-variable forecasting, classification and regression.
+    HybirdRNN is applied to all tasks: uni/multi-variate forecasting, classification and regression.
 
 
 
 LSTNet
-======
-LSTNet全称为长短时序网络(Long-and Short-term Time-series network, LSTNet), 是一种专门为长期和短期混合模式的多变量时间序列预测任务设计的深度学习框架。特点为: 1、通过一维卷积CNN来捕获短期局部信息; 2、使用LSTM或者GRU从来自卷积层的特征捕获长期的宏观信息; 3、对于输入数据维度整理, 使用SLTM或者GRU捕获更长期的信息并充分利用序列的周期特性; 4、用全连接网络模拟AR自回归过程, 为预测添加线性成份, 同时使输出可以响应输入的尺度变化。
+========
+LSTNet is short for Long-and Short-term Time-series network, which is a deep learning framework particularly designed for a mixture of long-term and short-term multivariate time series forecasting. In detail, LSTNet firstly uses the Convolution Neural Network (CNN) to extract short-term local dependency patterns among multi-dimensional variables. And it uses the Recurrent Neural Network (RNN) to discover long-term patterns for time series trends. Then LSTNet introduces a novel recurrent structure to capture very long-term dependence patterns and making the optimization easier as it utilizes the periodic property of the input time series signals. Lastly, it incorporates a traditional autoregressive model to tackle the scale insensitive problem of the neural network model. 
 
 For more information, please refer to the paper `Modeling Long- and Short-Term Temporal Patterns with Deep Neural Networks <https://arxiv.org/abs/1703.07015>`_
 
 .. tip::
-    LSTNet is applied to uni/multi-variable forecasting and regression.
+    LSTNet is applied to uni/multi-variate forecasting and regression.
 
 
 --------
