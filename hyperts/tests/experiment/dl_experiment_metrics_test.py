@@ -85,8 +85,8 @@ def multivariate_binaryclass(metric):
     exp = make_experiment(train_df.copy(),
                           mode='dl',
                           task=task,
-                          eval_data=test_df.copy(),
                           target=target,
+                          pos_label='notstanding',
                           reward_metric=reward_metric,
                           optimize_direction=optimize_direction)
 
@@ -114,8 +114,8 @@ def multivariate_multiclass(metric):
     exp = make_experiment(train_df.copy(),
                           mode='dl',
                           task=task,
-                          pos_label='standing',
                           target=target,
+                          pos_label='standing',
                           reward_metric=reward_metric,
                           optimize_direction=optimize_direction)
 
