@@ -79,7 +79,7 @@ The Vector Autoregressive(VAR) model is a multivariate time series model that re
 A second order VAR(2) model for two variables can be fomulated as below:
 
 .. math::
-   x_{1,t}=\alpha _{11,1}x_{1,t-1}+\alpha _{12,1}x_{2,t-1}+\alpha _{11,2}x_{1,t-2}+\alpha _{12,2}x_{2,t-2}+\epsilon _{1,t}
+   x_{1,t}=\alpha _{11,1}x_{1,t-1}+\alpha _{12,1}x_{2,t-1}+\alpha _{11,2}x_{1,t-2}+\alpha _{12,2}x_{2,t-2}+\epsilon _{1,t}, \\
    x_{2,t}=\alpha _{21,1}x_{1,t-1}+\alpha _{22,1}x_{2,t-1}+\alpha _{21,2}x_{1,t-2}+\alpha _{22,2}x_{2,t-2}+\epsilon _{2,t}
 
 .. tip::
@@ -132,7 +132,7 @@ For more information, please refer to the paper `DeepAR: Probabilistic Forecasti
 
 HybirdRNN
 =========
-HybirdRNN model is a combination of Recurrent Neural Network (RNN), Gated Recurrent Unit (GRU) and Long Short-term Memory (LSTM). 众所周知, 循环神经网络是一类以序列数据为输入在序列的演进方向上捕获时间特性的深度学习模型。循环神经网络具有记忆性且参数共享, 为了预防深度网络的梯度消失或梯度爆炸等问题, LSTM分别引入了遗忘门, 输入门和输出门等门控机制来学习更长的序列信息。GRU与LSTM类似, 不过将三门减少重置门和更新门两个门控, 使得每个循环单元可以自适应的捕捉不同时间刻度下的依赖。GRU更容易训练, 不过二者的效果不分伯仲。
+HybirdRNN model is a combination of Recurrent Neural Networks (RNN), Gated Recurrent Unit (GRU) and Long Short-term Memory (LSTM). RNN are a well-known class of neural networks that models sequential data or time series data. They could take the information from prior inputs (memory) to influence the current input and output. And they share parameters across each layer of the network.  LSTM were developed to deal with the vanishing gradients problems that tranditional RNNs can encountered.  A common LSTM unit is composed of a cell, an input gate, an output gate and a forget gate, which enable LSTM to learn longer sequencial information.  GRU is like a LSTM but with few parameters: a reset gate and a update gate. 
 
 For more information, please refer to the paper `Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling <https://arxiv.org/abs/1412.3555>`_
 
