@@ -6,7 +6,7 @@
 [![TensorFlow Versions](https://img.shields.io/badge/TensorFlow-2.0+-blue.svg)](https://pypi.org/project/deeptables)
 [![License](https://img.shields.io/github/license/DataCanvasIO/deeptables.svg)](https://github.com/DataCanvasIO/deeptables/blob/master/LICENSE)
 
->:dizzy: 易用，高效，统一的全管道自动时间序列分析工具，支持时间序列预测，分类及回归。
+> :dizzy: 易用，高效，统一的全管道自动时间序列分析工具，支持时间序列预测，分类及回归。
 
 ## 有志者，跟我来！
 亲爱的朋友们，我们在为热爱AutoML/NAS的专业人士和学生提供具有挑战性的机会。目前，我们的团队遍布北京(总部)、上海，成都，美国等世界各地，欢迎有志之士加入我们的团队DataCanvas Lab! 请您发送您的简历到 yangjian@zetyun.com. 
@@ -93,5 +93,7 @@ HyperTS支持以下特性:
 ![DataCanvas AutoML Toolkit](docs/static/images/datacanvas_automl_toolkit.png)
 
 ## DataCanvas
+
+![datacanvas](docs/static/images/dc_logo_1.png)
 
 HyperGBM是由数据科学平台领导厂商 [DataCanvas](https://www.datacanvas.com/) 创建的开源项目.
