@@ -23,7 +23,6 @@ logger = logging.get_logger(__name__)
 
 import warnings
 warnings.filterwarnings("ignore")
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 
 class Metrics(collections.UserDict):
@@ -39,15 +38,21 @@ class Metrics(collections.UserDict):
 
         self.data = {
             'mae': metrics.MeanAbsoluteError(name='mae'),
+            'mean_absolute_error': metrics.MeanAbsoluteError(name='mae'),
             'mape': metrics.MeanAbsolutePercentageError(name='mape'),
+            'mean_absolute_percentage_error': metrics.MeanAbsolutePercentageError(name='mape'),
             'smape': metrics.SymmetricMeanAbsolutePercentageError(name='smape'),
             'mse': metrics.MeanSquaredError(name='mse'),
+            'mean_squared_error': metrics.MeanSquaredError(name='mse'),
             'rmse': metrics.RootMeanSquaredError(name='rmse'),
             'msle': metrics.MeanSquaredLogarithmicError(name='msle'),
             'accuracy': metrics.CategoricalAccuracy(name='acc'),
             'auc': metrics.AUC(name='auc'),
-            'precison': metrics.Precision(name='precison'),
-            'recall': metrics.Recall(name='precall'),
+            'roc_auc_score': metrics.AUC(name='auc'),
+            'precision': metrics.Precision(name='precison'),
+            'precision_score': metrics.Precision(name='precison'),
+            'recall': metrics.Recall(name='recall'),
+            'recall_score': metrics.Recall(name='recall'),
         }
 
 class Losses(collections.UserDict):
@@ -469,10 +474,12 @@ class BaseDeepEstimator(object):
             raise ValueError('[proba] can not be none.')
         if len(proba.shape) == 1:
             proba = proba.reshape((-1, 1))
-        if proba.shape[-1] > 1:
+        if proba.shape[-1] > 2:
             predict = np.zeros(shape=proba.shape)
             argmax = proba.argmax(axis=-1)
             predict[np.arange(len(argmax)), argmax] = 1
+        elif proba.shape[-1] == 2:
+            predict = proba.argmax(axis=-1)
         else:
             predict = (proba > 0.5).astype('int32').reshape((-1, 1))
 
@@ -555,11 +562,13 @@ class BaseDeepEstimator(object):
             metrics = [Metrics()[m] for m in self.metrics]
         else:
             if self.task in consts.TASK_LIST_BINARYCLASS:
-                metrics = ['auc']
+                metrics = [Metrics()['auc']]
             elif self.task in consts.TASK_LIST_MULTICLASS:
-                metrics = ['accuracy']
+                metrics = [Metrics()['accuracy']]
             else:
-                metrics = ['rmse']
+                metrics = [Metrics()['rmse']]
+            logger.warning(f"In dl model, {self.metrics} is not supported, "
+                           f"so ['{metrics[0].name}'] will be called.")
 
         if optimizer == 'auto':
             optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, clipnorm=10.)

@@ -1,10 +1,11 @@
 # Welcome to HyperTS
-:dizzy: Easy-to-use, powerful, unified full pipeline automated time series toolkit. Supports forecasting, classification and regression.
-
 
 [![Python Versions](https://img.shields.io/pypi/pyversions/hypernets.svg)](https://pypi.org/project/hypernets)
 [![TensorFlow Versions](https://img.shields.io/badge/TensorFlow-2.0+-blue.svg)](https://pypi.org/project/deeptables)
 [![License](https://img.shields.io/github/license/DataCanvasIO/deeptables.svg)](https://github.com/DataCanvasIO/deeptables/blob/master/LICENSE)
+
+:dizzy: Easy-to-use, powerful, unified full pipeline automated time series toolkit. Supports forecasting, and regression.
+
 
 ## We Are Hiring！
 Dear folks, we are offering challenging opportunities located in Beijing for both professionals and students who are keen on AutoML/NAS. Come be a part of DataCanvas! Please send your CV to yangjian@zetyun.com. (Application deadline: TBD.) 
@@ -81,7 +82,7 @@ HyperTS supports the following features:
 ## Communication
 If you wish to contribute to this project, please refer to [CONTRIBUTING](CONTRIBUTING.md).
 
-## HyperTS related projects
+## HyperTS Related Projects
 * [Hypernets](https://github.com/DataCanvasIO/Hypernets): A general automated machine learning (AutoML) framework.
 * [HyperGBM](https://github.com/DataCanvasIO/HyperGBM): A full pipeline AutoML tool integrated various GBM models.
 * [HyperDT/DeepTables](https://github.com/DataCanvasIO/DeepTables): An AutoDL tool for tabular data.

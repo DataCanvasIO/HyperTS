@@ -3,6 +3,9 @@ from sklearn.metrics import *
 from hypernets.tabular import metrics
 from hyperts.utils import consts as const
 
+from hypernets.utils import logging
+logger = logging.get_logger(__name__)
+
 
 def check_is_array(y_true, y_pred):
     """Check whether the value is array-like.
@@ -172,6 +175,19 @@ def msle(y_true, y_pred, epsihon=1e-06, axis=None):
     return mse(np.log1p(y_true), np.log1p(y_pred), axis)
 
 
+def auc(y_true, y_score, average="macro", sample_weight=None,
+        max_fpr=None, multi_class="raise", labels=None):
+    """Compute Area Under the Receiver Operating Characteristic Curve (ROC AUC)
+    from prediction scores.
+
+    Note: this implementation can be used with binary, multiclass and
+    multilabel classification, but some restrictions apply (see sklearn.metrics.roc_auc_score).
+
+    """
+    return roc_auc_score(y_true, y_score, average=average, sample_weight=sample_weight,
+                         max_fpr=max_fpr, multi_class=multi_class, labels=labels)
+
+
 def _task_to_average(task):
     if 'binary' in task:
         average = 'binary'
@@ -192,8 +208,25 @@ def calc_score(y_true, y_preds, y_proba=None, metrics=('accuracy',), task=const.
         average = _task_to_average(task)
 
     recall_options = dict(average=average, labels=classes)
-    if pos_label is not None:
-        recall_options['pos_label'] = pos_label
+
+    if task in [const.TASK_BINARY, const.TASK_MULTICLASS] and pos_label is None:
+        if 1 in y_true:
+            recall_options['pos_label'] = 1
+        elif 'yes' in y_true:
+            recall_options['pos_label'] = 'yes'
+        elif 'true' in y_true:
+            recall_options['pos_label'] = 'true'
+        else:
+            recall_options['pos_label'] = y_true[0]
+        logger.warning(f"pos_label is not specified and defaults to {recall_options['pos_label']}.")
+    elif task in [const.TASK_BINARY, const.TASK_MULTICLASS] and pos_label is not None:
+        if pos_label in y_true:
+            recall_options['pos_label'] = pos_label
+        else:
+            recall_options['pos_label'] = y_true[0]
+            logger.warning(f"pos_label is incorrect and defaults to {y_true[0]}.")
+    else:
+        recall_options['pos_label'] = None
 
     for metric in metrics:
         if callable(metric):
@@ -202,9 +235,9 @@ def calc_score(y_true, y_preds, y_proba=None, metrics=('accuracy',), task=const.
                     if 'multiclass' in task:
                         score[metric.__name__] = metric(y_true, y_proba, multi_class='ovo', labels=classes)
                     else:
-                        score[metric] = metric(y_true, y_proba[:, 1])
+                        score[metric.__name__] = metric(y_true, y_proba[:, 1])
                 else:
-                    score[metric] = metric(y_true, y_proba)
+                    score[metric.__name__] = metric(y_true, y_proba)
             else:
                 try:
                     score[metric.__name__] = metric(y_true, y_preds)
@@ -262,6 +295,8 @@ def calc_score(y_true, y_preds, y_proba=None, metrics=('accuracy',), task=const.
                 score[metric] = r2_score(y_true, y_preds)
             elif metric_lower in ['logloss', 'log_loss']:
                 score[metric] = log_loss(y_true, y_proba, labels=classes)
+            else:
+                logger.error(f'{metric_lower} is not supported. Therefore, reset reward_metric.')
 
     return score
 

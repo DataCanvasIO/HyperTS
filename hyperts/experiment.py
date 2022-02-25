@@ -15,7 +15,6 @@ from hyperts.framework.compete import TSCompeteExperiment
 
 logger = logging.get_logger(__name__)
 
-
 def make_experiment(train_data,
                     task,
                     eval_data=None,
