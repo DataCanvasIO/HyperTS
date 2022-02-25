@@ -1,5 +1,5 @@
 Advanced Configurations
-########
+########################
 
 The :doc:`Quick Start </contents/0400_quick_start>` section presents the most basic application of HyperTS. The example is repeated as below. 
 
@@ -27,7 +27,7 @@ This section will introduce some advanced configurations of ``make_experience`` 
 
 
 
-Default settings
+Default Settings
 ===============================
 
 Firstly, load the input data and define the ``task`` type. The dataset information are collected `here <https://github.com/DataCanvasIO/HyperTS/blob/main/hyperts/datasets/base.py>`_。
@@ -56,8 +56,8 @@ Example codes:
 
 
 
-Select the processing method
-==================
+Select the Processing Mode
+=============================
 
 HyperTS includes three types of processing methods: Statistical (default)，Deep Learning and Neural Architecture Search, which are abbreviated as ``stats``, ``dl`` and ``nas`` respectively. Users could select the methods by setting argument ``mode``. 
 
@@ -83,7 +83,7 @@ The deep learning method is based on the Tensorfolw framework, which processes i
 
 
 
-Set the evaluation criterion
+Set the Evaluation Metric
 =================================
 
 By default, the evaluation criterion for forecasting task is 'mae', for classification task 'accuracy' and for regression task 'rmse'. Users could also set other evaluation criterion by argument ``reward-metric`` in both string format or importing from ``sklearn.metrics``.
@@ -110,7 +110,7 @@ Currently, ``reward_metric`` supports the following criterion:
 
 
 
-Set the optimization direction
+Set the Optimization Direction
 ================================
 
 The searcher needs an indication of the optimization direction ('min' or 'max'). By default, the system will detect from ``reward_metric``.
@@ -125,7 +125,7 @@ The searcher needs an indication of the optimization direction ('min' or 'max').
 
 
 
-Set the max search trials value
+Set the Max Search Trials
 ============================
 
 The default search trials is only three to obtain quick results. In practice, to achieve better performace, the search trails value is recommended more than 30. The higher the ``max_trials`` value is, the better performace would obtain if the time is sufficient.
@@ -138,8 +138,8 @@ The default search trials is only three to obtain quick results. In practice, to
 
 
 
-Set the early stopping strategy
-============================
+Set the Early Stopping Strategy
+===============================
 
 The early stopping strategy could define three different criterions to stop the processing to save time. The three strategies are:
 
@@ -156,8 +156,8 @@ The early stopping strategy could define three different criterions to stop the 
                         
 
 
-Define the evaluation dataset
-=========================
+Define the Evaluation Dataset
+==============================
 
 The evaluation dataset is split from the training dataset by default. Users could adjust ``eval_size`` to set the percentage. 
 
@@ -177,7 +177,7 @@ Besides, users could define a certain dataset as evaluation dataset by setting t
 
 
 
-Define a searcher
+Define a Searcher
 ======================
 
 HyperTS performs the model selection and hyperparameter search by the built-in search algorithms in `Hypernets <https://github.com/DataCanvasIO/Hypernets>`_, which includes EvolutionSearch(default, 'evalution'), MCTSSearcher('mcts'), RandomSearcher('random') and GridSearch('grid'). Users could define a specific search by setting the argument ``searcher``. It could be a class name or a string of the name.
@@ -192,8 +192,8 @@ For more details of the search algorithms, please refer to the section `Search A
 
 
 
-Set the time frequency
-==================
+Set the Time Frequency
+=======================
 
 For time series forecasting task, users could set the desired time frequency by the argument``freq``. The provided options are second (`S`), minute('T')、hour('H')、day('D')、week('W')、month('M') and year('Y'). If the frequency information is missing, it will adjust according to ``timestamp``.
 
@@ -208,7 +208,7 @@ For time series forecasting task, users could set the desired time frequency by 
 
 
 
-Set the time window
+Set the Time Window
 =============================
 
 When selecting the deep learning mode, users could set argument ``forecast_window`` to define the size of moving time window. The unit is per hour.
@@ -224,7 +224,7 @@ When selecting the deep learning mode, users could set argument ``forecast_windo
 
 
 
-Fix the random seed
+Fix the Random Seed
 ==========================
 
 Sometimes, the codes need to be re-executed. In order to keep the random numbers fixed, users could set the argument``random_state``. 
@@ -237,7 +237,7 @@ Sometimes, the codes need to be re-executed. In order to keep the random numbers
 
 
 
-Set the log level
+Set the Log Level
 =======================
 
 The progress messages during training can be printed by the argument ``log_level``. Foe more information, please refer to the python package ``logging``. Besides, more comprehensive messages will be printed when setting ``verbose = 1``.

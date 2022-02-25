@@ -1,9 +1,9 @@
 Installation
-########
+#############
 
 
-Software environment  
-========
+Software Environment
+=====================
 * Python 3.7 or 3.8
 
 * Tensorflow >=2.0.0, (Deep learning models require Tensorflow2)
@@ -11,7 +11,7 @@ Software environment
 
 
 Install with ``pip``
-========
+====================
 
 .. code-block:: sh
 
@@ -20,7 +20,7 @@ Install with ``pip``
 
 
 Install with ``conda``
-==========
+=======================
 
 .. code-block:: sh
 
@@ -29,7 +29,7 @@ Install with ``conda``
 
 
 
-Notice
+Notes
 ==========
 
 1. If you are failed to install ``sktime`` or ``prophet`` when using the STAT mode, suggest to install with ``conda`` instead of ``pip``:

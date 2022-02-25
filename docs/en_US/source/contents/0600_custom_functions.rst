@@ -3,7 +3,7 @@ User-defined Functions
 HyperTS supports several user-defined extension functions in addition to the built-in algorithms. 
 
 
-User-defined evaluation criterion
+User-defined Evaluation Metric
 ==============
 
 When creating an experiment, the evaluation criterion could be set by the argument ``reward_metric``. See example below:
@@ -79,7 +79,7 @@ Approach two:
 
 
 
-User-defined search space
+User-defined Search Space
 ==============
 
 HyperTS provides various algorithms with default search space for every processing mode. Most of them are listed below:
@@ -137,7 +137,7 @@ In addition to the built-in modeling algorithms as mentioned above, users could 
 
 Code example
 
-1. Build the model structure
+1. Build the Model Structure
 **************
 
 The example is to build a *Transformer Encoder* based on tensorflow. See `Keras tutorial <https://keras.io/examples/timeseries/timeseries_classification_transformer/>`_.
@@ -160,7 +160,7 @@ The example is to build a *Transformer Encoder* based on tensorflow. See `Keras 
         x = layers.LayerNormalization(epsilon=1e-6)(x)
         return x + res
  
-2. Build the algorithm 
+2. Build the Algorithm
 **************
 
 To make it sample, this example uses a template of an existing algorithm in HyperTS. Only a small part of ``_init_`` and ``_build_estimator`` are modified. 
@@ -240,7 +240,7 @@ To make it sample, this example uses a template of an existing algorithm in Hype
             model.summary()
             return model
 
-3. Build the estimator
+3. Build the Estimator
 **************
 
 Estimator connectes the algorithm model and search space. It defines the hyperparameters for optimization.
@@ -310,7 +310,7 @@ Estimator connectes the algorithm model and search space. It defines the hyperpa
                 raise ValueError('Check whether the task type meets specifications.')
             return transformer
 
-4.  Build the search space
+4.  Build the Search Space
 ************
 
 Add the estimator to the search space, in which the hyperparameters also could be defined properly to ensure the performance.  
@@ -361,7 +361,7 @@ Add the estimator to the search space, in which the hyperparameters also could b
             return r
 
 
-5. Execute the experiment with custom search space
+5. Execute the Sxperiment with Custom Search Space
 **********************
 
 .. code-block:: python

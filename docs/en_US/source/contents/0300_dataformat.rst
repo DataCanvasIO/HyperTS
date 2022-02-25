@@ -1,14 +1,14 @@
 Expected Data Format
-########
+#####################
 
 Time series data, or Time-stamped data, is a sequence of measurement data with respect to their time of occurrence. For any types of machine learning time series tasks, getting the correct data format is important. Below, we will introduce how to generate the correct time series data format based on different tasks.  
 
 
-Time series forecasting 
-============
+Time Series Forecasting
+=======================
 
-Required format
-************
+Required Format
+****************
 
 The required input data format is a two-dimensional structure (``pandas.DataFrame``), which should contain a timestamp column (``time_col``) and one or more variable columns (``var_col_0``, ``var_col_1``, ``var_col_2``,... ``var_col_n``,). See example below: 
 
@@ -134,10 +134,10 @@ The output shows that:
   
 
 
-Time series classification and regression
-==================
+Time Series Classification and Regression
+============================================
 
-Required format 
+Required Format
 ******************
 
 Differing from the forecasting tasks, the input data for classification and regression tasks are nested DataFrame, which means the variations over a time segment are listed in one cell. See example below.  
@@ -201,8 +201,8 @@ The output shows that:
 
 
 
-Convert array to nested dataframe
-******************
+Convert Array to Nested Dataframe
+***********************************
 
 Normally, the acquired data is in the form of ``numpy.array``. We need to convert them to the nested ``pandas.DataFrame``. For example, we have the numpy data as below: 
 

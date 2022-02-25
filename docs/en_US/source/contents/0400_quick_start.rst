@@ -12,8 +12,8 @@ The figure below shows the ``make_experiment`` workflow of HyperTS:
 HyperTS provides the unified API for different tasks, like time series forecasting, classification and regression. An example of how to perform the forecasting task is illustrated as follows. 
 
 
-Data preparation
-========
+Data Preparation
+=================
 
 This example uses the built-in dataset in HyperTS. Users could load their own datasets by ``pandas.Dataframe``. 
 
@@ -49,7 +49,7 @@ The detail information of this dataset:
 
 
 
-Model training
+Model Training
 ==============
 
 An experiment is firsty created by ``make_experiment`` with several user-defined parameters. Then the optimal model is simply obtained by using command ``run()``, which integrates the search, training and optimazation processes.
@@ -85,8 +85,8 @@ An experiment is firsty created by ``make_experiment`` with several user-defined
 
 
 
-Data prediction
-============
+Data Prediction
+================
 
 Function ``split_X_y()`` is to separate the test data into X (the timestamp) and y (the target variables). Then perform ``predict()`` to obtain the forecast results.
 
@@ -101,8 +101,8 @@ Function ``split_X_y()`` is to separate the test data into X (the timestamp) and
 
 
 
-Result evaluation
-========
+Result Evaluation
+==================
 
 To evaluate the forecast results, use function ``evaluate()`` to get the scores of different evaluation indicators. The example below shows the default indicators. Apart from this, users could set the parameter ``merics`` to define specific indicators. For instance, ``metrics=['mae', 'mse', mape_func]``, where ``mape_func`` could be a custom evaluation function or evaluation function from sklearn.
 
@@ -116,8 +116,8 @@ To evaluate the forecast results, use function ``evaluate()`` to get the scores 
 
 
 
-Result visualization
-======
+Result Visualization
+======================
 
 Use function ``plot()`` to draw the forecast curve of the first target variable by default. For multivariable forecasting task, user could set the parameter ``var_id`` to plot other target variables. For example, ``var_id='Var_3'`` or ``var_id=3``. The actural result is also shown in the graph for comparison.
 
