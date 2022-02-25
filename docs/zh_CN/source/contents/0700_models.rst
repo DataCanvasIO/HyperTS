@@ -66,8 +66,8 @@ VAR
 VAR全称为向量自回归模型(Vector Autoregressive), 针对于多变量时序分析。在这个模型中, 一组向量里的每一个时间序列被模型化为决定于自己滞后项以及这组向量里所有其他变量的滞后项。例如, 两阶的VAR模型可以表示为:
 
 .. math::
-    x_{t}=\alpha _{1}x_{t-1}+\alpha _{2}x_{t-2}+...+\alpha _{p}x_{t-p}+\epsilon _{1t},\\
-    y_{t}=\alpha _{1}y_{t-1}+\alpha _{2}y_{t-2}+...+\alpha _{p}y_{t-p}+\epsilon _{2t}.
+   x_{1,t}=\alpha _{11,1}x_{1,t-1}+\alpha _{12,1}x_{2,t-1}+\alpha _{11,2}x_{1,t-2}+\alpha _{12,2}x_{2,t-2}+\epsilon _{1,t}, \\
+   x_{2,t}=\alpha _{21,1}x_{1,t-1}+\alpha _{22,1}x_{2,t-1}+\alpha _{21,2}x_{1,t-2}+\alpha _{22,2}x_{2,t-2}+\epsilon _{2,t}
 
 VAR模型与AR模型相同, 一个核心问题是找到滞后项的阶数 :math:`p`, 从而获得好的预测效果。
 
