@@ -404,10 +404,10 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'summary': True,
 
             'rnn_type': Choice(['simple_rnn', 'gru', 'lstm']),
-            'rnn_units': Choice([8, 16, 32, 64, 128]),
+            'rnn_units': Choice([8, 16, 32, 64, 128, 256]),
             'rnn_layers': Choice([1, 2, 3]),
             'drop_rate': Choice([0., 0.1, 0.2]),
-            'window': Choice(self.window),
+            'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
             'y_log': Choice(['logx', 'log-none']),
             'y_scale': Choice(['min_max', 'max_abs'])
@@ -432,11 +432,10 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'summary': True,
 
             'rnn_type': Choice(['simple_rnn', 'gru', 'lstm']),
-            'rnn_units': Choice([8, 16, 32, 64, 128]),
+            'rnn_units': Choice([8, 16, 32, 64, 128, 256]),
             'rnn_layers': Choice([1, 2, 3]),
             'out_activation': Choice(['linear', 'sigmoid']),
-            'drop_rate': Choice([0., 0.1, 0.2]),
-            'window': Choice(self.window),
+            'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
             'y_log': Choice(['logx', 'log-none']),
             'y_scale': Choice(['min_max', 'max_abs'])
@@ -464,7 +463,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'skip_rnn_type': Choice(['simple_rnn', 'gru', 'lstm']),
             'cnn_filters': Choice([8, 16, 32, 64, 128]),
             'kernel_size': Choice([1, 3, 5]),
-            'rnn_units': Choice([8, 16, 32, 64, 128]),
+            'rnn_units': Choice([8, 16, 32, 64, 128, 256]),
             'skip_rnn_units': Choice([8, 16, 32, 64]),
             'rnn_layers': Choice([1, 2, 3]),
             'skip_rnn_layers': Choice([1, 2, 3]),
@@ -472,7 +471,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'drop_rate': Choice([0., 0.1, 0.2]),
             'skip_period': Choice([1, 3, 5]),
             'ar_order': Choice([1, 3, 5]),
-            'window': Choice(self.window),
+            'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
             'y_log': Choice(['logx', 'log-none']),
             'y_scale': Choice(['min_max', 'max_abs'])

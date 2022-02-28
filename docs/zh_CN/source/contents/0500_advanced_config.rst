@@ -166,6 +166,19 @@ HyperTS内置了三种运行模式, 分别为 统计模型模式('stats'), 深�
 
 ------------------
 
+指定正标签(pos_label)
+=====================
+
+在二分类任务中, 当计算precision, recall, f1-score等指标时, 评估指标函数需要获悉正标签, 即 ``pos_label``。HyperTS可以自动识别1, 'yes' 及'true'等常规正标签。当为非常规正标签时, HyperTS将默认y_true[0]为正标签。在实践过程中, 如果您的数据集采用非常规正标签, 建议您用过参数 ``pos_label`` 指定:
+
+.. code-block:: python
+
+  experiment = make_experiment(train_data, 
+                               pos_label='up',
+                              ...)    
+
+------------------
+
 指定验证数据集(eval_data)
 =========================
 
@@ -219,10 +232,10 @@ HyperTS通过 `Hypernets <https://github.com/DataCanvasIO/Hypernets>`_ 中内置
 
 ------------------
 
-指定预测窗口(forecast_window)
+指定预测窗口(dl_forecast_window)
 =============================
 
-当使用深度学习模式进行时序预测时, 您可以结合经验对数据的实际情况分析后, 通过参数 ``forecast_window`` 指定滑动窗口的大小:
+当使用深度学习模式进行时序预测时, 您可以结合经验对数据的实际情况分析后, 通过参数 ``dl_forecast_window`` 指定滑动窗口的大小:
 
 .. code-block:: python
 
@@ -230,8 +243,8 @@ HyperTS通过 `Hypernets <https://github.com/DataCanvasIO/Hypernets>`_ 中内置
                               task='forecast',
                               mode='dl',
                               timestamp='TimeStamp',
-                              forecast_window=24*7,
-                              ...)                            
+                              dl_forecast_window=24*7,
+                              ...)    							  
 
 ------------------
 

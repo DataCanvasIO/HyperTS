@@ -97,17 +97,17 @@ class TSToolBox(ToolBox):
         offsets: list, offset lag.
         max_loops: 'int', maximum number of loop imputed.
         """
-        if offsets == None and freq == 'S':
-            offsets = _offsets_pool.minute
-        elif offsets == None and freq == 'T':
-            offsets = _offsets_pool.minute
-        elif offsets == None and freq == 'H':
+        if offsets == None and freq in ['S', 'T', 'min']:
+            offsets = _offsets_pool.second
+        elif offsets == None and freq in ['H', 'BH']:
             offsets = _offsets_pool.hour
-        elif offsets == None and freq == 'D':
+        elif offsets == None and freq in ['C', 'B', 'D']:
             offsets = _offsets_pool.day
-        elif offsets == None and freq == 'M':
+        elif offsets == None and ['SM', 'M', 'MS', 'SMS', 'BM', 'CBM', 'CBMS']:
             offsets = _offsets_pool.month
-        elif offsets == None and freq == 'Y':
+        elif freq in 'Q' or freq in 'Q-' in freq or 'BQ-' in freq or 'QS-' in freq or 'BQS-':
+            offsets = _offsets_pool.quarter
+        elif freq in ['A', 'Y'] or 'A-' in freq or 'BA-' in freq or 'AS-' in freq or 'BAS-' in freq:
             offsets = _offsets_pool.year
         elif offsets == None:
             offsets = _offsets_pool.neighbor
@@ -238,11 +238,13 @@ class TSToolBox(ToolBox):
             return list(filter(lambda x: x<=max_size, [1, 6, 12, 24, 48]))
         elif freq in ['C', 'B', 'D']:
             return list(filter(lambda x: x<=max_size, [1, 5, 7, 15, 30]))
-        elif freq in ['W']:
+        elif freq in 'W' or 'W-' in freq or 'WOM-' in freq:
             return list(filter(lambda x: x<=max_size, [1, 4, 8, 12, 16]))
-        elif freq in ['SM', 'M', 'MS', 'SMS', 'BM', 'CBM', 'CBMS', 'Q']:
-            return list(filter(lambda x: x<=max_size, [1, 3, 6, 12, 24]))
-        elif freq in ['A', 'Y', 'A-JAN', 'AS-JAN', 'BA-JAN', 'BAS-JAN']:
+        elif freq in ['SM', 'M', 'MS', 'SMS', 'BM', 'CBM', 'CBMS']:
+            return list(filter(lambda x: x <= max_size, [1, 3, 6, 12, 24]))
+        elif freq in 'Q' or freq in 'Q-' in freq or 'BQ-' in freq or 'QS-' in freq or 'BQS-':
+            return list(filter(lambda x: x <= max_size, [1, 2, 3, 4, 6]))
+        elif freq in ['A', 'Y'] or 'A-' in freq or 'BA-' in freq or 'AS-' in freq or 'BAS-' in freq:
             return list(filter(lambda x: x<=max_size, [1, 3, 6, 12, 24]))
         elif freq in ['L', 'U', 'N', 'ms']:
             return list(filter(lambda x: x <= max_size, [1, 10, 100, 500, 1000]))
@@ -494,13 +496,14 @@ class TSToolBox(ToolBox):
 
 class _offsets_pool:
     neighbor = [-1, 1]
-    second = [-1, 1, -60 * 4, -60 * 3, -60 * 2, -60 * 1, 60 * 1, 60 * 2, 60 * 3, 60 * 4]
-    minute = [-1, 1, -60 * 4, -60 * 3, -60 * 2, -60 * 1, 60 * 1, 60 * 2, 60 * 3, 60 * 4]
-    hour   = [-1, 1, -24 * 4, -24 * 3, -24 * 2, -24 * 1, 24 * 1, 24 * 2, 24 * 3, 24 * 4,
+    second   = [-1, 1, -60 * 4, -60 * 3, -60 * 2, -60 * 1, 60 * 1, 60 * 2, 60 * 3, 60 * 4]
+    hour     = [-1, 1, -24 * 4, -24 * 3, -24 * 2, -24 * 1, 24 * 1, 24 * 2, 24 * 3, 24 * 4,
              -168 * 4, -168 * 3, -168 * 2, -168 * 1, 168 * 1, 168 * 2, 168 * 3, 168 * 4]
-    day    = [-1, 1, -7 * 4, -7 * 3, -7 * 2, -7 * 1, 7 * 1, 7 * 2, 7 * 3, 7 * 4]
-    month  = [-1, 1, -12 * 4, -12 * 3, -12 * 2, -12 * 1, 12 * 1, 12 * 2, 12 * 3, 12 * 4]
-    year   = [-1, 1]
+    day      = [-1, 1, -7 * 4, -7 * 3, -7 * 2, -7 * 1, 7 * 1, 7 * 2, 7 * 3, 7 * 4]
+    week     = [-1, -4*1, -4*2, -4*3, -4*4, 1, 4*1, 4*2, 4*3, 4*4]
+    month    = [-1, 1, -12 * 4, -12 * 3, -12 * 2, -12 * 1, 12 * 1, 12 * 2, 12 * 3, 12 * 4]
+    quarter  = [-1, -2, -3, -4, 1, 2, 3, 4]
+    year     = [-1, 1]
 
 def _infer_ts_freq(df: pd.DataFrame, ts_name: str = consts.TIMESTAMP):
     """ Infer the frequency of the time series.

@@ -360,7 +360,7 @@ def make_experiment(train_data,
         autual_covariables = covariables
 
     # 8. Infer Forecast Window for DL Mode
-    if mode in [consts.Mode_DL, consts.Mode_NAS] and dl_forecast_window is None:
+    if mode in [consts.Mode_DL, consts.Mode_NAS] and task in consts.TASK_LIST_FORECAST and dl_forecast_window is None:
         if eval_data is not None:
             max_win_size= int(len(X_eval) // 2 - dl_forecast_horizon)
         elif kwargs.get('eval_size') is not None:

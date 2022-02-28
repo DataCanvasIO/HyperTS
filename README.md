@@ -6,7 +6,7 @@
 [![TensorFlow Versions](https://img.shields.io/badge/TensorFlow-2.0+-blue.svg)](https://pypi.org/project/deeptables)
 [![License](https://img.shields.io/github/license/DataCanvasIO/deeptables.svg)](https://github.com/DataCanvasIO/deeptables/blob/master/LICENSE)
 
-> :dizzy: Easy-to-use, powerful, unified full pipeline automated time series toolkit. Supports forecasting, and regression.
+:dizzy: Easy-to-use, powerful, unified full pipeline automated time series toolkit. Supports forecasting, and regression.
 
 
 ## We Are Hiring！
