@@ -261,7 +261,8 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
     @property
     def default_var_init_kwargs(self):
         return {
-            'ic': Choice(['aic', 'fpe', 'hqic', 'bic']),
+            # 'ic': Choice(['aic', 'fpe', 'hqic', 'bic']),
+            'maxlags': Choice([None, 2, 6, 12, 24, 48]),
             'trend': Choice(['c', 'ct', 'ctt', 'nc', 'n']),
             'y_scale': Choice(['min_max', 'max_abs', 'scale-none']),
             'y_log': Choice(['logx', 'log-none'])
