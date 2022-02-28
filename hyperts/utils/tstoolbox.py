@@ -103,7 +103,9 @@ class TSToolBox(ToolBox):
             offsets = _offsets_pool.hour
         elif offsets == None and freq in ['C', 'B', 'D']:
             offsets = _offsets_pool.day
-        elif offsets == None and ['SM', 'M', 'MS', 'SMS', 'BM', 'CBM', 'CBMS']:
+        elif offsets == None and freq in 'W' or 'W-' in freq or 'WOM-' in freq:
+            offsets = _offsets_pool.week
+        elif offsets == None and freq in ['SM', 'M', 'MS', 'SMS', 'BM', 'CBM', 'CBMS']:
             offsets = _offsets_pool.month
         elif freq in 'Q' or freq in 'Q-' in freq or 'BQ-' in freq or 'QS-' in freq or 'BQS-':
             offsets = _offsets_pool.quarter

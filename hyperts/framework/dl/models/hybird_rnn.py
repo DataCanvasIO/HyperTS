@@ -92,7 +92,8 @@ class HybirdRNN(BaseDeepEstimator):
                  default = 'auto'.
     learning_rate : Positive Float - The optimizer's learning rate,
                  default = 0.001.
-    loss       : Str - Loss function, optional {'auto', 'adam', 'sgd'},
+    loss       : Str - Loss function, for forecsting or regression, optional {'auto', 'mae', 'mse', 'huber_loss',
+                 'mape'}, for classification, optional {'auto', 'categorical_crossentropy', 'binary_crossentropy},
                  default = 'auto'.
     reducelr_patience : Positive Int - The number of epochs with no improvement after which learning rate
                  will be reduced, default = 5.

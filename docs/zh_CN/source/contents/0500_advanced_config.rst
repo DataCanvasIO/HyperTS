@@ -169,7 +169,7 @@ HyperTS内置了三种运行模式, 分别为 统计模型模式('stats'), 深�
 指定正标签(pos_label)
 =====================
 
-在二分类任务中, 当计算precision, recall, f1-score等指标时, 评估指标函数需要获悉正标签, 即 ``pos_label``。HyperTS可以自动识别1, 'yes' 及'true'等常规正标签。当为非常规正标签时, HyperTS将默认y_true[0]为正标签。在实践过程中, 如果您的数据集采用非常规正标签, 建议您用过参数 ``pos_label`` 指定:
+在二分类任务中, 当计算precision, recall, f1-score等评估指标时, 评估指标函数需要获悉正标签, 即 ``pos_label``。HyperTS可以自动识别1, 'yes' 及'true'等常规正标签。当为非常规正标签时, HyperTS将默认y_true[0]为正标签。在实践过程中, 如果您的数据集采用非常规正标签, 建议您通过参数 ``pos_label`` 指定:
 
 .. code-block:: python
 
