@@ -119,7 +119,7 @@ To evaluate the forecast results, use function ``evaluate()`` to get the scores 
 Visualization
 ======================
 
-Use function ``plot()`` to draw the forecast curve of the first target variable by default. For multivariable forecasting task, user could set the parameter ``var_id`` to plot other target variables. For example, ``var_id='Var_3'`` or ``var_id=3``. The actural result is also shown in the graph for comparison.
+Use function ``plot()`` to draw the forecast curve and actural result for comparison.
 
 .. code-block:: python
 
@@ -129,5 +129,13 @@ Use function ``plot()`` to draw the forecast curve of the first target variable 
     :align: left
     :width: 850
 
+.. Note::
+    - The visualization plot only shows one variable, which is the first target variable by default.
+    - For multivariable forecasting task, user could set the parameter ``var_id`` to plot other target variables. For example, ``var_id='Var_3'`` or ``var_id=3``.
+    - The visualization plot supports human interactions: see specific point value and zoom in/out the time scale. The default setting is true, ``interactive=true``.
+    - To plot more historial data, set ``history=sub_train_data``.
+    - When ``actual=None`` (default), it only plots the forecasting curve, without the actural curve.
+    - When ``show_forecast_interval=True`` (default), it shows the confidence intervals estimated by Bayesian algorithm.
+    
 .. tip::
     The forecasting curve graph is made by plotly library. Users could observe each point value by clicking on the curve. 
