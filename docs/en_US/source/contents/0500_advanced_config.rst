@@ -155,6 +155,18 @@ The early stopping strategy could define three different criterions to stop the 
                               ...)    
                         
 
+Define the positive label
+============================
+
+To evaluate the performance of binary classification task, most evaluation criterions requre known positive labels. HyperTS could identify regular positive labels, like '1', 'yes',and 'true'. For irregular labels, we recommed to define it by argument ``pos_label``. See example:
+
+
+.. code-block:: python
+
+  experiment = make_experiment(train_data, 
+                              pos_label='up',
+                              ...)   
+
 
 Define the Evaluation Dataset
 ==============================
