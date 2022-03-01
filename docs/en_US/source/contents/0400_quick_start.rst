@@ -1,7 +1,7 @@
 Quick Start
 ########
 
-HyperTS is a subtool of DataCanvas AutoML Toolkit(DAT), which is based on the general frameowrk  `Hypernets <https://github.com/DataCanvasIO/Hypernets>`_.  Similar to HyperGBM (another subtool for structured tabular data), HyperTS follows the same rules of both ``make_experiment`` API and ``scikit-learn`` model API. In general, an experiment is created after the data is ready. Then a trained model can be simply obtained by command ``run()``. To analyze the model, HyperTS also supports the functions like ``predict()``, ``evaluate()`` and ``plot()``.  
+HyperTS is a subtool of DataCanvas AutoML Toolkit(DAT), which is based on the general frameowrk  `Hypernets <https://github.com/DataCanvasIO/Hypernets>`_.  Similar to `HyperGBM <https://github.com/DataCanvasIO/HyperGBM>`_ (another subtool for structured tabular data), HyperTS follows the same rules of both ``make_experiment`` API and ``scikit-learn`` model API. In general, an experiment is created after the data is ready. Then a trained model can be simply obtained by command ``run()``. To analyze the model, HyperTS also supports the functions like ``predict()``, ``evaluate()`` and ``plot()``.  
 The figure below shows the ``make_experiment`` workflow of HyperTS:
 
 .. image:: /figures/images/workflow.png
@@ -22,7 +22,7 @@ This example uses the built-in dataset in HyperTS. Users could load their own da
     from hyperts.datasets import load_network_traffic
     from sklearn.model_selection import train_test_split
 
-The data split is based on time sequences to avoid the loss of time information. Therefore, the test data is the end part of the whole dataset with setting ``shuffle=False``.
+The data split is based on time sequences to avoid the information leakage. Therefore, the test data is the end part of the whole dataset with setting ``shuffle=False``.
 
 .. code-block:: python
 
@@ -52,7 +52,7 @@ The detail information of this dataset:
 Model Training
 ==============
 
-An experiment is firsty created by ``make_experiment`` with several user-defined parameters. Then the optimal model is simply obtained by using command ``run()``, which integrates the search, training and optimazation processes.
+An experiment is firsty created by ``make_experiment`` with several user-defined parameters. Then the optimal model is simply obtained by using command ``run()``, which integrates the search, training and optimization processes.
 
 .. code-block:: python
 
@@ -81,14 +81,14 @@ An experiment is firsty created by ``make_experiment`` with several user-defined
 
 .. tip::
 
-    For more advanced performance, you could modify other parameters. Please refer to the instructions of ``make_experiment``.
+    For more advanced performance, you could modify other parameters. Please refer to the instructions of :doc:`Advanced Configurations </contents/0500_0500_advanced_config>`.
 
 
 
-Data Prediction
+Prediction
 ================
 
-Function ``split_X_y()`` is to separate the test data into X (the timestamp) and y (the target variables). Then perform ``predict()`` to obtain the forecast results.
+Function ``split_X_y()`` is to separate the test data into X (the timestamp and covariates) and y (the target variables). Then perform ``predict()`` to obtain the forecast results.
 
 .. code-block:: python
 
@@ -101,10 +101,10 @@ Function ``split_X_y()`` is to separate the test data into X (the timestamp) and
 
 
 
-Result Evaluation
+Evaluation
 ==================
 
-To evaluate the forecast results, use function ``evaluate()`` to get the scores of different evaluation indicators. The example below shows the default indicators. Apart from this, users could set the parameter ``merics`` to define specific indicators. For instance, ``metrics=['mae', 'mse', mape_func]``, where ``mape_func`` could be a custom evaluation function or evaluation function from sklearn.
+To evaluate the forecast results, use function ``evaluate()`` to get the scores of different evaluation criterions. The example below shows the default criterions. Apart from this, users could set the argument ``metrics`` to define specific criterions. For instance, ``metrics=['mae', 'mse', mape_func]``, where ``mape_func`` could be a custom evaluation function or evaluation function from sklearn.
 
 .. code-block:: python
 
@@ -116,7 +116,7 @@ To evaluate the forecast results, use function ``evaluate()`` to get the scores 
 
 
 
-Result Visualization
+Visualization
 ======================
 
 Use function ``plot()`` to draw the forecast curve of the first target variable by default. For multivariable forecasting task, user could set the parameter ``var_id`` to plot other target variables. For example, ``var_id='Var_3'`` or ``var_id=3``. The actural result is also shown in the graph for comparison.

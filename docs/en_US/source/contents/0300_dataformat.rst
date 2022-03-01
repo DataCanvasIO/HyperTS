@@ -1,7 +1,7 @@
 Expected Data Format
 #####################
 
-Time series data, or Time-stamped data, is a sequence of measurement data with respect to their time of occurrence. For any types of machine learning time series tasks, getting the correct data format is important. Below, we will introduce how to generate the correct time series data format based on different tasks.  
+Time series data, or Time-stamped data, is a sequence of measurement data with respect to their time of occurrence. For any types of machine learning time series tasks, getting the correct data format is important. Below, we illustrate the correct time series data format based on different tasks.  
 
 
 Time Series Forecasting
@@ -38,7 +38,7 @@ where *xxxx-xx-xx xx:xx:xx* stands for the datetime. Preferably, the date format
   - The datetime can be any format as long as it can be identified by ``pandas.to_datetime``.  
   - HyperTS could sort the data in time sequence if the timestamps of original input data are random. 
   - HyperTS supports input data with various time frequencies. For example, second(S)、minute(T)、hour(H)、day(D)、week(W)、month(M)、year(Y), etc.
-  - HyperTS could interpolate the missing time segments and missing values during the preprocessing stage.
+  - HyperTS could impute the missing time segments and missing values during the preprocessing stage.
   - HyperTS could dropout the repeated rows during the preprocessing stage.
 
 
@@ -66,7 +66,7 @@ where ``covar_col_1``,..., ``covar_col_m`` are covariates.
 
 .. note::
 
-  - Covariates could be continuous or discrete values. 
+  - Covariates could be continuous or discrete(categorical) values. 
   - Covariates could contain repeated or missing values.
 
 

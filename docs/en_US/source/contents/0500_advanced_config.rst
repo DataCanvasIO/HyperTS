@@ -31,7 +31,7 @@ Default Settings
 ===============================
 
 Firstly, load the input data and define the ``task`` type. The dataset information are collected `here <https://github.com/DataCanvasIO/HyperTS/blob/main/hyperts/datasets/base.py>`_。
-Secondly, define the related variables according to different task types. For forecasting task, the required variables are the ``timestampe``, and ``covariables`` if have. For classification task, the required avariable is the ``target``. 
+Secondly, define the related variables according to different task types. For forecasting task, the required variables are the ``timestampe``, and ``covariables`` if have. For classification task, the required variable is the ``target``. 
 
 Example codes:
 
@@ -52,14 +52,14 @@ Example codes:
   
   For claasification task, it could be divided into ``univariate-binaryclass``, ``univariate-multiclass``, ``multivariate-binaryclass`` and ``multivariate-multiclass``, according to the number of features and the target categories. 
   
-  If the exact task type is known, the specific name is recommended to assign to the function argument. For example, ``task='univariate-forecast'``. If not, using the general type name, ``task='classification'``, also work. 
+  If the exact task type is known, the specific name is recommended to assign to the function argument. For example, ``task='univariate-forecast'``. If not, using the general type name, ``task='classification'``, also works. 
 
 
 
-Select the Processing Mode
+Select the Run Mode
 =============================
 
-HyperTS includes three types of processing methods: Statistical (default)，Deep Learning and Neural Architecture Search, which are abbreviated as ``stats``, ``dl`` and ``nas`` respectively. Users could select the methods by setting argument ``mode``. 
+HyperTS includes three types of methods: Statistical (default), Deep Learning and Neural Architecture Search, which are abbreviated as ``stats``, ``dl`` and ``nas`` respectively. Users could select the methods by setting argument ``mode``. 
 
 .. code-block:: python
 
@@ -144,7 +144,7 @@ Set the Early Stopping Strategy
 The early stopping strategy could define three different criterions to stop the processing to save time. The three strategies are:
 
 - ``early_stopping_time_limit``:  unit is second.
-- ``early_stopping_round``: limit is the times of search trials (priority to max_trials).
+- ``early_stopping_round``: the trials number of invalid search after obtaining the optimal value.
 - ``early_stopping_reward``: defines the threshold value of certain reward.
 
 .. code-block:: python
@@ -195,7 +195,7 @@ For more details of the search algorithms, please refer to the section `Search A
 Set the Time Frequency
 =======================
 
-For time series forecasting task, users could set the desired time frequency by the argument``freq``. The provided options are second (`S`), minute('T')、hour('H')、day('D')、week('W')、month('M') and year('Y'). If the frequency information is missing, it will adjust according to ``timestamp``.
+For time series forecasting task, users could set the desired time frequency by the argument ``freq``. The provided options are second (`S`), minute('T')、hour('H')、day('D')、week('W')、month('M') and year('Y'). If the frequency information is missing, it will adjust according to ``timestamp``.
 
 .. code-block:: python
 
@@ -211,7 +211,7 @@ For time series forecasting task, users could set the desired time frequency by 
 Set the Time Window
 =============================
 
-When selecting the deep learning mode, users could set argument ``forecast_window`` to define the size of moving time window. The unit is per hour.
+When selecting the deep learning mode, users could set argument ``dl_forecast_window`` to define the size of moving time window. The unit is per hour.
 
 .. code-block:: python
 
@@ -219,7 +219,7 @@ When selecting the deep learning mode, users could set argument ``forecast_windo
                               task='forecast',
                               mode='dl',
                               timestamp='TimeStamp',
-                              forecast_window=24*7,
+                              dl_forecast_window=24*7,
                               ...)                            
 
 
@@ -227,7 +227,7 @@ When selecting the deep learning mode, users could set argument ``forecast_windo
 Fix the Random Seed
 ==========================
 
-Sometimes, the codes need to be re-executed. In order to keep the random numbers fixed, users could set the argument``random_state``. 
+Sometimes, the codes need to be re-executed. In order to keep the random numbers fixed, users could set the argument ``random_state``. 
 
 .. code-block:: python
 
@@ -240,7 +240,7 @@ Sometimes, the codes need to be re-executed. In order to keep the random numbers
 Set the Log Level
 =======================
 
-The progress messages during training can be printed by the argument ``log_level``. Foe more information, please refer to the python package ``logging``. Besides, more comprehensive messages will be printed when setting ``verbose = 1``.
+The progress messages during training can be printed by the argument ``log_level``. For more information, please refer to the python package ``logging``. Besides, more comprehensive messages will be printed when setting ``verbose = 1``.
 
 .. code-block:: python
 

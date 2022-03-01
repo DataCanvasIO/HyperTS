@@ -117,7 +117,7 @@ DeepAR是基于深度学习的时间序列预测算法, 为升级版的自回归
 
 HybirdRNN
 =========
-HybirdRNN模型是指朴素循环神经网络(Recurrent Neural Network, RNN), 门控循环单元网络(Gated Recurrent Unit, GRU)以及长短记忆网络(Long Short-term Memory, LSTM)三种循环神经网络的集合。众所周知, 循环神经网络是一类以序列数据为输入在序列的演进方向上捕获时间特性的深度学习模型。循环神经网络具有记忆性且参数共享, 为了预防深度网络的梯度消失或梯度爆炸等问题, LSTM分别引入了遗忘门, 输入门和输出门等门控机制来学习更长的序列信息。GRU与LSTM类似, 不过将三门减少重置门和更新门两个门控, 使得每个循环单元可以自适应的捕捉不同时间刻度下的依赖。GRU更容易训练, 不过二者的效果不分伯仲。
+HybirdRNN模型是指朴素循环神经网络(Recurrent Neural Network, RNN), 门控循环单元网络(Gated Recurrent Unit, GRU)以及长短记忆网络(Long Short-term Memory, LSTM)三种循环神经网络的集合。众所周知, 循环神经网络是一类以序列数据为输入在序列的演进方向上捕获时间特性的深度学习模型。循环神经网络具有记忆性且参数共享, 为了预防深度网络的梯度消失问题, LSTM分别引入了遗忘门, 输入门和输出门等门控机制来学习更长的序列信息。GRU与LSTM类似, 减少为重置门和更新门两个门控, 使得每个循环单元可以自适应的捕捉不同时间刻度下的依赖。GRU更容易训练, 不过二者的效果不分伯仲。
 
 更多区别可参考: `Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling <https://arxiv.org/abs/1412.3555>`_
 

@@ -1,10 +1,11 @@
 User-defined Functions
-########
+#######################
+
 HyperTS supports several user-defined extension functions in addition to the built-in algorithms. 
 
 
 User-defined Evaluation Metric
-==============
+================================
 
 When creating an experiment, the evaluation criterion could be set by the argument ``reward_metric``. See example below:
 
@@ -70,7 +71,7 @@ Approach two:
                                 task='forecast',
                                 timestamp='TimeStamp',
                                 reward_metric=custom_metric,
-                                scorer=make_scorer,
+                                scorer=custom_scorer,
                                 ...) 
 
 .. note::
@@ -80,9 +81,9 @@ Approach two:
 
 
 User-defined Search Space
-==============
+=========================
 
-HyperTS provides various algorithms with default search space for every processing mode. Most of them are listed below:
+HyperTS provides various algorithms with default search space for every mode. Most of them are listed below:
 
 - 'StatsForecastSearchSpace' includes the search space for statistical models (Prophet, ARIMA, VAR);
 - 'StatsClassificationSearchSpace' includes the search space for statistical models (TSForest, k-NNs);
@@ -92,7 +93,7 @@ HyperTS provides various algorithms with default search space for every processi
 By setting the argument ``search_space``, users could define their own search space. The instructions and an example are given below to modify the ``StatsForecastSearchSpace``. 
 
 - Mandatory! Describe the exact name of the task. For instance, ``task='univariate-forecast'``;
-- Mandatory! Assign the name of the 'timestamp' column;
+- Mandatory! Assign the name of the ``timestamp`` column;
 - Mandatory! If have the covariables, describe them clearly. For instance, ``covariables={xxx: xxx, ...}``;
 - Set the argument as false to disable a certain algorithm. For instance, ``enable_arima=False``;
 - Change the initial parameters of a certain algorithm by function ``prophet_init_kwargs={xxx:xxx, ...}``;
@@ -126,8 +127,8 @@ Code example:
 
 
 
-User defined modeling algorithm
-==============
+User Defined Modeling Algorithm
+================================
 
 In addition to the built-in modeling algorithms as mentioned above, users could also define new algorithms. The instructions and an example are given below to build a modified neural network model 'Transformer' inside 'DLForecastSearchSpace':
 
@@ -138,7 +139,7 @@ In addition to the built-in modeling algorithms as mentioned above, users could 
 Code example
 
 1. Build the Model Structure
-**************
+*****************************
 
 The example is to build a *Transformer Encoder* based on tensorflow. See `Keras tutorial <https://keras.io/examples/timeseries/timeseries_classification_transformer/>`_.
 
@@ -161,7 +162,7 @@ The example is to build a *Transformer Encoder* based on tensorflow. See `Keras 
         return x + res
  
 2. Build the Algorithm
-**************
+***********************
 
 To make it sample, this example uses a template of an existing algorithm in HyperTS. Only a small part of ``_init_`` and ``_build_estimator`` are modified. 
 
@@ -241,7 +242,7 @@ To make it sample, this example uses a template of an existing algorithm in Hype
             return model
 
 3. Build the Estimator
-**************
+***********************
 
 Estimator connectes the algorithm model and search space. It defines the hyperparameters for optimization.
 
@@ -361,7 +362,7 @@ Add the estimator to the search space, in which the hyperparameters also could b
             return r
 
 
-5. Execute the Sxperiment with Custom Search Space
+5. Execute the Experiment with Custom Search Space
 **********************
 
 .. code-block:: python

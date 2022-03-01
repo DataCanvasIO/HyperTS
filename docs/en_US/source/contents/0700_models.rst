@@ -1,5 +1,5 @@
 Model References
-########
+#################
 
 HyperTS provides three different methods to perform time series analysis, which are statistical methods, deep learning algorithms and neural architecture search algorithms(not implemented yet). Each method also includes several algorithms to solve specific problems. This section will give a breif introduction to these algorithms. Besides, more novel and advanced algorithms will be involved in the near future, like Transformer and N-Beats.  
 
@@ -24,7 +24,7 @@ Prophet is stated as a decomposable model with three main components: trend, sea
 
 Where :math:`g(t)` is the trend function which models non-periodic changes in the value of thetime  series, :math:`s(t)` represents  periodic  changes  (e.g.,  weekly  and  yearly  seasonality), :math:`h(t)` represents the effects of holidays which occur on potentially irregular schedules overone or more days. The error term :math:`\epsilon_{t}` represents any idiosyncratic changes which are not accommodated  by  the  model;  later  we  will  make  the  parametric  assumption  that the error is normally distributed.
 
-For more information, please check the `website <https://facebook.github.io/prophet/>` and the paper `Forecasting at scale <https://peerj.com/preprints/3190/>`_.
+For more information, please check the `website <https://facebook.github.io/prophet/>`_ and the paper `Forecasting at scale <https://peerj.com/preprints/3190/>`_.
 
 .. tip::
 

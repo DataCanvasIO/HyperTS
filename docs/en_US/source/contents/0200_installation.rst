@@ -10,7 +10,7 @@ Software Environment
 
 
 
-Install with ``pip``
+Install with pip
 ====================
 
 .. code-block:: sh
@@ -19,7 +19,7 @@ Install with ``pip``
 
 
 
-Install with ``conda``
+Install with conda
 =======================
 
 .. code-block:: sh
@@ -32,7 +32,7 @@ Install with ``conda``
 Notes
 ==========
 
-1. If you are failed to install ``sktime`` or ``prophet`` when using the STAT mode, suggest to install with ``conda`` instead of ``pip``:
+1. If you are failed to install ``sktime`` or ``prophet`` when using the STATS mode, suggest to install with ``conda`` instead of ``pip``:
 
 .. code-block:: sh
 

@@ -70,7 +70,7 @@ HyperTS除了使用内置的算法外, 还支持用户自定义部分功能, 以
                                 task='forecast',
                                 timestamp='TimeStamp',
                                 reward_metric=custom_metric,
-                                scorer=make_scorer,
+                                scorer=custom_scorer,
                                 ...) 
 
 .. note::
