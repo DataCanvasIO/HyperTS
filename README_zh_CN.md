@@ -20,12 +20,12 @@ HyperTS是一个Python工具包，提供了一个端到端的时间序列分析�
 
 ## 教程
 
-|[中文文档](https://hyperts.readthedocs.io/zh_CN/latest/) | [英文文档](https://hyperts.readthedocs.io/en/latest)|
+|[中文文档](https://hyperts.readthedocs.io/zh_CN/latest/) / [英文文档](https://hyperts.readthedocs.io/en/latest) | 描述 |
 | --------------------------------- | --------------------------------- |
-[数据规范](https://hyperts.readthedocs.io/en/latest/contents/0300_dataformat.html)|HyperTS期待什么样的数据？|
-|[快速开始](https://hyperts.readthedocs.io/en/latest/contents/0400_quick_start.html)| 如何快速正确地使用HyperTS？|
-|[进阶之梯](https://hyperts.readthedocs.io/en/latest/contents/0500_examples.html)|如何释放HyperTS的巨大潜能？|
-|[自定义化](https://hyperts.readthedocs.io/en/latest/contents/0600_custom_functions.html)|如何定制化自己的HyperTS?|
+[数据规范](https://hyperts.readthedocs.io/zh_CN/latest/contents/0300_dataformat.html)|HyperTS期待什么样的数据？|
+|[快速开始](https://hyperts.readthedocs.io/zh_CN/latest/contents/0400_quick_start.html)| 如何快速正确地使用HyperTS？|
+|[进阶之梯](https://hyperts.readthedocs.io/zh_CN/latest/contents/0500_advanced_config.html)|如何释放HyperTS的巨大潜能？|
+|[自定义化](https://hyperts.readthedocs.io/zh_CN/latest/contents/0600_user_defined.html)|如何定制化自己的HyperTS?|
 
 ## 示例
 
@@ -67,7 +67,7 @@ HyperTS支持以下特性:
 
 **多任务支持:** 时间序列预测、分类及回归。
 
-**多模式支持:** 大量的时序模型，从统计模型到深度学习模型，再到神经结构搜索(开发中)。
+**多模式支持:** 大量的时序模型，从统计模型到深度学习模型，再到神经架构搜索(开发中)。
 
 **多变量支持:** 支持从单变量到多变量时间序列任务。
 
@@ -84,11 +84,13 @@ HyperTS支持以下特性:
 如果您想为HyperTS做一些贡献, 请参考 [CONTRIBUTING](CONTRIBUTING.md).
 
 ## 相关项目
-* [HyperGBM](https://github.com/DataCanvasIO/HyperGBM): 一个集成了多个GBM模型的全Pipeline AutoML工具.
-* [HyperDT/DeepTables](https://github.com/DataCanvasIO/DeepTables): 一个面向结构化数据的AutoDL工具.
-* [HyperKeras](https://github.com/DataCanvasIO/HyperKeras): 一款为Tensorflow和Keras提供神经架构搜索和超参数优化的AutoDL工具.
-* [Cooka](https://github.com/DataCanvasIO/Cooka): 一个交互式的轻量级自动机器学习系统.
-* [Hypernets](https://github.com/DataCanvasIO/Hypernets): 一个通用的自动机器学习框架.
+* [Hypernets](https://github.com/DataCanvasIO/Hypernets): 一个通用的自动机器学习框架。
+* [HyperGBM](https://github.com/DataCanvasIO/HyperGBM): 一个集成了多个GBM模型的全Pipeline AutoML工具。
+* [HyperDT/DeepTables](https://github.com/DataCanvasIO/DeepTables): 一个面向结构化数据的AutoDL工具。
+* [HyperTS](https://github.com/DataCanvasIO/HyperTS): 一个面向时间序列数据的AutoML和AutoDL工具。
+* [HyperKeras](https://github.com/DataCanvasIO/HyperKeras): 一个为Tensorflow和Keras提供神经架构搜索和超参数优化的AutoDL工具。
+* [HyperBoard](https://github.com/DataCanvasIO/HyperBoard): 一个为Hypernets提供可视化界面的工具。
+* [Cooka](https://github.com/DataCanvasIO/Cooka): 一个交互式的轻量级自动机器学习系统。
   
 ![DataCanvas AutoML Toolkit](docs/static/images/datacanvas_automl_toolkit.png)
 
@@ -96,4 +98,4 @@ HyperTS支持以下特性:
 
 ![datacanvas](docs/static/images/dc_logo_1.png)
 
-HyperGBM是由数据科学平台领导厂商 [DataCanvas](https://www.datacanvas.com/) 创建的开源项目.
+HyperTS是由数据科学平台领导厂商 [DataCanvas](https://www.datacanvas.com/) 创建的开源项目。

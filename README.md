@@ -6,7 +6,7 @@
 [![TensorFlow Versions](https://img.shields.io/badge/TensorFlow-2.0+-blue.svg)](https://pypi.org/project/deeptables)
 [![License](https://img.shields.io/github/license/DataCanvasIO/deeptables.svg)](https://github.com/DataCanvasIO/deeptables/blob/master/LICENSE)
 
-:dizzy: Easy-to-use, powerful, unified full pipeline automated time series toolkit. Supports forecasting, and regression.
+:dizzy: Easy-to-use, powerful, unified full pipeline automated time series toolkit. Supports forecasting, classification and regression.
 
 
 ## We Are Hiring！
@@ -16,24 +16,24 @@ Dear folks, we are offering challenging opportunities located in Beijing for bot
 ## Overview
 HyperTS is a Python package that provides an end-to-end time series (TS) analysis toolkit. It covers complete and flexible AutoML workflows for TS, including data clearning, preprocessing, feature engineering, model selection, hyperparamter optimization, result evaluation, and visualization.
 
-Multi-mode drive, light-heavy combination is the highlight feature of HyperTS. Therefore, statistical models (STATS), deep learning (DL), and neural architecture search (NAS) can be switched arbitrarily to get a powerful TS estimator.
+Multi-mode drive, light-heavy combination is the highlighted features of HyperTS. Therefore, statistical models (STATS), deep learning (DL), and neural architecture search (NAS) can be switched arbitrarily to get a powerful TS estimator.
 
-Easy-to-use and lower-level API. Users can get a model after simply running the experiment, and then execute ```.predict()```, ```.predict_proba()```, ```.evalute()```, ```.plot()``` for various time series analysis.
+As an easy-to-use and lower-thoreshold API, users can get a model after simply running the experiment, and then execute ```.predict()```, ```.predict_proba()```, ```.evalute()```, ```.plot()``` for various time series analysis.
 
 
 ## Tutorial
 
-|[English Docs](https://hyperts.readthedocs.io/en/latest/) | [Chinese Docs](https://hyperts.readthedocs.io/zh_CN/latest)|
+|[English Docs](https://hyperts.readthedocs.io/en/latest/) / [Chinese Docs](https://hyperts.readthedocs.io/zh_CN/latest)| Discription |
 | --------------------------------- | --------------------------------- |
 [Expected Data Format](https://hyperts.readthedocs.io/en/latest/contents/0300_dataformat.html)|What data formats do HyperTS expect?|
 |[Quick Start](https://hyperts.readthedocs.io/en/latest/contents/0400_quick_start.html)| How to get started quickly with HyperTS?|
-|[Advanced Ladder](https://hyperts.readthedocs.io/en/latest/contents/0500_examples.html)|How to realize the potential of HyprTS?|
+|[Advanced Ladder](https://hyperts.readthedocs.io/en/latest/contents/0500_advanced_config.html)|How to realize the potential of HyprTS?|
 |[Custom Functions](https://hyperts.readthedocs.io/en/latest/contents/0600_custom_functions.html)|How to customize the functions of HyprTS?|
 
 
 ## Examples
 
-Users can quickly create and ```run()``` an experiment with ```make_experiment()```, where ```train_data```, and ```task``` as required input parameters. In the following forecast example, we tell the experiment that it is a multivariate-forecast ```task```, using stats ```mode```, since the data contains timestamp and covariable columns, ```timestamp``` and ```covariables``` parameters must inform the experiment.
+Users can quickly create and ```run()``` an experiment with ```make_experiment()```, where ```train_data```, and ```task``` are required input parameters. In the following forecast example, we define the experiment as a multivariate-forecast ```task```, and use the statistical model (stat ```mode```) . Besides, the mandatory arguments ```timestamp``` and ```covariables``` (if have) should also be defined in the experiment.
 
 ```python
 from hyperts.experiment import make_experiment
@@ -69,7 +69,7 @@ HyperTS supports the following features:
 
 **Multi-task Support:** Time series forecasting, classification, and regression.
 
-**Multi-mode Support:** A large collection of TS models, from statistical models to deep learning models, and to neural architecture search (developing).
+**Multi-mode Support:** A large collection of TS models, including statistical models (Prophet,ARIMA,VAR,etc.) , deep learning models(DeepAR,GRU,LSTNet,etc), and neural architecture search (to be developed).
 
 **Multi-variate Support:** From univariate to multivariate time series.
 
@@ -77,9 +77,9 @@ HyperTS supports the following features:
 
 **Probabilistic intervals Support:** Time series forecsting visualization can show confidence intervals.
 
-**Abundant Metrics:** From MSE, SMAPE, Accuracy to F1-Score, a variety of performance metrics to evaluate results and guide models optimization.
+**Abundant Metrics:** A variety of performance metrics to evaluate results and guide models optimization, including MSE, SMAPE, Accuracy, F1-Score,etc. 
 
-**Powerful search strategies:** Adapting Grid Search, Monte Carlo Tree Search, Evolution Algorithm combined with a meta-learner to learn a powerful and effective TS pipeline.
+**Powerful search strategies:** Adapting Grid Search, Monte Carlo Tree Search, Evolution Algorithm combined with a meta-learner to enable a powerful and effective TS pipeline.
 
 ## Communication
 If you wish to contribute to this project, please refer to [CONTRIBUTING](CONTRIBUTING.md).
@@ -89,6 +89,7 @@ If you wish to contribute to this project, please refer to [CONTRIBUTING](CONTRI
 * [HyperGBM](https://github.com/DataCanvasIO/HyperGBM): A full pipeline AutoML tool integrated various GBM models.
 * [HyperDT/DeepTables](https://github.com/DataCanvasIO/DeepTables): An AutoDL tool for tabular data.
 * [HyperKeras](https://github.com/DataCanvasIO/HyperKeras): An AutoDL tool for Neural Architecture Search and Hyperparameter Optimization on Tensorflow and Keras.
+* [HyperBoard](https://github.com/DataCanvasIO/HyperBoard): A visualization tool for Hypernets.
 * [Cooka](https://github.com/DataCanvasIO/Cooka): Lightweight interactive AutoML system.
 
 ![DataCanvas AutoML Toolkit](docs/static/images/datacanvas_automl_toolkit.png)
