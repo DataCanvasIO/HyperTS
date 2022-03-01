@@ -36,5 +36,52 @@ HyperTS supports the following features:
   
 - **Abundant evaluation methods**
 
-  To evaluate the trained model, HyperTS provides several performance matrics, including MSE, SMAPE, F1-score, accuracy and so on. Besides, forcasting curve with confidence intervals and controllable time scaling plot make the result more informative and better visualized. 
+  After obtaining the trained model, HyperTS provides functions ``predict()`` and ``evaluate()`` to evaluate the model peformance. The output matrics include a variety of criterions like MSE, SMAPE, F1-score, accuracy，etc. Besides, function ``plot()`` will plot a interactive forcasting curves with confidence intervals, which makes the results more informative and better visualized. 
 
+
+Feature Metrics
+================
+
+Below is the overview of all features and run modes of HyperTS:
+
+.. csv-table:: 
+   :stub-columns: 1
+   :header: Category, Features, Current version, Future Version
+   :widths: 5, 20, 5, 5
+   
+   Data cleaning, Repeated columns cleaning, √
+   , Columns types correction, √
+   , `ID` column cleaning, √ 
+   , Constant covariate columns cleaning, √
+   , Deleting covariate columns with missing values, √
+   , Deleting samples without targets, √
+   Data preprocessing, TimeStamp impution, √
+   , Missing value simple impution, √
+   , Missing value average moving impution, √
+   , Outliers processing, √
+   , OrdinalEncoder, √
+   , LabelEncoder, √
+   , StandardScaler, √
+   , MinMaxScaler, √
+   , MaxAbsScaler, √
+   , Log(x+1), √
+   Dataset split, split by time sequence, √
+   , split by moving window, √
+   Model & Mode, Prophet —> STATS mode | univariate | forecasting, √
+   , ARIMA —> STATS mode | univariate  | forecasting, √
+   , VAR —> STATS mode | multivariate | forecasting, √
+   , Theta —> STATS mode | univariate  | forecasting, , √
+   , DeepAR —> DL mode | univariate  | forecasting | covariates √
+   , RNN —> DL mode | uni/multi-variate | forecasting/classification/regression | covariates, √
+   , GRU —> DL mode | uni/multi-variate | forecasting/classification/regression  | covariates, √
+   , LSTM —> DL mode | uni/multi-variate | forecasting/classification/regression | covariates, √
+   , LSTNet —> DL mode | uni/multi-variate | forecasting/classification/regression  | covariates, √
+   , Wavenet —> DL mode | uni/multi-variate | forecasting/classification/regression  | covariates, , √
+   , Transformer —> DL mode | uni/multi-variate | forecasting/classification/regression  | covariates, , √
+   , Transformer —> DL mode | uni/multi-variate | forecasting/classification/regression  | covariates, , √
+   , NAS —> NAS | uni/multi-variate | forecasting/classification/regression  | covariates, , √
+   Evaluation methods, Train-Validation-Holdout, √
+   , Rolling-Window-Evaluation, , √
+   Model ensemble, GreedyEnsemble, , √
+   Visualization, forecasting curve, √
+   , forecasting trends, seasonality, , √
