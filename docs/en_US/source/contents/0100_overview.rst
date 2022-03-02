@@ -47,7 +47,7 @@ Below is the overview of all features and run modes of HyperTS:
 .. csv-table:: 
    :stub-columns: 1
    :header: Category, Features, Current version, Future Version
-   :widths: 5, 20, 5, 5
+   :widths: 5, 25, 5, 5
    
    Data cleaning, Repeated columns cleaning, √
    , Columns types correction, √
@@ -65,13 +65,13 @@ Below is the overview of all features and run modes of HyperTS:
    , MinMaxScaler, √
    , MaxAbsScaler, √
    , Log(x+1), √
-   Dataset split, split by time sequence, √
-   , split by moving window, √
+   Dataset split, Split training dataset and test dataset in the order of time sequence, √
+   Dataset creation , Create batches of inputs and targets by sliding window, √
    Model & Mode, Prophet —> STATS mode | univariate | forecasting, √
    , ARIMA —> STATS mode | univariate  | forecasting, √
    , VAR —> STATS mode | multivariate | forecasting, √
    , Theta —> STATS mode | univariate  | forecasting, , √
-   , DeepAR —> DL mode | univariate  | forecasting | covariates √
+   , DeepAR —> DL mode | univariate  | forecasting | covariates , √
    , RNN —> DL mode | uni/multi-variate | forecasting/classification/regression | covariates, √
    , GRU —> DL mode | uni/multi-variate | forecasting/classification/regression  | covariates, √
    , LSTM —> DL mode | uni/multi-variate | forecasting/classification/regression | covariates, √
@@ -83,5 +83,5 @@ Below is the overview of all features and run modes of HyperTS:
    Evaluation methods, Train-Validation-Holdout, √
    , Rolling-Window-Evaluation, , √
    Model ensemble, GreedyEnsemble, , √
-   Visualization, forecasting curve, √
-   , forecasting trends, seasonality, , √
+   Visualization, Forecasting curve, √
+   , Forecasting trends and seasonality, , √
