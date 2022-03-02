@@ -36,10 +36,10 @@ HyperTS supports the following features:
   
 - **Abundant evaluation methods**
 
-  After obtaining the trained model, HyperTS provides functions ``predict()`` and ``evaluate()`` to evaluate the model peformance. The output matrics include a variety of criterions like MSE, SMAPE, F1-score, accuracy，etc. Besides, function ``plot()`` will plot a interactive forcasting curves with confidence intervals, which makes the results more informative and better visualized. 
+  After obtaining the trained model, HyperTS provides functions ``predict()`` and ``evaluate()`` to evaluate the model peformance. The output matrics include a variety of criterions like MSE, SMAPE, F1-score, accuracy, etc. Besides, function ``plot()`` will plot an interactive forcasting curves with confidence intervals, which makes the results more informative and better visualized. 
 
 
-Feature Metrics
+Feature Matrix
 ================
 
 Below is the overview of all features and run modes of HyperTS:
