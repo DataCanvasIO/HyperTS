@@ -8,8 +8,8 @@ HyperTS is an AutoML and AutoDL tool which focuses on processing time series dat
 
 - Support the following data and tasks
 
-  - forecasting, classification, and regression
-  - univariate, multivariates, covariates
+  - Forecasting, classification, and regression
+  - Univariate, multivariates, covariates
 
 - Data cleaning:
 
@@ -35,13 +35,17 @@ HyperTS is an AutoML and AutoDL tool which focuses on processing time series dat
 
 - Data split: 
 
-  - split by time sequence
-  - split by moving window
+  - Split training dataset and test dataset in the order of time sequence	
+  
+- Dataset creation	
+  
+  - Create batches of inputs and targets by sliding window
+ 
 
 - Model & mode: 
 
-  - statistical models: Prophet、ARIMA、VAR、TSForest、KNeighbors
-  - deep learning models: DeepAR、RNN、GRU、LSTM、LSTNet 
+  - Statistical models: Prophet、ARIMA、VAR、TSForest、KNeighbors
+  - Deep learning models: DeepAR、RNN、GRU、LSTM、LSTNet 
 
 - Evaluation method: 
 
@@ -49,6 +53,6 @@ HyperTS is an AutoML and AutoDL tool which focuses on processing time series dat
   
 - Visualization:
 
-  - human interactive plot
-  - plot options: historical data, forecasting data and actural data
-  - confidence intervals 
+  - Human interactive plot
+  - Plot options: historical data, forecasting data and actural data
+  - Confidence intervals 
