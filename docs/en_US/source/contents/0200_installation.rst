@@ -18,31 +18,19 @@ Install with pip
     pip install hyperts
 
 
-
-Install with conda
-=======================
-
-.. code-block:: sh
-
-    conda install hyperts
-
-
-
-
 Notes
 ==========
 
-1. If you are failed to install ``sktime`` or ``prophet`` when using the STATS mode, suggest to install with ``conda`` instead of ``pip``:
-
-.. code-block:: sh
-
-    conda install -c conda-forge sktime==0.8.1
+1. HyperTS relies on Prophet. When installing hyperts using pip, it is recommended that you first install Prophet using ``conda``:
 
 .. code-block:: sh
 
     conda install -c conda-forge prophet==1.0.1
 
-2. If you meet the error shown below when using the DL mode, please check and change the ``pyparsing`` version to 2.4.7. 
+2. If your device supports GPU, you can manually install the ``tensorFlow-gpu`` version to speed up the deep learning model.
+
+
+1. If you meet the error shown below when using the DL mode, please check and change the ``pyparsing`` version to 2.4.7. 
 
 .. code-block:: none
 

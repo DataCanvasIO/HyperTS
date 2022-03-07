@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath('./.'))
 
 now = datetime.now()
 project = 'HyperTS'
-copyright = '{now.year}, DataCanvas.com'
+copyright = f'{now.year}, DataCanvas.com'
 author = 'DataCanvas.com'
 
 # The full version, including alpha/beta/rc tags

@@ -30,6 +30,14 @@ As an easy-to-use and lower-thoreshold API, users can get a model after simply r
 |[Advanced Ladder](https://hyperts.readthedocs.io/en/latest/contents/0500_advanced_config.html)|How to realize the potential of HyprTS?|
 |[Custom Functions](https://hyperts.readthedocs.io/en/latest/contents/0600_custom_functions.html)|How to customize the functions of HyprTS?|
 
+## Installation
+
+HyperTS is available on Pypi and can be installed with pip:
+
+```bash
+pip install hyperts
+```
+For more installation tips, see [installation](https://hyperts.readthedocs.io/en/latest/contents/0200_installation.html).
 
 ## Examples
 

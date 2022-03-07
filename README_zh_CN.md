@@ -18,6 +18,17 @@ HyperTS是一个Python工具包，提供了一个端到端的时间序列分析�
 
 简单易上手的API。您可以简单操作创建一个实验，然后```run()```它，便会获得一个最佳的全pipeline模型。然后针对得到的model执行```.predict()```, ```.predict_proba()```, ```.evalute()```, ```.plot()```等操作来对做各种各样的时间序列结果分析。
 
+## 安装
+
+HyperTS在Pypi上可用，可以使用pip安装:
+
+```bash
+pip install hyperts
+```
+
+更多安装细节及注意事项，请看 [安装指南](https://hyperts.readthedocs.io/zh_CN/latest/contents/0200_installation.html).
+
+
 ## 教程
 
 |[中文文档](https://hyperts.readthedocs.io/zh_CN/latest/) / [英文文档](https://hyperts.readthedocs.io/en/latest) | 描述 |

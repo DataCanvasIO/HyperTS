@@ -51,7 +51,7 @@ Below is the overview of all features and run modes of HyperTS:
    
    Data cleaning, Repeated columns cleaning, √
    , Columns types correction, √
-   , `ID` column cleaning, √ 
+   , id column cleaning, √ 
    , Constant covariate columns cleaning, √
    , Deleting covariate columns with missing values, √
    , Deleting samples without targets, √
@@ -70,14 +70,15 @@ Below is the overview of all features and run modes of HyperTS:
    Model & Mode, Prophet —> STATS mode | univariate | forecasting, √
    , ARIMA —> STATS mode | univariate  | forecasting, √
    , VAR —> STATS mode | multivariate | forecasting, √
-   , Theta —> STATS mode | univariate  | forecasting, , √
+   , TSForest —> DL mode | univariate | classification, , √
+   , KNeighbors —> DL mode | uni/multi-variate | classification, , √
+   , Theta —> STATS mode | univariate | forecasting, , √
    , DeepAR —> DL mode | univariate  | forecasting | covariates , √
    , RNN —> DL mode | uni/multi-variate | forecasting/classification/regression | covariates, √
    , GRU —> DL mode | uni/multi-variate | forecasting/classification/regression  | covariates, √
    , LSTM —> DL mode | uni/multi-variate | forecasting/classification/regression | covariates, √
    , LSTNet —> DL mode | uni/multi-variate | forecasting/classification/regression  | covariates, √
    , Wavenet —> DL mode | uni/multi-variate | forecasting/classification/regression  | covariates, , √
-   , Transformer —> DL mode | uni/multi-variate | forecasting/classification/regression  | covariates, , √
    , Transformer —> DL mode | uni/multi-variate | forecasting/classification/regression  | covariates, , √
    , NAS —> NAS | uni/multi-variate | forecasting/classification/regression  | covariates, , √
    Evaluation methods, Train-Validation-Holdout, √
