@@ -344,6 +344,8 @@ class BaseDeepEstimator(object):
         if validation_data is None:
             if self.task in consts.TASK_LIST_FORECAST:
                 X, X_val, y, y_val = tb.temporal_train_test_split(X, y, test_size=validation_split)
+                X = tb.concat_df([X, X_val], axis=0)
+                y = tb.concat_df([y, y_val], axis=0)
             else:
                 X, X_val, y, y_val = tb.random_train_test_split(X, y, test_size=validation_split)
         else:

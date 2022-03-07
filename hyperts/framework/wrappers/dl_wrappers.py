@@ -18,8 +18,9 @@ class DeepARWrapper(EstimatorWrapper, WrapperMixin):
         self.model = DeepAR(**self.init_kwargs)
 
     def fit(self, X, y=None, **kwargs):
+        fit_kwargs = self._merge_dict(self.fit_kwargs, kwargs)
         y = self.fit_transform(y)
-        self.model.fit(X, y, **self.fit_kwargs)
+        self.model.fit(X, y, **fit_kwargs)
 
     def predict(self, X, **kwargs):
         if self.init_kwargs.get('task') in consts.TASK_LIST_FORECAST:
@@ -49,11 +50,12 @@ class HybirdRNNWrapper(EstimatorWrapper, WrapperMixin):
         self.model = HybirdRNN(**self.init_kwargs)
 
     def fit(self, X, y=None, **kwargs):
+        fit_kwargs = self._merge_dict(self.fit_kwargs, kwargs)
         if self.init_kwargs.get('task') in consts.TASK_LIST_FORECAST:
             y = self.fit_transform(y)
         else:
             X = self.fit_transform(X)
-        self.model.fit(X, y, **self.fit_kwargs)
+        self.model.fit(X, y, **fit_kwargs)
 
     def predict(self, X, **kwargs):
         if self.init_kwargs.get('task') in consts.TASK_LIST_FORECAST:
@@ -90,11 +92,12 @@ class LSTNetWrapper(EstimatorWrapper, WrapperMixin):
         self.model = LSTNet(**self.init_kwargs)
 
     def fit(self, X, y=None, **kwargs):
+        fit_kwargs = self._merge_dict(self.fit_kwargs, kwargs)
         if self.init_kwargs.get('task') in consts.TASK_LIST_FORECAST:
             y = self.fit_transform(y)
         else:
             X = self.fit_transform(X)
-        self.model.fit(X, y, **self.fit_kwargs)
+        self.model.fit(X, y, **fit_kwargs)
 
     def predict(self, X, **kwargs):
         if self.init_kwargs.get('task') in consts.TASK_LIST_FORECAST:

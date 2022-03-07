@@ -3,9 +3,7 @@
 
 """
 import copy
-
 import numpy as np
-import pandas as pd
 
 from hypernets.core import set_random_state
 from hypernets.experiment.compete import SteppedExperiment, ExperimentStep, \
@@ -61,10 +59,13 @@ class TSFDataPreprocessStep(ExperimentStep):
 
         # 4. eval variables data process
         if X_eval is None or y_eval is None:
-            eval_size = self.experiment.eval_size
             if self.task in consts.TASK_LIST_FORECAST:
+                if X_train.shape[0] <= 2*consts.DEFAULT_FORECAST_EVAL_SIZE:
+                    eval_horizon = consts.DEFAULT_EVAL_SIZE
+                else:
+                    eval_horizon = consts.DEFAULT_FORECAST_EVAL_SIZE
                 X_train, X_eval, y_train, y_eval = \
-                    tb.temporal_train_test_split(X_train, y_train, test_size=eval_size)
+                    tb.temporal_train_test_split(X_train, y_train, test_size=eval_horizon)
                 self.step_progress('split into train set and eval set')
         else:
             if self.covariate_cols is not None and len(self.covariate_cols) > 0:
@@ -237,8 +238,6 @@ class TSSpaceSearchStep(SpaceSearchStep):
         super().__init__(experiment, name, cv=cv, num_folds=num_folds)
 
     def search(self, X_train, y_train, X_test=None, X_eval=None, y_eval=None, **kwargs):
-        if X_eval is not None:
-            kwargs['eval_set'] = (X_eval, y_eval)
         model = copy.deepcopy(self.experiment.hyper_model)
         es = self.find_early_stopping_callback(model.callbacks)
         if es is not None and es.time_limit is not None and es.time_limit > 0:
@@ -320,10 +319,7 @@ class TSPipeline:
         self.sk_pipeline = sk_pipeline
         if self.task in consts.TASK_LIST_FORECAST:
             self.prior = sk_pipeline.named_steps.estimator.history_prior
-            if mode == consts.Mode_STATS:
-                self.history = history
-            else:
-                self.history = history[[timestamp]]
+            self.history = history
 
     def predict(self, X, forecast_start=None):
         """Predicts target for sequences in X.
@@ -337,7 +333,7 @@ class TSPipeline:
         forecast_start : 'DataFrame'. This parameter applies only to 'dl' mode.
             Forecast the start fragment, if None, by default the last window fragment of the
             train data.
-            forecast_start.columns = ['timestamp', (covariate_1), (covariate_2),...].
+            forecast_start.columns = ['timestamp', variate_1, variate_2, ..., (covariate_1), (covariate_2),...].
             (covariate_1) indicates that it may not exist.
         """
         tb = get_tool_box(X)
@@ -352,16 +348,8 @@ class TSPipeline:
                 forecast_start = self._preprocess_forecast_start(forecast_start)
                 self.sk_pipeline.named_steps.estimator.model.model.forecast_start = forecast_start
             elif self.mode == consts.Mode_DL and forecast_start is None:
-                estimator = self.sk_pipeline.named_steps.estimator
-                forecast_start = estimator.model.model.forecast_start
-                if self.covariables is None:
-                    history = forecast_start[0, :, :]
-                else:
-                    history = forecast_start[0][0, :, :len(self.target)]
-                history = estimator.model.inverse_transform(history)
-                history = tb.DataFrame(history, columns=self.target)
-                time_df = tb.reset_index(self.history.iloc[-len(history):])
-                self.history = tb.concat_df([time_df, history], axis=1)
+                forecast_start = self._preprocess_forecast_start(self.history)
+                self.sk_pipeline.named_steps.estimator.model.model.forecast_start = forecast_start
 
             y_pred = self.sk_pipeline.predict(X)
 
@@ -768,10 +756,20 @@ class TSCompeteExperiment(SteppedExperiment):
         sk_pipeline = super(TSCompeteExperiment, self).to_estimator(
                             X_train, y_train, X_test, X_eval, y_eval, steps)
 
-        tb = get_tool_box(X_eval, y_eval)
-
         if self.task in consts.TASK_LIST_FORECAST:
-            history = tb.concat_df([X_eval[self.timestamp], y_eval], axis=1)
+            import gc
+            tb = get_tool_box(X_train, y_train)
+            train_data = tb.concat_df([X_train, y_train], axis=1)
+            eval_data = tb.concat_df([X_eval, y_eval], axis=1)
+            whole_data = tb.concat_df([train_data, eval_data], axis=0)
+            if self.mode == consts.Mode_STATS:
+                window = 1
+            else:
+                window = sk_pipeline.named_steps.estimator.model.init_kwargs['window']
+            max_history_length = max(window, len(X_eval))
+            history = whole_data.tail(max_history_length)
+            del train_data, eval_data, whole_data
+            gc.collect()
         else:
             history = None
 

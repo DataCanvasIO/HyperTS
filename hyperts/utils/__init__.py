@@ -29,6 +29,7 @@ def set_random_state(seed=9527, mode=consts.Mode_STATS):
     os.environ['TF_DETERMINISTIC_OPS'] = '0'
     np.random.seed(seed)
 
-    if mode != consts.Mode_DL:
+    if mode == consts.Mode_DL:
         import tensorflow as tf
         tf.random.set_seed(seed)
+

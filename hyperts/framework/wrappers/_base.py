@@ -179,6 +179,13 @@ class WrapperMixin:
         if self.init_kwargs.get('use_multiprocessing'):
             self.fit_kwargs.update({'use_multiprocessing': self.init_kwargs.pop('use_multiprocessing')})
 
+    def _merge_dict(self, *args):
+        d = {}
+        for a in args:
+            if isinstance(a, dict):
+                d.update(a)
+        return d
+
 
 ##################################### Define Simple Time Series Estimator #####################################
 class SimpleTSEstimator(ModuleSpace):
