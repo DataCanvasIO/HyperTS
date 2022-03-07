@@ -43,7 +43,7 @@ pip install hyperts
 您可以使用```make_experiment()```快速创建并运行一个实验，其中```train_data```和```task```作为必需的输入参数。在以下预测示例中，我们告诉实验这是一个多变量预测任务，开启```stats```模式(统计)，因为数据包含时间戳和协变量列，因此```timestamp```和```covariables```参数也必须传给实验。
 
 ```python
-from hyperts.experiment import make_experiment
+from hyperts import make_experiment
 from hyperts.datasets import load_network_traffic
 
 from sklearn.model_selection import train_test_split

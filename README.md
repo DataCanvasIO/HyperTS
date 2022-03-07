@@ -44,7 +44,7 @@ For more installation tips, see [installation](https://hyperts.readthedocs.io/en
 Users can quickly create and ```run()``` an experiment with ```make_experiment()```, where ```train_data```, and ```task``` are required input parameters. In the following forecast example, we define the experiment as a multivariate-forecast ```task```, and use the statistical model (stat ```mode```) . Besides, the mandatory arguments ```timestamp``` and ```covariables``` (if have) should also be defined in the experiment.
 
 ```python
-from hyperts.experiment import make_experiment
+from hyperts import make_experiment
 from hyperts.datasets import load_network_traffic
 
 from sklearn.model_selection import train_test_split
