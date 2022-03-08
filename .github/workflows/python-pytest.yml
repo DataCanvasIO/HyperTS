@@ -37,15 +37,15 @@ jobs:
       shell: bash -l {0}
       run: |
         python -m pip install --upgrade pip
-        pip install -q tensorflow==2.4.2
         conda install -y -c conda-forge sktime==0.8.1
         conda install scikit-learn==0.24.2
         pip install -q featuretools==0.27.1
         pip install -q git+https://github.com/DataCanvasIO/Hypernets
         conda install -y -c conda-forge prophet==1.0.1
-        pip install -q pyparsing==2.4.7
         pip install -q -r requirements.txt
         pip install scipy==1.7.3
+        pip install -q tensorflow==2.4.2
+        pip install -q pyparsing==2.4.7
         pip install -q pytest-cov==2.4.0  python-coveralls  codacy-coverage
     - name: Conda list
       shell: bash -l {0}
