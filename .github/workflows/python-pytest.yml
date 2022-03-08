@@ -17,7 +17,6 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        tf-version: [2.1.0, 2.2.0, 2.3.1, 2.4.2]
         python-version: [3.7, 3.8] # feature-tools only update to 0.23.3 on python3.6 and the latest is 1.2.0(2021/11)
         exclude:
           - os: windows-latest
@@ -38,7 +37,7 @@ jobs:
       shell: bash -l {0}
       run: |
         python -m pip install --upgrade pip
-        pip install -q tensorflow==${{ matrix.tf-version }}
+        pip install -q tensorflow==2.4.2
         conda install -y -c conda-forge sktime==0.8.1
         conda install scikit-learn==0.24.2
         pip install -q featuretools==0.27.1
