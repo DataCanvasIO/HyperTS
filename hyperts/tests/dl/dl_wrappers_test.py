@@ -5,8 +5,8 @@ import numpy as np
 from hyperts.datasets import *
 from hyperts.utils.metrics import rmse, mape, accuracy_score
 from hyperts.utils import consts
-from hyperts.utils._base import get_tool_box
-from hyperts.framework.wrappers import DeepARWrapper, HybirdRNNWrapper, LSTNetWrapper
+from hyperts.utils import get_tool_box
+from hyperts.framework.wrappers.dl_wrappers import DeepARWrapper, HybirdRNNWrapper, LSTNetWrapper
 
 
 class Test_DL_Wrappers():

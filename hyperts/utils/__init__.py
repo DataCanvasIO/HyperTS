@@ -30,6 +30,8 @@ def set_random_state(seed=9527, mode=consts.Mode_STATS):
     np.random.seed(seed)
 
     if mode == consts.Mode_DL:
-        import tensorflow as tf
-        tf.random.set_seed(seed)
-
+        try:
+            import tensorflow as tf
+            tf.random.set_seed(seed)
+        except ImportError:
+            raise RuntimeError('Please install `tensorflow` package first. command: pip install tensorflow[-gpu].')

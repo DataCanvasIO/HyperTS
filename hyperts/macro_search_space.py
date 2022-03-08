@@ -248,7 +248,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
             'q': Choice([0, 1, 2]),
             'trend': Choice(['n', 'c', 't', 'ct']),
             'seasonal_order': Choice([(0, 0, 0, 12), (1, 0, 1, 24), (1, 0, 2, 7),
-                                      (2, 0, 1, 12), (2, 0, 2, 3), (0, 1, 1, 60)]),
+                                      (2, 0, 1, 12), (2, 0, 2, 3), (0, 1, 1, 5)]),
             'y_scale': Choice(['min_max', 'max_abs', 'scale-none'])
         }
 
@@ -279,7 +279,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
         univar_containers = {}
         multivar_containers = {}
 
-        if self.enable_prophet:
+        if self.enable_prophet and ProphetForecastEstimator().is_prophet_installed:
             univar_containers['prophet'] = (
             ProphetForecastEstimator, self.default_prophet_init_kwargs, self.default_prophet_fit_kwargs)
         if self.enable_arima:

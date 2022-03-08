@@ -60,8 +60,8 @@ class TSFDataPreprocessStep(ExperimentStep):
         # 4. eval variables data process
         if X_eval is None or y_eval is None:
             if self.task in consts.TASK_LIST_FORECAST:
-                if X_train.shape[0] <= 2*consts.DEFAULT_FORECAST_EVAL_SIZE:
-                    eval_horizon = consts.DEFAULT_EVAL_SIZE
+                if X_train.shape[0] <= 2*consts.DEFAULT_FORECAST_EVAL_SIZE or isinstance(self.experiment.eval_size, int):
+                    eval_horizon = self.experiment.eval_size
                 else:
                     eval_horizon = consts.DEFAULT_FORECAST_EVAL_SIZE
                 X_train, X_eval, y_train, y_eval = \
@@ -757,7 +757,6 @@ class TSCompeteExperiment(SteppedExperiment):
                             X_train, y_train, X_test, X_eval, y_eval, steps)
 
         if self.task in consts.TASK_LIST_FORECAST:
-            import gc
             tb = get_tool_box(X_train, y_train)
             train_data = tb.concat_df([X_train, y_train], axis=1)
             eval_data = tb.concat_df([X_eval, y_eval], axis=1)
@@ -769,7 +768,6 @@ class TSCompeteExperiment(SteppedExperiment):
             max_history_length = max(window, len(X_eval))
             history = whole_data.tail(max_history_length)
             del train_data, eval_data, whole_data
-            gc.collect()
         else:
             history = None
 

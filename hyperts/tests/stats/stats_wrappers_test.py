@@ -1,7 +1,7 @@
 import numpy as np
 from hyperts.utils._base import get_tool_box
 from hyperts.utils.metrics import accuracy_score
-from hyperts.framework.wrappers import ProphetWrapper, ARIMAWrapper, VARWrapper, TSForestWrapper, KNeighborsWrapper
+from hyperts.framework.wrappers.stats_wrappers import ProphetWrapper, ARIMAWrapper, VARWrapper, TSForestWrapper, KNeighborsWrapper
 from hyperts.datasets import load_random_univariate_forecast_dataset, load_random_multivariate_forecast_dataset, load_arrow_head
 
 

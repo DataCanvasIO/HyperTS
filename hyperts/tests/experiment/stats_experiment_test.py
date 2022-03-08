@@ -1,6 +1,5 @@
 from hyperts.datasets import load_network_traffic, load_arrow_head, load_basic_motions
-from hyperts.utils import consts, metrics
-from hyperts.utils._base import get_tool_box
+from hyperts.utils import consts, metrics, get_tool_box
 from hyperts.experiment import make_experiment
 
 class Test_Experiment():

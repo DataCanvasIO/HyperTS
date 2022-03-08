@@ -21,6 +21,7 @@ def make_experiment(train_data,
                     test_data=None,
                     mode='stats',
                     max_trials=3,
+                    eval_size=0.2,
                     target=None,
                     freq=None,
                     timestamp=None,
@@ -63,7 +64,9 @@ def make_experiment(train_data,
         Feature data for evaluation, should be None or have the same python type with 'train_data'.
     test_data : str, Pandas or Dask or Cudf DataFrame, optional.
         Feature data for testing without target column, should be None or have the same python type with 'train_data'.
-    max_trials : int, maximum number of tests (model search), optional, (default=None).
+    max_trials : int, maximum number of tests (model search), optional, (default=3).
+    eval_size : float or int, When the eval_data is None, customize the ratio to split the eval_data from
+        the train_data. int indicates the prediction length of the forecast task. (default=0.2 or 10).
     mode : str, default 'stats'. Optional {'stats', 'dl', 'nas'}, where,
         'stats' indicates that all the models selected in the execution experiment are statistical models.
         'dl' indicates that all the models selected in the execution experiment are deep learning models.
@@ -263,7 +266,7 @@ def make_experiment(train_data,
                                    expected_reward=early_stopping_reward)
         return [es] + cbs
 
-    # 1. Check Data and Task
+    # 1. Check Data and Task and Mode
     assert train_data is not None, 'train data is required.'
     assert eval_data is None or type(eval_data) is type(train_data)
     assert test_data is None or type(test_data) is type(train_data)
@@ -281,8 +284,15 @@ def make_experiment(train_data,
     if task in consts.TASK_LIST_FORECAST and covariables is None:
         logger.warning('If the data contains covariables, specify the covariable column names.')
 
+    if mode != consts.Mode_STATS:
+        try:
+            import tensorflow
+        except ImportError:
+            raise RuntimeError('Please install `tensorflow` package first. command: pip install tensorflow.')
+
     kwargs = kwargs.copy()
     kwargs['max_trials'] = max_trials
+    kwargs['eval_size'] = eval_size
 
     # 2. Set Log Level
     if log_level is None:

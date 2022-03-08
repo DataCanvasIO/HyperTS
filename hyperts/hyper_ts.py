@@ -18,7 +18,7 @@ from hypernets.pipeline.base import ComposeTransformer
 from hypernets.dispatchers.in_process_dispatcher import InProcessDispatcher
 
 from hyperts.utils import consts, get_tool_box
-from hyperts.utils.metrics import calc_score
+
 
 logger = logging.get_logger(__name__)
 
@@ -217,11 +217,11 @@ class HyperTSEstimator(Estimator):
 
     @staticmethod
     def _load(model_file, mode):
-        from hyperts.framework.dl.models import BaseDeepEstimator
         if mode == consts.Mode_STATS:
             with fs.open(f'{model_file}', 'rb') as input:
                 estimator = pickle.load(input)
         else:
+            from hyperts.framework.dl.models import BaseDeepEstimator
             with fs.open(f'{model_file}', 'rb') as input:
                 estimator = pickle.load(input)
             model = BaseDeepEstimator.load_model(model_file)

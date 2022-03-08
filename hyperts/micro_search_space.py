@@ -9,7 +9,8 @@ from hypernets.core.ops import HyperInput
 from hypernets.core.search_space import HyperSpace, Choice
 from hypernets.tabular import column_selector
 
-from hyperts.framework.wrappers import SimpleTSEstimator, ProphetWrapper, VARWrapper, TSForestWrapper
+from hyperts.framework.wrappers import SimpleTSEstimator
+from hyperts.framework.wrappers.stats_wrappers import ProphetWrapper, VARWrapper, TSForestWrapper
 from hyperts.utils.transformers import TimeSeriesHyperTransformer
 
 

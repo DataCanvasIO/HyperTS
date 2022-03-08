@@ -1,9 +1,14 @@
 import numpy as np
 
 try:
-    from prophet import Prophet
+    try:
+        from prophet import Prophet
+    except:
+        from fbprophet import Prophet
+    is_prophet_installed = True
 except:
-    from fbprophet import Prophet
+    is_prophet_installed = False
+
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.vector_ar.var_model import VAR
 from sktime.classification.interval_based import TimeSeriesForestClassifier
@@ -11,7 +16,7 @@ from sktime.classification.distance_based import KNeighborsTimeSeriesClassifier
 
 from hypernets.utils import logging
 
-from hyperts.framework.wrappers._base import EstimatorWrapper, WrapperMixin, suppress_stdout_stderr
+from hyperts.framework.wrappers import EstimatorWrapper, WrapperMixin, suppress_stdout_stderr
 
 logger = logging.get_logger(__name__)
 
@@ -23,7 +28,10 @@ class ProphetWrapper(EstimatorWrapper, WrapperMixin):
     """
     def __init__(self, fit_kwargs, **kwargs):
         super(ProphetWrapper, self).__init__(fit_kwargs, **kwargs)
-        self.model = Prophet(**self.init_kwargs)
+        if is_prophet_installed:
+            self.model = Prophet(**self.init_kwargs)
+        else:
+            self.model = None
 
     def fit(self, X, y=None, **kwargs):
         # adapt for prophet

@@ -6,14 +6,19 @@ from hypernets.utils import logging
 from hypernets.core.search_space import ModuleSpace
 
 from hyperts.utils import consts
-from hyperts.framework.wrappers import (ProphetWrapper,
-                                        VARWrapper,
-                                        ARIMAWrapper,
-                                        TSForestWrapper,
-                                        KNeighborsWrapper,
-                                        DeepARWrapper,
-                                        HybirdRNNWrapper,
-                                        LSTNetWrapper)
+
+from hyperts.framework.wrappers.stats_wrappers import ProphetWrapper, is_prophet_installed, \
+                                 VARWrapper, ARIMAWrapper, TSForestWrapper, KNeighborsWrapper
+try:
+    import tensorflow
+except:
+    is_tensorflow_installed = False
+else:
+    is_tensorflow_installed = True
+
+if is_tensorflow_installed:
+    from hyperts.framework.wrappers.dl_wrappers import DeepARWrapper, HybirdRNNWrapper, LSTNetWrapper
+
 
 logger = logging.get_logger(__name__)
 
@@ -146,6 +151,13 @@ class ProphetForecastEstimator(HyperEstimator):
         else:
             raise ValueError('Prophet model supports only univariate forecast task.')
         return prophet
+
+    @property
+    def is_prophet_installed(self):
+        if is_prophet_installed:
+            return True
+        else:
+            return False
 
 
 class ARIMAForecastEstimator(HyperEstimator):
