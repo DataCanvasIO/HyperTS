@@ -83,6 +83,9 @@ class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
 
     def predict(self, X, **kwargs):
         last_date = X[self.timestamp].tail(1).to_list()[0].to_pydatetime()
+        if last_date == self._end_date:
+            raise ValueError('The end date of the valid set must be '
+                             'less than the end date of the test set.')
         steps = int((last_date - self._end_date).total_seconds() / self._freq)
         predict_result = self.model.forecast(steps=steps).values
 
@@ -120,6 +123,9 @@ class VARWrapper(EstimatorWrapper, WrapperMixin):
 
     def predict(self, X, **kwargs):
         last_date = X[self.timestamp].tail(1).to_list()[0].to_pydatetime()
+        if last_date == self._end_date:
+            raise ValueError('The end date of the valid set must be '
+                             'less than the end date of the test set.')
         steps = int((last_date - self._end_date).total_seconds() / self._freq)
         predict_result = self.model.forecast(self.model.y, steps=steps)
 

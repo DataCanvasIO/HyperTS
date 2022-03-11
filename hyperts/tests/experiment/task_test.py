@@ -29,7 +29,7 @@ class Test_Task():
                             optimize_direction=OptimizeDirection.Minimize)
         hyper_model = HyperTS(rs, task='univariate-forecast', reward_metric='rmse', callbacks=[SummaryCallback()])
 
-        exp = TSCompeteExperiment(hyper_model, X_train, y_train, X_eval=X_test, y_eval=y_test,
+        exp = TSCompeteExperiment(hyper_model, X_train, y_train,
                                   timestamp_col='ds',
                                   covariate_cols=[['id'], cs.covariables_],
                                   covariate_cleaner=cs)
@@ -46,7 +46,7 @@ class Test_Task():
                             optimize_direction=OptimizeDirection.Minimize)
         hyper_model = HyperTS(rs, task='multivariate-forecast', reward_metric='rmse', callbacks=[SummaryCallback()])
 
-        exp = TSCompeteExperiment(hyper_model, X_train, y_train, X_eval=X_test, y_eval=y_test, timestamp_col='ds')
+        exp = TSCompeteExperiment(hyper_model, X_train, y_train, timestamp_col='ds')
         pipeline_model = exp.run(max_trials=3)
 
         y_pred = pipeline_model.predict(X_test)
@@ -60,7 +60,7 @@ class Test_Task():
                             optimize_direction=OptimizeDirection.Maximize)
         hyper_model = HyperTS(rs, task='univariate-multiclass', reward_metric='accuracy', callbacks=[SummaryCallback()])
 
-        exp = TSCompeteExperiment(hyper_model, X_train, y_train, X_eval=X_test, y_eval=y_test)
+        exp = TSCompeteExperiment(hyper_model, X_train, y_train)
         pipeline_model = exp.run(max_trials=3)
 
         y_pred = pipeline_model.predict(X_test)
