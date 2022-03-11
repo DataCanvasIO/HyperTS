@@ -226,9 +226,9 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
     def default_prophet_init_kwargs(self):
         return {
             # 'seasonality_prior_scale': Choice([True, False]),
-            # 'daily_seasonality': Choice([True, False]),
-            # 'weekly_seasonality': Choice([True, False]),
-            'yearly_seasonality': Choice([True, False]),
+            # 'daily_seasonality': Choice(['auto', True, False]),
+            # 'weekly_seasonality': Choice(['auto', True, False]),
+            # 'yearly_seasonality': Choice(['auto', 0, 1, 2, 5, 10]),
             'seasonality_mode': Choice(['additive', 'multiplicative']),
             'n_changepoints': Choice([25, 35, 45]),
             'interval_width': Choice([0.6, 0.7, 0.8])
