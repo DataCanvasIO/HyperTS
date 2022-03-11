@@ -3,8 +3,9 @@ from hypernets.utils.const import *
 
 TIMESTAMP                          = 'timestamp'
 DEFAULT_EVAL_SIZE                  = 0.2
-DEFAULT_FORECAST_EVAL_SIZE         = 10
+DEFAULT_MIN_EVAL_SIZE              = 0.05
 NAN_DROP_SIZE                      = 0.6
+FINAL_TRAINING_EPOCHS              = 120
 
 Task_UNIVARIATE_FORECAST           = 'univariate-forecast'
 Task_MULTIVARIATE_FORECAST         = 'multivariate-forecast'

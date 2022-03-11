@@ -26,7 +26,7 @@ def set_random_state(seed=9527, mode=consts.Mode_STATS):
 
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
-    os.environ['TF_DETERMINISTIC_OPS'] = '0'
+    os.environ['TF_DETERMINISTIC_OPS'] = '1'
     np.random.seed(seed)
 
     if mode == consts.Mode_DL:

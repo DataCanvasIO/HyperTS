@@ -282,7 +282,7 @@ def make_experiment(train_data,
         raise ValueError("Forecast task 'timestamp' cannot be None.")
 
     if task in consts.TASK_LIST_FORECAST and covariables is None:
-        logger.warning('If the data contains covariables, specify the covariable column names.')
+        logger.info('If the data contains covariables, specify the covariable column names.')
 
     if mode != consts.Mode_STATS:
         try:
@@ -358,6 +358,8 @@ def make_experiment(train_data,
 
         if freq is None:
             freq = tb.infer_ts_freq(X_train, ts_name=timestamp)
+            if freq is None:
+                raise RuntimeError('Unable to infer correct frequency, please check data or specify frequency.')
 
     # 7. Covarite Transformer
     if covariables is not None:

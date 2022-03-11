@@ -60,10 +60,10 @@ class TSFDataPreprocessStep(ExperimentStep):
         # 4. eval variables data process
         if X_eval is None or y_eval is None:
             if self.task in consts.TASK_LIST_FORECAST:
-                if X_train.shape[0] <= 2*consts.DEFAULT_FORECAST_EVAL_SIZE or isinstance(self.experiment.eval_size, int):
+                if int(X_train.shape[0]*consts.DEFAULT_MIN_EVAL_SIZE)<=10 or isinstance(self.experiment.eval_size, int):
                     eval_horizon = self.experiment.eval_size
                 else:
-                    eval_horizon = consts.DEFAULT_FORECAST_EVAL_SIZE
+                    eval_horizon = consts.DEFAULT_MIN_EVAL_SIZE
                 X_train, X_eval, y_train, y_eval = \
                     tb.temporal_train_test_split(X_train, y_train, test_size=eval_horizon)
                 self.step_progress('split into train set and eval set')
@@ -282,6 +282,30 @@ class TSEnsembleStep(EnsembleStep):
         else:
             ensemble_task = 'multiclass'
         return tb.greedy_ensemble(ensemble_task, estimators, scoring=self.scorer, ensemble_size=self.ensemble_size)
+
+
+class TSFinalTrainStep(FinalTrainStep):
+    def __init__(self, experiment, name, mode=None, retrain_on_wholedata=False):
+        super().__init__(experiment, name)
+
+        self.mode = mode
+        self.retrain_on_wholedata = retrain_on_wholedata
+
+    def build_estimator(self, hyper_model, X_train, y_train, X_test=None, X_eval=None, y_eval=None, **kwargs):
+        if self.retrain_on_wholedata:
+            trial = hyper_model.get_best_trial()
+            tb = get_tool_box(X_train, X_eval)
+            X_all = tb.concat_df([X_train, X_eval], axis=0)
+            y_all = tb.concat_df([y_train, y_eval], axis=0)
+
+            if self.mode != consts.Mode_STATS:
+                kwargs.update({'epochs': consts.FINAL_TRAINING_EPOCHS})
+
+            estimator = hyper_model.final_train(trial.space_sample, X_all, y_all, **kwargs)
+        else:
+            estimator = hyper_model.load_estimator(hyper_model.get_best_trial().model_file)
+
+        return estimator
 
 
 class TSPipeline:
@@ -731,7 +755,7 @@ class TSCompeteExperiment(SteppedExperiment):
         #                                 ensemble_size=ensemble_size))
         # else:
         # final train step
-        steps.append(FinalTrainStep(self, consts.StepName_FINAL_TRAINING, retrain_on_wholedata=False))
+        steps.append(TSFinalTrainStep(self, consts.StepName_FINAL_TRAINING, retrain_on_wholedata=True))
 
         # ignore warnings
         import warnings
