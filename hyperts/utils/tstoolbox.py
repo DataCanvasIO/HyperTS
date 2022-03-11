@@ -97,22 +97,37 @@ class TSToolBox(ToolBox):
         offsets: list, offset lag.
         max_loops: 'int', maximum number of loop imputed.
         """
-        if offsets == None and freq in ['S', 'T', 'min']:
-            offsets = _offsets_pool.second
-        elif offsets == None and freq in ['H', 'BH']:
-            offsets = _offsets_pool.hour
-        elif offsets == None and freq in ['C', 'B', 'D']:
-            offsets = _offsets_pool.day
-        elif offsets == None and freq in 'W' or 'W-' in freq or 'WOM-' in freq:
-            offsets = _offsets_pool.week
-        elif offsets == None and freq in ['SM', 'M', 'MS', 'SMS', 'BM', 'CBM', 'CBMS']:
-            offsets = _offsets_pool.month
-        elif freq in 'Q' or freq in 'Q-' in freq or 'BQ-' in freq or 'QS-' in freq or 'BQS-':
-            offsets = _offsets_pool.quarter
-        elif freq in ['A', 'Y'] or 'A-' in freq or 'BA-' in freq or 'AS-' in freq or 'BAS-' in freq:
-            offsets = _offsets_pool.year
+        if not isinstance(freq, str):
+            return df
+
+        if offsets is None and freq in 'W' or 'W-' in freq or 'WOM-' in freq:
+            offsets = [-1, -2, -3, -4, 1, 2, 3, 4]
+        elif offsets is None and freq in ['M', 'MS', 'BM', 'CBM', 'CBMS']:
+            offsets = [-1, -2, -3, -4, 1, 2, 3, 4]
+        elif offsets is None and freq in ['SM', '15D', 'SMS']:
+            offsets = [-1, -2, -4, -6, -8, 1, 2, 4, 6, 8]
+        elif offsets is None and 'Q' in freq or 'Q-' in freq or 'BQ' in freq or 'BQ-' in freq or 'QS-' in freq or 'BQS-':
+            offsets = [-1, -4, -8, -12, 1, 4, 8, 12]
+        elif offsets is None and freq in ['A', 'Y'] or 'A-' in freq or 'BA-' in freq or 'AS-' in freq or 'BAS-' in freq:
+            offsets = [-1, -2, -3, -4, 1, 2, 3, 4]
+        elif offsets is None and 'S' in freq or 'T' in freq or 'min' in freq:
+            offsets = [-60*4, -60*3, -60*2, -60*1, -1, 1, 60*1, 60*2, 60*3, 60*4]
+        elif offsets is None and 'H' in freq:
+            offsets = [-24*4, -24*3, -24*2, -24*1, -1, 1, 24*1, 24*2, 24*3, 24*4,
+                      -168*4, -168*3, -168*2, -168*1, 168*1, 168*2, 168*3, 168*4]
+        elif offsets is None and 'BH' in freq or '8H' in freq:
+            offsets = [-8*4, -8*3, -8*2, -8*1, -1, 1, 8*1, 8*2, 8*3, 8*4,
+                      -40*4, -40*3, -40*2, -40*1, 40*1, 40*2, 40*3, 40*4]
+        elif offsets is None and 'D' in freq:
+            offsets = [-1, -7, -7*2, 7*3, -7*4, 1, 7, 7*2, 7*3, 7*4]
+        elif offsets is None and freq in ['C', 'B']:
+            offsets = [-1, -5, -5*2, 5*3, -5*4, 1, 5, 5*2, 5*3, 5*4]
+        elif offsets is None and 'L' in freq or 'U' in freq or 'N' in freq or 'ms' in freq:
+            offsets = [-1, -50, -100, -200, -1000, 1, 50, 100, 200, 1000]
         elif offsets == None:
-            offsets = _offsets_pool.neighbor
+            offsets = [-1, 1]
+
+        offsets = _expand_list(freq=freq, pre_list=offsets)
 
         values = df.values.copy()
         loop, missing_rate = 0, 1
@@ -234,24 +249,36 @@ class TSToolBox(ToolBox):
 
     @staticmethod
     def infer_window_size(max_size: int, freq: str):
-        if freq in ['S', 'T', 'min']:
-            return list(filter(lambda x: x<=max_size, [1, 5, 10, 30, 60]))
-        elif freq in ['H', 'BH']:
-            return list(filter(lambda x: x<=max_size, [1, 6, 12, 24, 48]))
-        elif freq in ['C', 'B', 'D']:
-            return list(filter(lambda x: x<=max_size, [1, 5, 7, 15, 30]))
-        elif freq in 'W' or 'W-' in freq or 'WOM-' in freq:
-            return list(filter(lambda x: x<=max_size, [1, 4, 8, 12, 16]))
-        elif freq in ['SM', 'M', 'MS', 'SMS', 'BM', 'CBM', 'CBMS']:
-            return list(filter(lambda x: x <= max_size, [1, 3, 6, 12, 24]))
-        elif freq in 'Q' or freq in 'Q-' in freq or 'BQ-' in freq or 'QS-' in freq or 'BQS-':
-            return list(filter(lambda x: x <= max_size, [1, 2, 3, 4, 6]))
+        """Infer window of neural net.
+        Parameters
+        ----------
+        max_size: int, maximum time window allowed.
+        freq: str or DateOffset.
+        """
+        if freq in 'W' or 'W-' in freq or 'WOM-' in freq:
+            window = list(filter(lambda x: x<=max_size, [1, 2, 3, 4, 5, 6, 7]))
+        elif freq in ['SM', 'M', 'MS', 'SMS', 'BM', 'CBM', 'CBMS', '15D']:
+            window = list(filter(lambda x: x <= max_size, [1, 3, 6, 12, 24]))
+        elif 'Q' in freq or 'Q-' in freq or 'BQ' in freq or 'BQ-' in freq or 'QS-' in freq or 'BQS-':
+            window = list(filter(lambda x: x <= max_size, [1, 4, 8, 12, 16]))
         elif freq in ['A', 'Y'] or 'A-' in freq or 'BA-' in freq or 'AS-' in freq or 'BAS-' in freq:
-            return list(filter(lambda x: x<=max_size, [1, 3, 6, 12, 24]))
-        elif freq in ['L', 'U', 'N', 'ms']:
-            return list(filter(lambda x: x <= max_size, [1, 10, 100, 500, 1000]))
+            window = list(filter(lambda x: x<=max_size, [1, 3, 6, 12, 24]))
+        elif 'S' in freq or 'T' in freq or 'min' in freq:
+            window = list(filter(lambda x: x<=max_size, [1, 5, 10, 30, 60]))
+        elif 'H' in freq:
+            window = list(filter(lambda x: x<=max_size, [1, 6, 12, 24, 48]))
+        elif 'BH' in freq or '8H':
+            window = list(filter(lambda x: x<=max_size, [1, 4, 8, 16, 24]))
+        elif 'D' in freq:
+            window = list(filter(lambda x: x<=max_size, [1, 7, 14, 21]))
+        elif freq in ['C', 'B']:
+            window = list(filter(lambda x: x<=max_size, [1, 5, 10, 15, 20]))
+        elif 'L' in freq or 'U' in freq or 'N' in freq or 'ms' in freq:
+            window = list(filter(lambda x: x <= max_size, [1, 10, 50, 100, 500, 1000]))
         else:
-            return list(filter(lambda x: x <= max_size, [1, 3, 5, 12, 24]))
+            window = list(filter(lambda x: x <= max_size, [1, 3, 5, 7, 12, 24]))
+
+        return _expand_list(freq=freq, pre_list=window)
 
 
     @staticmethod
@@ -496,16 +523,6 @@ class TSToolBox(ToolBox):
 
     metrics = metrics_.Metrics
 
-class _offsets_pool:
-    neighbor = [-1, 1]
-    second   = [-1, 1, -60 * 4, -60 * 3, -60 * 2, -60 * 1, 60 * 1, 60 * 2, 60 * 3, 60 * 4]
-    hour     = [-1, 1, -24 * 4, -24 * 3, -24 * 2, -24 * 1, 24 * 1, 24 * 2, 24 * 3, 24 * 4,
-             -168 * 4, -168 * 3, -168 * 2, -168 * 1, 168 * 1, 168 * 2, 168 * 3, 168 * 4]
-    day      = [-1, 1, -7 * 4, -7 * 3, -7 * 2, -7 * 1, 7 * 1, 7 * 2, 7 * 3, 7 * 4]
-    week     = [-1, -4*1, -4*2, -4*3, -4*4, 1, 4*1, 4*2, 4*3, 4*4]
-    month    = [-1, 1, -12 * 4, -12 * 3, -12 * 2, -12 * 1, 12 * 1, 12 * 2, 12 * 3, 12 * 4]
-    quarter  = [-1, -2, -3, -4, 1, 2, 3, 4]
-    year     = [-1, 1]
 
 def _infer_ts_freq(df: pd.DataFrame, ts_name: str = consts.TIMESTAMP):
     """ Infer the frequency of the time series.
@@ -514,10 +531,15 @@ def _infer_ts_freq(df: pd.DataFrame, ts_name: str = consts.TIMESTAMP):
     ts_name: 'str', time column name.
     """
     dateindex = pd.DatetimeIndex(pd.to_datetime(df[ts_name]))
-    for i in range(len(df)):
-        freq = pd.infer_freq(dateindex[i:i + 3])
-        if freq != None:
-            return freq
+    freq = pd.infer_freq(dateindex)
+    if freq is not None:
+        return freq
+    else:
+        for i in range(len(df)):
+            freq = pd.infer_freq(dateindex[i:i + 3])
+            if freq != None:
+                return freq
+    return None
 
 def _impute(values, offsets):
     """ Index slide imputation.
@@ -540,3 +562,11 @@ def _impute(values, offsets):
     else:
         missing_rate = 0.
     return values, missing_rate
+
+def _expand_list(freq, pre_list):
+    try:
+        import re
+        s = int(re.findall('\d+', freq)[0])
+        return list(map(lambda x: x // s + 1, pre_list))
+    except:
+        return pre_list
