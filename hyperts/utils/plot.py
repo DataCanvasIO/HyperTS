@@ -267,6 +267,7 @@ def plot_mpl(forecast,
         plt.plot(pd.to_datetime(X_test[timestamp_col]),
                  y_test.values[:, var_id],
                  c='#FF0000',
+                 alpha=0.5,
                  label='Actual')
 
     if forecast_interval is not None and show_forecast_interval:

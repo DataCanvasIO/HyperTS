@@ -26,12 +26,14 @@ class TSFDataPreprocessStep(ExperimentStep):
 
     """
 
-    def __init__(self, experiment, name, timestamp_col=None, freq=None, covariate_cols=None, covariate_cleaner=None):
+    def __init__(self, experiment, name, timestamp_col=None, freq=None,
+                 cv=False, covariate_cols=None, covariate_cleaner=None):
         super().__init__(experiment, name)
 
         timestamp_col = [timestamp_col] if isinstance(timestamp_col, str) else timestamp_col
         covariate_cols = [covariate_cols] if isinstance(covariate_cols, str) else covariate_cols
 
+        self.cv = cv
         self.freq = freq
         self.target_cols = None
         self.covariate_cols = covariate_cols
@@ -42,6 +44,13 @@ class TSFDataPreprocessStep(ExperimentStep):
         super().fit_transform(hyper_model, X_train, y_train, X_test=X_test, X_eval=X_eval, y_eval=y_eval)
 
         tb = get_tool_box(X_train, y_train)
+
+        if self.cv and X_eval is not None and y_eval is not None:
+            logger.info(f'{self.name} cv enabled, so concat train data and eval data')
+            X_train = tb.concat_df([X_train, X_eval], axis=0)
+            y_train = tb.concat_df([y_train, y_eval], axis=0)
+            X_eval = None
+            y_eval = None
 
         # 1. covariates data clean procsss
         if self.covariate_cols is not None and len(self.covariate_cols) > 0:
@@ -58,22 +67,23 @@ class TSFDataPreprocessStep(ExperimentStep):
         self.step_progress('fit_transform train set')
 
         # 4. eval variables data process
-        if X_eval is None or y_eval is None:
-            if self.task in consts.TASK_LIST_FORECAST:
-                if int(X_train.shape[0]*consts.DEFAULT_MIN_EVAL_SIZE)<=10 or isinstance(self.experiment.eval_size, int):
-                    eval_horizon = self.experiment.eval_size
-                else:
-                    eval_horizon = consts.DEFAULT_MIN_EVAL_SIZE
-                X_train, X_eval, y_train, y_eval = \
-                    tb.temporal_train_test_split(X_train, y_train, test_size=eval_horizon)
-                self.step_progress('split into train set and eval set')
-        else:
-            if self.covariate_cols is not None and len(self.covariate_cols) > 0:
-                X_eval = self.covariate_transform(X_eval)
-            eval_Xy = tb.concat_df([X_eval, y_eval], axis=1)
-            eval_Xy = self.series_transform(eval_Xy, target_cols)
-            X_eval, y_eval = eval_Xy[excluded_cols], eval_Xy[target_cols]
-            self.step_progress('transform eval set')
+        if not self.cv:
+            if X_eval is None or y_eval is None:
+                if self.task in consts.TASK_LIST_FORECAST:
+                    if int(X_train.shape[0]*consts.DEFAULT_MIN_EVAL_SIZE)<=10 or isinstance(self.experiment.eval_size, int):
+                        eval_horizon = self.experiment.eval_size
+                    else:
+                        eval_horizon = consts.DEFAULT_MIN_EVAL_SIZE
+                    X_train, X_eval, y_train, y_eval = \
+                        tb.temporal_train_test_split(X_train, y_train, test_size=eval_horizon)
+                    self.step_progress('split into train set and eval set')
+            else:
+                if self.covariate_cols is not None and len(self.covariate_cols) > 0:
+                    X_eval = self.covariate_transform(X_eval)
+                eval_Xy = tb.concat_df([X_eval, y_eval], axis=1)
+                eval_Xy = self.series_transform(eval_Xy, target_cols)
+                X_eval, y_eval = eval_Xy[excluded_cols], eval_Xy[target_cols]
+                self.step_progress('transform eval set')
 
         # 4. compute new data shape
         data_shapes = {'X_train.shape': tb.get_shape(X_train),
@@ -294,13 +304,17 @@ class TSFinalTrainStep(FinalTrainStep):
     def build_estimator(self, hyper_model, X_train, y_train, X_test=None, X_eval=None, y_eval=None, **kwargs):
         if self.retrain_on_wholedata:
             trial = hyper_model.get_best_trial()
-            tb = get_tool_box(X_train, X_eval)
-            X_all = tb.concat_df([X_train, X_eval], axis=0)
-            y_all = tb.concat_df([y_train, y_eval], axis=0)
+            if X_eval is not None or y_eval is not None:
+                tb = get_tool_box(X_train, X_eval)
+                X_all = tb.concat_df([X_train, X_eval], axis=0)
+                y_all = tb.concat_df([y_train, y_eval], axis=0)
+            else:
+                X_all, y_all = X_train, y_train
 
             if self.mode != consts.Mode_STATS:
                 kwargs.update({'epochs': consts.FINAL_TRAINING_EPOCHS})
 
+            logger.info('Retrain the best trial model with all data ...')
             estimator = hyper_model.final_train(trial.space_sample, X_all, y_all, **kwargs)
         else:
             estimator = hyper_model.load_estimator(hyper_model.get_best_trial().model_file)
@@ -688,7 +702,6 @@ class TSCompeteExperiment(SteppedExperiment):
                  timestamp_col=None,
                  covariate_cols=None,
                  covariate_cleaner=None,
-                 data_cleaner_args=None,
                  cv=False,
                  num_folds=3,
                  task=None,
@@ -732,6 +745,7 @@ class TSCompeteExperiment(SteppedExperiment):
         if task in consts.TASK_LIST_FORECAST:
             steps.append(TSFDataPreprocessStep(self, consts.StepName_DATA_PREPROCESSING,
                                                freq=freq,
+                                               cv=cv,
                                                timestamp_col=timestamp_col,
                                                covariate_cols=cleaned_covariables,
                                                covariate_cleaner=covariate_cleaner))
@@ -781,17 +795,17 @@ class TSCompeteExperiment(SteppedExperiment):
                             X_train, y_train, X_test, X_eval, y_eval, steps)
 
         if self.task in consts.TASK_LIST_FORECAST:
-            tb = get_tool_box(X_train, y_train)
-            train_data = tb.concat_df([X_train, y_train], axis=1)
-            eval_data = tb.concat_df([X_eval, y_eval], axis=1)
-            whole_data = tb.concat_df([train_data, eval_data], axis=0)
             if self.mode == consts.Mode_STATS:
                 window = 1
             else:
                 window = sk_pipeline.named_steps.estimator.model.init_kwargs['window']
-            max_history_length = max(window, len(X_eval))
-            history = whole_data.tail(max_history_length)
-            del train_data, eval_data, whole_data
+            tb = get_tool_box(X_train, y_train)
+            all_data = tb.concat_df([X_train, y_train], axis=1)
+            if X_eval is not None or y_eval is not None:
+                eval_data = tb.concat_df([X_eval, y_eval], axis=1)
+                all_data = tb.concat_df([all_data, eval_data], axis=0)
+            max_history_length = max(window, int(len(all_data)*consts.DEFAULT_EVAL_SIZE))
+            history = all_data.tail(max_history_length)
         else:
             history = None
 

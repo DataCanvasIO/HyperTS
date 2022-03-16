@@ -22,6 +22,8 @@ def make_experiment(train_data,
                     mode='stats',
                     max_trials=3,
                     eval_size=0.2,
+                    cv=False,
+                    num_folds=3,
                     target=None,
                     freq=None,
                     timestamp=None,
@@ -44,6 +46,7 @@ def make_experiment(train_data,
                     hyper_model_options=None,
                     dl_gpu_usage_strategy=0,
                     dl_memory_limit=2048,
+                    verbose=1,
                     log_level=None,
                     random_state=None,
                     clear_cache=None,
@@ -67,6 +70,10 @@ def make_experiment(train_data,
     max_trials : int, maximum number of tests (model search), optional, (default=3).
     eval_size : float or int, When the eval_data is None, customize the ratio to split the eval_data from
         the train_data. int indicates the prediction length of the forecast task. (default=0.2 or 10).
+    cv : bool, default False.
+        If True, use cross-validation instead of evaluation set reward to guide the search process.
+    num_folds : int, default 3.
+        Number of cross-validated folds, only valid when cv is true.
     mode : str, default 'stats'. Optional {'stats', 'dl', 'nas'}, where,
         'stats' indicates that all the models selected in the execution experiment are statistical models.
         'dl' indicates that all the models selected in the execution experiment are deep learning models.
@@ -139,6 +146,9 @@ def make_experiment(train_data,
     random_state : int or None, default None.
     clear_cache: bool, optional, (default False)
         Clear cache store before running the expeirment.
+    verbose : int, 0, 1, or 2, (default=None).
+        0 = silent, 1 = progress bar, 2 = one line per epoch (DL mode).
+        Print order selection output to the screen
     log_level : int, str, or None, (default=None),
         Level of logging, possible values:
             -logging.CRITICAL
@@ -293,6 +303,9 @@ def make_experiment(train_data,
     kwargs = kwargs.copy()
     kwargs['max_trials'] = max_trials
     kwargs['eval_size'] = eval_size
+    kwargs['cv'] = cv
+    kwargs['num_folds'] = num_folds
+    kwargs['verbose'] = verbose
 
     # 2. Set Log Level
     if log_level is None:
@@ -466,8 +479,8 @@ def make_experiment(train_data,
     # 18. Define hyper_model
     if hyper_model_options is None:
         hyper_model_options = {}
-    hyper_model = hyper_ts_cls(searcher, mode=mode, reward_metric=reward_metric, task=task,
-            callbacks=search_callbacks, discriminator=discriminator, **hyper_model_options)
+    hyper_model = hyper_ts_cls(searcher, mode=mode, reward_metric=reward_metric, task=task, cv=cv,
+                   callbacks=search_callbacks, discriminator=discriminator, **hyper_model_options)
 
     # 19. Build Experiment
     experiment = TSCompeteExperiment(hyper_model, X_train=X_train, y_train=y_train, X_eval=X_eval, y_eval=y_eval,

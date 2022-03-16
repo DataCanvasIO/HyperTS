@@ -23,6 +23,7 @@ logger = logging.get_logger(__name__)
 
 import warnings
 warnings.filterwarnings("ignore")
+tf.get_logger().setLevel('ERROR')
 
 
 class Metrics(collections.UserDict):

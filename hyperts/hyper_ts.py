@@ -38,10 +38,11 @@ class HyperTSEstimator(Estimator):
         For details of parameters, refer to hypernets.tabular.data_cleaner.
     """
 
-    def __init__(self, task, mode, space_sample, data_cleaner_params=None):
+    def __init__(self, task, mode, reward_metric, space_sample, data_cleaner_params=None):
         super(HyperTSEstimator, self).__init__(space_sample=space_sample, task=task)
         self.data_pipeline = None
         self.mode = mode
+        self.reward_metric = reward_metric
         self.data_cleaner_params = data_cleaner_params
         self.model = None  # Time-Series model
         self.cv_models_ = None
@@ -98,10 +99,134 @@ class HyperTSEstimator(Estimator):
 
     def fit_cross_validation(self, X, y, verbose=0, stratified=True, num_folds=3, pos_label=None,
                              shuffle=False, random_state=9527, metrics=None, **kwargs):
-        return None, None, None
+        starttime = time.time()
+        if verbose is None:
+            verbose = 0
+        if verbose > 0:
+            logger.info('transforming the train set')
+
+        if kwargs.get('verbose') is None:
+            kwargs['verbose'] = verbose
+
+        pbar = self.transients_.get('pbar')
+        if pbar is not None:
+            pbar.reset()
+            pbar.set_description('fit_transform_data')
+
+        tb = get_tool_box(X, y)
+        if self.data_pipeline is not None:
+            X_transformed = self.data_pipeline.fit_transform(X)
+        else:
+            X_transformed = X
+
+        cross_validator = kwargs.pop('cross_validator', None)
+        if cross_validator is not None:
+            iterators = cross_validator
+        else:
+            if self.task in consts.TASK_LIST_FORECAST:
+                iterators = tb.preqfold(strategy='preq-bls', n_splits=num_folds)
+            elif stratified and self.task not in consts.TASK_LIST_REGRESSION:
+                iterators = tb.statified_kfold(n_splits=num_folds, shuffle=True, random_state=random_state)
+            else:
+                iterators = tb.kfold(n_splits=num_folds, shuffle=True, random_state=random_state)
+
+        if metrics is None:
+            if self.reward_metric is not None:
+                metrics = [self.reward_metric]
+            else:
+                if self.task in consts.TASK_LIST_FORECAST:
+                    metrics = ['mae']
+                elif self.task in consts.TASK_LIST_CLASSIFICATION:
+                    metrics = ['accuracy']
+                elif self.task in consts.TASK_LIST_REGRESSION:
+                    metrics = ['rmse']
+                else:
+                    raise ValueError(f'This task type [{self.task}] is not supported.')
+
+        oof_ = []
+        oof_scores = []
+        self.cv_models_ = []
+        if pbar is not None:
+            pbar.set_description('cross_validation')
+        sel = tb.select_1d
+        for n_fold, (train_idx, valid_idx) in enumerate(iterators.split(X, y)):
+            x_train_fold, y_train_fold = sel(X_transformed, train_idx), sel(y, train_idx)
+            x_val_fold, y_val_fold = sel(X_transformed, valid_idx), sel(y, valid_idx)
+
+            fold_est = copy.deepcopy(self.model)
+            fold_est.group_id = f'{fold_est.__class__.__name__}_cv_{n_fold}'
+
+            fold_start_at = time.time()
+            fold_est.fit(x_train_fold, y_train_fold, **kwargs)
+            if verbose:
+                logger.info(f'fit fold {n_fold} with {time.time() - fold_start_at} seconds')
+
+            if self.classes_ is None and hasattr(fold_est, 'classes_'):
+                self.classes_ = np.array(tb.to_local(fold_est.classes_)[0])
+
+            if self.task in consts.TASK_LIST_CLASSIFICATION:
+                proba = fold_est.predict_proba(x_val_fold)
+            else:
+                proba = fold_est.predict(x_val_fold)
+
+            fold_scores = self.get_scores(y_val_fold, proba, metrics)
+            oof_scores.append(fold_scores)
+            oof_.append((valid_idx, proba))
+            self.cv_models_.append(fold_est)
+
+            if pbar is not None:
+                pbar.update(1)
+
+        logger.info(f'oof_scores: {oof_scores}')
+        oof_ = tb.merge_oof(oof_)
+        scores = self.get_scores(y, oof_, metrics)
+
+        if verbose > 0:
+            logger.info(f'taken {time.time() - starttime}s')
+
+        return scores, oof_, oof_scores
+
+    def get_scores(self, y, oof_, metrics):
+        tb = get_tool_box(y)
+        y, proba = tb.select_valid_oof(y, oof_)
+        y = np.array(y) if not isinstance(y, np.ndarray) else y
+
+        if self.task in consts.TASK_LIST_CLASSIFICATION:
+            if 'binaryclass' in self.task:
+                classification_type = 'binary'
+            else:
+                classification_type = 'multiclass'
+            preds = self.proba2predict(proba)
+            preds = tb.take_array(self.classes_, preds, axis=0)
+            scores = tb.metrics.calc_score(y, preds, proba,
+                                           metrics=metrics,
+                                           task=classification_type,
+                                           pos_label=self.pos_label,
+                                           classes=self.classes_)
+        else:
+            scores = tb.metrics.calc_score(y, proba, metrics=metrics, task=self.task)
+        return scores
 
     def get_iteration_scores(self):
-        return None
+        iteration_scores = {}
+
+        def get_scores(ts_model, iteration_scores, fold=None, ):
+            if hasattr(ts_model, 'iteration_scores'):
+                if ts_model.__dict__.get('group_id'):
+                    group_id = ts_model.group_id
+                else:
+                    if fold is not None:
+                        group_id = f'{ts_model.__class__.__name__}_cv_{i}'
+                    else:
+                        group_id = ts_model.__class__.__name__
+                iteration_scores[group_id] = ts_model.iteration_scores
+
+        if self.cv_models_:
+            for i, ts_model in enumerate(self.cv_models_):
+                get_scores(ts_model, iteration_scores, i)
+        else:
+            get_scores(self.model, iteration_scores)
+        return iteration_scores
 
     def fit(self, X, y, pos_label=None, verbose=0, **kwargs):
         starttime = time.time()
@@ -109,6 +234,10 @@ class HyperTSEstimator(Estimator):
             verbose = 0
         if verbose > 0:
             logger.info('estimator is transforming the train set')
+
+        if kwargs.get('verbose') is None:
+            kwargs['verbose'] = verbose
+
         self.pos_label = pos_label
 
         if self.data_pipeline is not None:
@@ -140,8 +269,22 @@ class HyperTSEstimator(Estimator):
             X_transformed = X
 
         if self.cv_models_ is not None:
-            raise NotImplementedError('The current version does not support CV.')
+            if self.task in consts.TASK_LIST_FORECAST+consts.TASK_LIST_REGRESSION:
+                pred_sum = None
+                for est in self.cv_models_:
+                    pred = est.predict(X_transformed)
+                    if pred_sum is None:
+                        pred_sum = pred
+                    else:
+                        pred_sum += pred
+                preds = pred_sum / len(self.cv_models_)
+            else:
+                proba = self.predict_proba(X_transformed)
+                preds = self.proba2predict(proba)
+                preds = get_tool_box(preds).take_array(np.array(self.classes_), preds, axis=0)
         else:
+            if verbose > 0:
+                logger.info('estimator is predicting the data')
             preds = self.model.predict(X_transformed, **kwargs)
 
         if verbose > 0:
@@ -167,7 +310,14 @@ class HyperTSEstimator(Estimator):
             method = 'predict'
 
         if self.cv_models_ is not None:
-            raise  NotImplementedError('The current version does not support CV.')
+            prpba_sum = None
+            for est in self.cv_models_:
+                proba = getattr(est, method)(X_transformed, **kwargs)
+                if prpba_sum is None:
+                    prpba_sum = proba
+                else:
+                    prpba_sum += proba
+            proba = prpba_sum / len(self.cv_models_)
         else:
             proba = getattr(self.model, method)(X_transformed, **kwargs)
 
@@ -175,6 +325,17 @@ class HyperTSEstimator(Estimator):
             logger.info(f'taken {time.time() - starttime}s')
 
         return proba
+
+    def proba2predict(self, proba, proba_threshold=0.5):
+        if self.task in consts.TASK_LIST_FORECAST+consts.TASK_LIST_REGRESSION:
+            return proba
+        if proba.shape[-1] > 2:
+            predict = proba.argmax(axis=-1)
+        elif proba.shape[-1] == 2:
+            predict = (proba[:, 1] > proba_threshold).astype('int32')
+        else:
+            predict = (proba > proba_threshold).astype('int32')
+        return predict
 
     def evaluate(self, X, y, metrics=None, verbose=0, **kwargs):
         y = np.array(y) if not isinstance(y, np.ndarray) else y
@@ -211,12 +372,16 @@ class HyperTSEstimator(Estimator):
                 pickle.dump(self, output, protocol=pickle.HIGHEST_PROTOCOL)
         else:
             subself = copy.copy(self)
-            subself.model.model.save_model(model_file)
+            if self.cv_models_ is None:
+                subself.model.model.save_model(model_file)
+            else:
+                for est in subself.cv_models_:
+                    est.model.save_model(model_file + '_' + est.group_id)
             with fs.open(f'{model_file}', 'wb') as output:
                 pickle.dump(subself, output, protocol=pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
-    def _load(model_file, mode):
+    def _load(model_file, mode, cv, num_folds):
         if mode == consts.Mode_STATS:
             with fs.open(f'{model_file}', 'rb') as input:
                 estimator = pickle.load(input)
@@ -224,8 +389,14 @@ class HyperTSEstimator(Estimator):
             from hyperts.framework.dl.models import BaseDeepEstimator
             with fs.open(f'{model_file}', 'rb') as input:
                 estimator = pickle.load(input)
-            model = BaseDeepEstimator.load_model(model_file)
-            estimator.model.model.model = model
+            if not cv:
+                model = BaseDeepEstimator.load_model(model_file)
+                estimator.model.model.model = model
+            else:
+                for i in num_folds:
+                    est = estimator.cv_models_[i]
+                    model = BaseDeepEstimator.load_model(model_file + '_' + est.group_id)
+                    est.model.model = model
         return estimator
 
 
@@ -264,6 +435,8 @@ class HyperTS(HyperModel):
     def __init__(self,
                  searcher,
                  task=None,
+                 cv=False,
+                 num_folds=3,
                  mode='stats',
                  dispatcher=None,
                  callbacks=None,
@@ -272,6 +445,8 @@ class HyperTS(HyperModel):
                  data_cleaner_params=None,
                  clear_cache=False):
 
+        self.cv = cv
+        self.num_folds = num_folds
         self.mode = mode
         self.data_cleaner_params = data_cleaner_params
 
@@ -284,11 +459,15 @@ class HyperTS(HyperModel):
                             discriminator=discriminator)
 
     def _get_estimator(self, space_sample):
-        estimator = HyperTSEstimator(task=self.task, mode=self.mode, space_sample=space_sample, data_cleaner_params=self.data_cleaner_params)
+        estimator = HyperTSEstimator(task=self.task,
+                                     mode=self.mode,
+                                     reward_metric=self.reward_metric,
+                                     space_sample=space_sample,
+                                     data_cleaner_params=self.data_cleaner_params)
         return estimator
 
     def load_estimator(self, model_file):
-        return HyperTSEstimator._load(model_file, self.mode)
+        return HyperTSEstimator._load(model_file, self.mode, self.cv, self.num_folds)
 
     def _get_reward(self, value, key=None):
         def cast_float(value):
