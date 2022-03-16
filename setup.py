@@ -81,7 +81,7 @@ setup(
     ],
     packages=find_packages(exclude=('docs', 'tests')),
     package_data={
-        'hyperts': ['examples/*', 'examples/**/*', 'examples/**/**/*'],
+        'hyperts': ['examples/*', 'examples/**/*', 'examples/**/**/*', 'datasets/*.pkl', 'datasets/*.csv'],
     },
     zip_safe=False,
     include_package_data=True,
