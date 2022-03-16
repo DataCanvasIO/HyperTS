@@ -2,9 +2,9 @@
 
 [English](README.md)
 
-[![Python Versions](https://img.shields.io/pypi/pyversions/hypernets.svg)](https://pypi.org/project/hypernets)
-[![TensorFlow Versions](https://img.shields.io/badge/TensorFlow-2.0+-blue.svg)](https://pypi.org/project/deeptables)
-[![License](https://img.shields.io/github/license/DataCanvasIO/deeptables.svg)](https://github.com/DataCanvasIO/deeptables/blob/master/LICENSE)
+[![Python Versions](https://img.shields.io/pypi/pyversions/hyperts.svg)](https://pypi.org/project/hyperts)
+[![TensorFlow Versions](https://img.shields.io/badge/TensorFlow-2.0+-blue.svg)](https://pypi.org/project/hyperts)
+[![License](https://img.shields.io/github/license/DataCanvasIO/hyperts.svg)](https://github.com/DataCanvasIO/hyperts/blob/master/LICENSE)
 
 :dizzy: 易用，高效，统一的全管道自动时间序列分析工具，支持时间序列预测，分类及回归。
 
@@ -25,6 +25,17 @@ HyperTS在Pypi上可用，可以使用pip安装:
 ```bash
 pip install hyperts
 ```
+
+您也可以安装HyperTS通过``conda``的``conda-forge``通道:
+
+```bash
+conda install -c conda-forge hyperts
+```
+
+提示:
+
+- Prophet是被HyperTS需要的, 当您使用``pip``安装HyperTS前建议先使用``conda``安装Prophet。
+- Tensorflow对于HyperTS是可选依赖, 如果您使用到深度学习及神经架构搜索模式, 请安装tf。
 
 更多安装细节及注意事项，请看 [安装指南](https://hyperts.readthedocs.io/zh_CN/latest/contents/0200_installation.html).
 

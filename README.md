@@ -2,9 +2,9 @@
 
 [简体中文](README_zh_CN.md)
 
-[![Python Versions](https://img.shields.io/pypi/pyversions/hypernets.svg)](https://pypi.org/project/hypernets)
-[![TensorFlow Versions](https://img.shields.io/badge/TensorFlow-2.0+-blue.svg)](https://pypi.org/project/deeptables)
-[![License](https://img.shields.io/github/license/DataCanvasIO/deeptables.svg)](https://github.com/DataCanvasIO/deeptables/blob/master/LICENSE)
+[![Python Versions](https://img.shields.io/pypi/pyversions/hyperts.svg)](https://pypi.org/project/hyperts)
+[![TensorFlow Versions](https://img.shields.io/badge/TensorFlow-2.0+-blue.svg)](https://pypi.org/project/hyperts)
+[![License](https://img.shields.io/github/license/DataCanvasIO/hyperts.svg)](https://github.com/DataCanvasIO/hyperts/blob/master/LICENSE)
 
 :dizzy: Easy-to-use, powerful, unified full pipeline automated time series toolkit. Supports forecasting, classification and regression.
 
@@ -32,11 +32,23 @@ As an easy-to-use and lower-thoreshold API, users can get a model after simply r
 
 ## Installation
 
-HyperTS is available on Pypi and can be installed with pip:
+HyperTS is available on Pypi and can be installed with ``pip``:
 
 ```bash
 pip install hyperts
 ```
+
+You can also install HyperTS from ``conda`` via the ``conda-forge`` channel:
+
+```bash
+conda install -c conda-forge hyperts
+```
+
+Note:
+
+- Prophet is required by HyperTS, install it from ``conda`` before installing HyperTS using ``pip``.
+- Tensorflow is an optional dependency for HyperTS, install it if using DL and NAS mode.
+
 For more installation tips, see [installation](https://hyperts.readthedocs.io/en/latest/contents/0200_installation.html).
 
 ## Examples
