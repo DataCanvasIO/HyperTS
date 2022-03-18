@@ -345,6 +345,7 @@ class BaseDeepEstimator(object):
 
         if validation_data is None:
             if self.task in consts.TASK_LIST_FORECAST:
+                validation_split = max(int(len(X)*validation_split), 2*self.window-self.forecast_length+1)
                 X, X_val, y, y_val = tb.temporal_train_test_split(X, y, test_size=validation_split)
                 X = tb.concat_df([X, X_val], axis=0)
                 y = tb.concat_df([y, y_val], axis=0)
@@ -354,6 +355,8 @@ class BaseDeepEstimator(object):
             if len(validation_data) != 2:
                 raise ValueError(f'Unexpected validation_data length, expected 2 but {len(validation_data)}.')
             X_val, y_val = validation_data[0], validation_data[1]
+            if len(X_val) < 2*self.window-self.forecast_length+1:
+                raise ValueError('The valid data length cannot be smaller than the winow plus forecast_length size.')
 
         if batch_size is None:
             batch_size = min(int(len(X) / 16), 128)
@@ -630,7 +633,7 @@ class BaseDeepEstimator(object):
                 X_data = np.concatenate(X_data, axis=0)
                 y_data = np.concatenate(y_data, axis=0)[:, :, :target_length]
             except:
-                raise ValueError(f'Reset forecast_window, which should be less than {X//2}.')
+                raise ValueError(f'Reset forecast_window, which should be less than {len(X)//2}.')
             if not is_train:
                 self.forecast_start = data[-window:].reshape(1, window, data.shape[1])
             if categorical_length != 0:
