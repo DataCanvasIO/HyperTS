@@ -27,6 +27,7 @@ def make_experiment(train_data,
                     target=None,
                     freq=None,
                     timestamp=None,
+                    forecast_train_data_periods=None,
                     timestamp_format='%Y-%m-%d %H:%M:%S',
                     covariables=None,
                     dl_forecast_window=None,
@@ -83,7 +84,8 @@ def make_experiment(train_data,
         Target feature name for training, which must be one of the train_data columns for classification[str],
         regression[str] or unvariate forecast task [list]. For multivariate forecast task, it is multiple columns
         of training data.
-    freq: 'str', DateOffset or None, default None.
+    freq : 'str', DateOffset or None, default None.
+        Note: If your task is a discontinuous time series, you can specify the freq as 'Discrete'.
     timestamp : str, forecast task 'timestamp' cannot be None, (default=None).
     timestamp_format : str, the date format of timestamp col for forecast task, (default='%Y-%m-%d %H:%M:%S').
     covariables : list[n*str], if the data contains covariables, specify the covariable column names, (default=None).
@@ -300,6 +302,9 @@ def make_experiment(train_data,
         except ImportError:
             raise RuntimeError('Please install `tensorflow` package first. command: pip install tensorflow.')
 
+    if freq is consts.DISCRETE_FORECAST and mode is consts.Mode_STATS:
+        raise RuntimeError('Note: `stats` mode does not support discrete data forecast.')
+
     kwargs = kwargs.copy()
     kwargs['max_trials'] = max_trials
     kwargs['eval_size'] = eval_size
@@ -390,6 +395,8 @@ def make_experiment(train_data,
             max_win_size= int(len(X_eval) // 2 - dl_forecast_horizon)
         elif kwargs.get('eval_size') is not None:
             max_win_size = int(len(X_train)*kwargs['eval_size'] // 2 - dl_forecast_horizon)
+        elif isinstance(forecast_train_data_periods, int) and forecast_train_data_periods < len(X_train):
+            max_win_size = int(forecast_train_data_periods * kwargs['eval_size'] // 2 - dl_forecast_horizon)
         else:
             max_win_size = int(len(X_train)*consts.DEFAULT_EVAL_SIZE // 2 - dl_forecast_horizon)
 
@@ -488,7 +495,8 @@ def make_experiment(train_data,
                                      covariate_cols=[covariables, autual_covariables], covariate_cleaner=cs,
                                      freq=freq, log_level=log_level, random_state=random_state,
                                      optimize_direction=optimize_direction, scorer=scorer,
-                                     id=id, callbacks=callbacks, **kwargs)
+                                     id=id, forecast_train_data_periods=forecast_train_data_periods,
+                                     callbacks=callbacks, **kwargs)
 
     # 20. Clear Cache
     if clear_cache:

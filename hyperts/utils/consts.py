@@ -7,6 +7,8 @@ DEFAULT_MIN_EVAL_SIZE              = 0.05
 NAN_DROP_SIZE                      = 0.6
 FINAL_TRAINING_EPOCHS              = 120
 
+DISCRETE_FORECAST                  = 'Discrete'
+
 Task_UNIVARIATE_FORECAST           = 'univariate-forecast'
 Task_MULTIVARIATE_FORECAST         = 'multivariate-forecast'
 Task_UNIVARIATE_BINARYCLASS        = 'univariate-binaryclass'

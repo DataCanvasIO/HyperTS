@@ -27,7 +27,8 @@ class TSFDataPreprocessStep(ExperimentStep):
     """
 
     def __init__(self, experiment, name, timestamp_col=None, freq=None,
-                 cv=False, covariate_cols=None, covariate_cleaner=None):
+                 cv=False, covariate_cols=None, covariate_cleaner=None,
+                 train_data_periods=None):
         super().__init__(experiment, name)
 
         timestamp_col = [timestamp_col] if isinstance(timestamp_col, str) else timestamp_col
@@ -38,6 +39,7 @@ class TSFDataPreprocessStep(ExperimentStep):
         self.target_cols = None
         self.covariate_cols = covariate_cols
         self.covariate_cleaner = covariate_cleaner
+        self.train_data_periods = train_data_periods
         self.timestamp_col = timestamp_col if timestamp_col is not None else consts.TIMESTAMP
 
     def fit_transform(self, hyper_model, X_train, y_train, X_test=None, X_eval=None, y_eval=None, **kwargs):
@@ -129,6 +131,7 @@ class TSFDataPreprocessStep(ExperimentStep):
         else:
             impute_col_names = covar_float_names
 
+        X = tb.sort_values(X, ts_name=self.timestamp_col[0])
         self.freq = self.freq if self.freq is not None else \
             tb.infer_ts_freq(X[self.timestamp_col], ts_name=self.timestamp_col[0])
         X = tb.drop_duplicated_ts_rows(X, ts_name=self.timestamp_col[0])
@@ -140,6 +143,10 @@ class TSFDataPreprocessStep(ExperimentStep):
             X[impute_col_names] = tb.multi_period_loop_imputer(X[impute_col_names], freq=self.freq)
         if covar_object_names is not None and len(covar_object_names) > 0:
             X[covar_object_names] = X[covar_object_names].fillna(method='ffill').fillna(method='bfill')
+
+        if isinstance(self.train_data_periods, int) and self.train_data_periods < len(X):
+            X = tb.select_1d_reverse(X, self.train_data_periods)
+            X = tb.reset_index(X)
 
         return X
 
@@ -312,7 +319,8 @@ class TSFinalTrainStep(FinalTrainStep):
                 X_all, y_all = X_train, y_train
 
             if self.mode != consts.Mode_STATS:
-                kwargs.update({'epochs': consts.FINAL_TRAINING_EPOCHS})
+                final_train_epochs = kwargs.pop('final_train_epochs', consts.FINAL_TRAINING_EPOCHS)
+                kwargs.update({'epochs': final_train_epochs})
 
             logger.info('Retrain the best trial model with all data ...')
             estimator = hyper_model.final_train(trial.space_sample, X_all, y_all, **kwargs)
@@ -389,13 +397,14 @@ class TSPipeline:
                 forecast_start = self._preprocess_forecast_start(self.history)
                 self.sk_pipeline.named_steps.estimator.model.model.forecast_start = forecast_start
 
-            y_pred = self.sk_pipeline.predict(X)
-
             if X[self.timestamp].dtypes == object:
                 X[self.timestamp] = tb.to_datetime(X[self.timestamp])
-            date_index = tb.smooth_missed_ts_rows(X[[self.timestamp]], self.freq, self.timestamp)
+            X_transformed = tb.smooth_missed_ts_rows(X, ts_name=self.timestamp)
+
+            y_pred = self.sk_pipeline.predict(X_transformed)
+
             forecast = tb.DataFrame(y_pred, columns=self.target)
-            forecast = tb.concat_df([date_index, forecast], axis=1)
+            forecast = tb.concat_df([X_transformed[[self.timestamp]], forecast], axis=1)
             forecast = tb.join_df(X[[self.timestamp]], forecast, on=self.timestamp)
 
             return forecast
@@ -456,6 +465,38 @@ class TSPipeline:
         scores = scores.reset_index().rename(columns={'index': 'Metirc'})
 
         return scores
+
+    def make_future_dataframe(self, start_date=None, periods=None, covariate_df=None):
+        """Simulate the trend using the extrapolated generative model.
+
+        Notes
+        ----------
+        If covariate_df exists, the start time of the covariate_df must be the same as that of start_date.
+        In addition, the covariate_df length is not less than periods.
+
+        Parameters
+        ----------
+        start_date: 'str' or datetime-like, forecast the future start date.
+        periods: 'int', number of periods to forecast forward.
+
+        Returns
+        -------
+        pd.Dataframe that extends forward from the end of history for the
+        requested number of periods.
+        """
+        tb = get_tool_box(self.history)
+        start_date = self.history[self.timestamp].max() if start_date is None else start_date
+        dates = tb.date_range(start=start_date, periods=periods+1, freq=self.freq)
+        dates = dates[dates > start_date]
+        dates = dates[:periods]
+        futures = tb.DataFrame({self.timestamp: dates})
+
+        if covariate_df is not None and len(covariate_df) >= len(futures):
+            covariate_df = tb.reset_index(covariate_df[self.covariables])
+            covariate_df = tb.select_1d_forward(covariate_df, periods)
+            futures = tb.concat_df([futures, covariate_df], axis=1)
+
+        return futures
 
     def plot(self,
              forecast,
@@ -707,6 +748,7 @@ class TSCompeteExperiment(SteppedExperiment):
                  task=None,
                  mode='stats',
                  id=None,
+                 forecast_train_data_periods=None,
                  callbacks=None,
                  log_level=None,
                  random_state=None,
@@ -748,7 +790,8 @@ class TSCompeteExperiment(SteppedExperiment):
                                                cv=cv,
                                                timestamp_col=timestamp_col,
                                                covariate_cols=cleaned_covariables,
-                                               covariate_cleaner=covariate_cleaner))
+                                               covariate_cleaner=covariate_cleaner,
+                                               train_data_periods=forecast_train_data_periods))
         else:
             steps.append(TSCDataPreprocessStep(self, consts.StepName_DATA_PREPROCESSING,
                                                cv=cv))
