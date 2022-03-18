@@ -40,15 +40,15 @@ def plot_plotly(forecast,
     ----------
     forecast: 'DataFrame'. The columns need to include the timestamp column
         and the target columns.
-    timestamp_col:
-    target_col:
+    timestamp_col: str. 'timestamp' column name.
+    target_col: str or list. target columns name.
     var_id: 'int' or 'str'. If int, it is the index of the target column. If str,
         it is the name of the target column. default 0.
     actual: 'DataFrame' or None. If it is not None, the column needs to include
         the time column and the target column.
-    history:
-    forecast_interval:
-
+    history: 'DataFrame'. History data. The columns need to include the timestamp column
+        and the target columns.
+    forecast_interval: 'DataFrame'. Forecast confidence interval.
     show_forecast_interval: 'bool'. Whether to show the forecast intervals.
         Default False.
     include_history: 'bool'. Whether to show the historical observations.
@@ -58,6 +58,8 @@ def plot_plotly(forecast,
     ----------
     fig : 'plotly.graph_objects.Figure'.
     """
+    if not isinstance(target_col, list):
+        target_col = [target_col]
 
     if isinstance(var_id, str) and var_id in target_col:
         var_id = target_col.index(var_id)
@@ -211,24 +213,30 @@ def plot_mpl(forecast,
     ----------
     forecast: 'DataFrame'. The columns need to include the timestamp column
         and the target columns.
-    timestamp_col:
-    target_col:
+    timestamp_col: str. 'timestamp' column name.
+    target_col: str or list. target columns name.
     var_id: 'int' or 'str'. If int, it is the index of the target column. If str,
         it is the name of the target column. default 0.
     actual: 'DataFrame' or None. If it is not None, the column needs to include
         the time column and the target column.
-    history:
-    forecast_interval:
-
+    history: 'DataFrame'. History data. The columns need to include the timestamp column
+        and the target columns.
+    forecast_interval: 'DataFrame'. Forecast confidence interval.
     show_forecast_interval: 'bool'. Whether to show the forecast intervals.
         Default False.
     include_history: 'bool'. Whether to show the historical observations.
+        Default True.
+    figsize: (float, float), `figure.figsize` Width, height in inches.
+        Default (16, 6).
+    grid: 'bool'. Whether to display the grid.
         Default True.
 
     Returns
     ----------
     fig : 'matpltlib..pyplot.figure'.
     """
+    if not isinstance(target_col, list):
+        target_col = [target_col]
 
     if isinstance(var_id, str) and var_id in target_col:
         var_id = target_col.index(var_id)

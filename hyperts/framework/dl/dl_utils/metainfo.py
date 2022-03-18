@@ -187,6 +187,9 @@ class MetaTSFprocessor(MetaPreprocessor):
         if not isinstance(y, pd.DataFrame):
             y = pd.DataFrame(y)
 
+        X.set_index(np.arange(len(X)), inplace=True)
+        y.set_index(np.arange(len(y)), inplace=True)
+
         X_shape = self._get_shape(X)
         y_shape = self._get_shape(y)
 
