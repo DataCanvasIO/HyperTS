@@ -263,6 +263,9 @@ class HyperTSEstimator(Estimator):
         if verbose > 0:
             logger.info('estimator is predicting the data')
 
+        if kwargs.get('verbose') is None:
+            kwargs['verbose'] = verbose
+
         if self.data_pipeline is not None:
             X_transformed = self.data_pipeline.transform(X)
         else:

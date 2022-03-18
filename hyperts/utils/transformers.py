@@ -28,24 +28,48 @@ class TimeSeriesTransformer:
 class LogXplus1Transformer(BaseEstimator, TransformerMixin):
     """Scale each feature by log(x+1).
 
+    Parameters
+    ----------
+    nan_tolerance : int, default=5.
+        Tolerate the number of nans that exist.
+    eps  : float, default=1e-8.
+        To prevent the division by 0.
+    copy : bool, default=True.
+        Set to False to perform inplace row normalization and avoid a copy.
     """
-    def __init__(self):
+    def __init__(self, nan_tolerance=5, eps=1e-8, copy=True):
         super(LogXplus1Transformer, self).__init__()
+        self.eps = eps
+        self.copy = copy
+        self.nan_tolerance = nan_tolerance
+        self.is_trans = True
 
     def fit(self, X, y=None, **kwargs):
         return self
 
     def transform(self, X, y=None, **kwargs):
+        if self.copy:
+            X = copy.deepcopy(X)
         if not isinstance(X, np.ndarray):
             X = np.array(X)
         transform_X = np.log(X + 1)
-        transform_X = np.clip(transform_X, 1e-6, abs(transform_X))
+        transform_X = np.clip(transform_X, self.eps, abs(transform_X))
+        indices = np.where(np.isnan(transform_X))
+        if len(indices[0]) <= self.nan_tolerance:
+            transform_X[indices] = self.eps
+        else:
+            transform_X = X
+            self.is_trans = False
+
         return transform_X
 
     def inverse_transform(self, X, y=None, **kwargs):
+        if self.copy:
+            X = copy.deepcopy(X)
         if not isinstance(X, np.ndarray):
             X = np.array(X)
-        X = np.exp(X) - 1
+        if self.is_trans:
+            X = np.exp(X) - 1
         return X
 
 

@@ -16,6 +16,7 @@ from sktime.classification.distance_based import KNeighborsTimeSeriesClassifier
 
 from hypernets.utils import logging
 
+from hyperts.utils import get_tool_box
 from hyperts.framework.wrappers import EstimatorWrapper, WrapperMixin, suppress_stdout_stderr
 
 logger = logging.get_logger(__name__)
@@ -68,6 +69,7 @@ class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
         date_series_top2 = X[self.timestamp][:2].tolist()
         self._freq = (date_series_top2[1] - date_series_top2[0]).total_seconds()
         self._end_date = X[self.timestamp].tail(1).to_list()[0].to_pydatetime()
+        freq, period = self._seasonality(X, y)
 
         y = self.fit_transform(y)
 
@@ -75,9 +77,13 @@ class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
         d = self.init_kwargs.pop('d', 1)
         q = self.init_kwargs.pop('q', 1)
         trend = self.init_kwargs.pop('trend', 'c')
-        seasonal_order = self.init_kwargs.pop('seasonal_order', (0, 0, 0, 0))
+        seasonal_order = self.init_kwargs.pop('seasonal_order', (1, 1, 1))
+        period_offset = self.init_kwargs.pop('period_offset', 0)
+        if period+period_offset > 1:
+            period = min(period+period_offset, 30)
+        seasonal_order = seasonal_order + (period,)
 
-        model = ARIMA(endog=y, order=(p, d, q), trend=trend,
+        model = ARIMA(endog=y, order=(p, d, q), trend=trend, freq=freq,
                       seasonal_order=seasonal_order, dates=X[self.timestamp])
         self.model = model.fit(**self.init_kwargs)
 
@@ -97,6 +103,12 @@ class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
         preds = self.inverse_transform(preds)
         preds = np.clip(preds, a_min=1e-6, a_max=abs(preds)) if self.is_scale is not None else preds
         return preds
+
+    def _seasonality(self, X, y):
+        tb = get_tool_box(X, y)
+        freq = tb.infer_ts_freq(X, ts_name=self.timestamp)
+        period = tb.fft_infer_period(y)
+        return freq, period
 
 
 class VARWrapper(EstimatorWrapper, WrapperMixin):

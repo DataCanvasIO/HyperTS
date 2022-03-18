@@ -68,11 +68,57 @@ class TSToolBox(ToolBox):
         return pd.to_datetime(df, **kwargs)
 
     @staticmethod
+    def date_range(start=None, end=None, periods=None, freq=None, **kwargs):
+        """Return a fixed frequency DatetimeIndex.
+
+        Parameters
+        ----------
+        start : str or datetime-like, optional
+            Left bound for generating dates.
+        end : str or datetime-like, optional
+            Right bound for generating dates.
+        periods : int, optional
+            Number of periods to generate.
+        freq : str or DateOffset, default 'D'
+            Frequency strings can have multiples, e.g. '5H'. See
+            :ref:`here <timeseries.offset_aliases>` for a list of
+            frequency aliases.
+        """
+        return pd.date_range(start=start, end=end, periods=periods, freq=freq, **kwargs)
+
+    @staticmethod
     def datetime_format(df: pd.DataFrame, format='%Y-%m-%d %H:%M:%S'):
         """Convert datetime format.
 
         """
         return pd.to_datetime(df).dt.strftime(format)
+
+    @staticmethod
+    def select_1d_forward(arr, indices):
+        """
+        Select by indices from the first axis(0) with forward.
+        """
+        if hasattr(arr, 'iloc'):
+            return arr.iloc[:indices]
+        else:
+            return arr[:indices]
+
+    @staticmethod
+    def select_1d_reverse(arr, indices):
+        """
+        Select by indices from the first axis(0) with reverse.
+        """
+        if hasattr(arr, 'iloc'):
+            return arr.iloc[-indices:]
+        else:
+            return arr[-indices:]
+
+    @staticmethod
+    def sort_values(df: pd.DataFrame, ts_name: str = consts.TIMESTAMP):
+        """
+        Sort in time order.
+        """
+        return df.sort_values(by=[ts_name])
 
     @staticmethod
     def infer_ts_freq(df: pd.DataFrame, ts_name: str = consts.TIMESTAMP):
@@ -101,7 +147,9 @@ class TSToolBox(ToolBox):
         if not isinstance(freq, str):
             return df
 
-        if offsets is None and freq in 'W' or 'W-' in freq or 'WOM-' in freq:
+        if freq is consts.DISCRETE_FORECAST:
+            offsets = [-1, 1]
+        elif offsets is None and freq in 'W' or 'W-' in freq or 'WOM-' in freq:
             offsets = [-1, -2, -3, -4, 1, 2, 3, 4]
         elif offsets is None and freq in ['M', 'MS', 'BM', 'CBM', 'CBMS']:
             offsets = [-1, -2, -3, -4, 1, 2, 3, 4]
@@ -128,7 +176,8 @@ class TSToolBox(ToolBox):
         elif offsets == None:
             offsets = [-1, 1]
 
-        offsets = _expand_list(freq=freq, pre_list=offsets)
+        if freq != consts.DISCRETE_FORECAST:
+            offsets = _expand_list(freq=freq, pre_list=offsets)
 
         values = df.values.copy()
         loop, missing_rate = 0, 1
@@ -182,6 +231,7 @@ class TSToolBox(ToolBox):
         """
         assert isinstance(df, pd.DataFrame)
         drop_df = df.drop_duplicates(subset=[ts_name], keep=keep_data)
+        drop_df.reset_index(drop=True, inplace=True)
 
         return drop_df
 
@@ -208,13 +258,12 @@ class TSToolBox(ToolBox):
         if df[ts_name].dtypes == object:
             df[ts_name] = pd.to_datetime(df[ts_name])
         df = df.sort_values(by=ts_name)
-        start, end = df[ts_name].iloc[0], df[ts_name].iloc[-1]
+        if  freq is not None and freq is not consts.DISCRETE_FORECAST:
+            start, end = df[ts_name].iloc[0], df[ts_name].iloc[-1]
+            full_ts = pd.DataFrame(pd.date_range(start=start, end=end, freq=freq), columns=[ts_name])
+            df = full_ts.join(df.set_index(ts_name), on=ts_name)
 
-        full_ts = pd.DataFrame(pd.date_range(start=start, end=end, freq=freq), columns=[ts_name])
-
-        smooth_df = full_ts.join(df.set_index(ts_name), on=ts_name)
-
-        return smooth_df
+        return df
 
     @staticmethod
     def clip_to_outliers(df: pd.DataFrame, std_threshold: int = 3):
@@ -281,10 +330,29 @@ class TSToolBox(ToolBox):
 
         return _expand_list(freq=freq, pre_list=window)
 
+    @staticmethod
+    def fft_infer_period(data: pd.DataFrame):
+        """Fourier inference period.
+
+        References
+        ----------
+        https://github.com/xuawai/AutoPeriod/blob/master/auto_period.ipynb
+        """
+        data = data.values.reshape(-1,)
+        ft = np.fft.rfft(data)
+        freqs = np.fft.rfftfreq(len(data), 1)
+        mags = abs(ft)
+        inflection = np.diff(np.sign(np.diff(mags)))
+        peaks = (inflection < 0).nonzero()[0] + 1
+        peak = peaks[mags[peaks].argmax()]
+        signal_freq = freqs[peak]
+        period = int(1 / signal_freq)
+        return period
 
     @staticmethod
     def generate_ts_covariables(start_date, periods, freq='H'):
         """Generate covariates about time.
+
         Parameters
         ----------
         start_date: 'str' or datetime-like.
@@ -540,6 +608,7 @@ def _infer_ts_freq(df: pd.DataFrame, ts_name: str = consts.TIMESTAMP):
     ts_name: 'str', time column name.
     """
     dateindex = pd.DatetimeIndex(pd.to_datetime(df[ts_name]))
+    df = df.sort_values([ts_name])
     freq = pd.infer_freq(dateindex)
     if freq is not None:
         return freq
