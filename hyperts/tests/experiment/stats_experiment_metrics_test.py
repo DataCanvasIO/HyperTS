@@ -115,7 +115,7 @@ def _test_univariate_forecast_metric(metric):
     tb = get_tool_box(df)
     train_df, test_df = tb.temporal_train_test_split(df, test_size=0.1)
     exp = make_experiment(train_df, task=task, reward_metric=reward_metric, **params[1])
-    model = exp.run(max_trials=1)
+    model = exp.run(max_trials=1, period=12)
     X_test, y_test = model.split_X_y(test_df.copy())
     y_pred = model.predict(X_test)
     assert y_pred.shape[0] == y_test.shape[0]
