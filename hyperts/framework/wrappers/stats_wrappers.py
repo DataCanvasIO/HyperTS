@@ -79,8 +79,10 @@ class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
         trend = self.init_kwargs.pop('trend', 'c')
         seasonal_order = self.init_kwargs.pop('seasonal_order', (1, 1, 1))
         period_offset = self.init_kwargs.pop('period_offset', 0)
-        if period+period_offset > 1:
+        if period != 2 and period+period_offset > 1:
             period = min(period+period_offset, 30)
+        else:
+            period = 3
         seasonal_order = seasonal_order + (period,)
 
         model = ARIMA(endog=y, order=(p, d, q), trend=trend, freq=freq,
