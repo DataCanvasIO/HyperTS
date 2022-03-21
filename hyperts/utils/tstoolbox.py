@@ -114,6 +114,13 @@ class TSToolBox(ToolBox):
             return arr[-indices:]
 
     @staticmethod
+    def columns_values(df: pd.DataFrame):
+        """
+        Get column values.
+        """
+        return df.columns.values
+
+    @staticmethod
     def sort_values(df: pd.DataFrame, ts_name: str = consts.TIMESTAMP):
         """
         Sort in time order.

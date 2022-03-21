@@ -87,6 +87,8 @@ def make_experiment(train_data,
     freq : 'str', DateOffset or None, default None.
         Note: If your task is a discontinuous time series, you can specify the freq as 'Discrete'.
     timestamp : str, forecast task 'timestamp' cannot be None, (default=None).
+    forecast_train_data_periods : 'int', Cut off a certain period of data from the train data from back to front
+        as a train set. (default=None).
     timestamp_format : str, the date format of timestamp col for forecast task, (default='%Y-%m-%d %H:%M:%S').
     covariables : list[n*str], if the data contains covariables, specify the covariable column names, (default=None).
     dl_forecast_window : int or None. When selecting 'dl' mode, you can specify window, which is the sequence

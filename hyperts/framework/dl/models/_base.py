@@ -173,6 +173,24 @@ class BaseDeepEstimator(object):
             '_predict is a protected abstract method, it must be implemented.'
         )
 
+    def _reset_parameters(self, **kwargs):
+        """Reset init parameters based on fit-kwargs.
+
+        """
+        if kwargs.get('window') is not None and kwargs.get('window') > 0:
+            self.window = kwargs.get('window')
+        if kwargs.get('horizon') is not None and kwargs.get('horizon') > 0:
+            self.horizon = kwargs.get('horizon')
+        if kwargs.get('forecast_length') is not None and kwargs.get('forecast_length') > 0:
+            self.forecast_length = kwargs.get('forecast_length')
+        if kwargs.get('monitor_metric') is not None and isinstance(kwargs.get('monitor_metric'), str):
+            self.monitor_metric = kwargs.get('monitor_metric')
+        if kwargs.get('reducelr_patience') is not None and kwargs.get('reducelr_patience') > 0:
+            self.reducelr_patience = kwargs.get('reducelr_patience')
+        if kwargs.get('earlystop_patience') is not None and kwargs.get('earlystop_patience') > 0:
+            self.earlystop_patience = kwargs.get('earlystop_patience')
+        if kwargs.get('embedding_output_dim') is not None and kwargs.get('embedding_output_dim') > 0:
+            self.embedding_output_dim = kwargs.get('embedding_output_dim')
 
     def fit(self,
             X,
@@ -338,6 +356,8 @@ class BaseDeepEstimator(object):
         See `tf.keras.model.Model.fit` for details.
         """
         start = time.time()
+        self._reset_parameters(**kwargs)
+
         X, y = self._preprocessor(X, y)
         tb = get_tool_box(X)
         if validation_data is not None:

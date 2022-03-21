@@ -599,11 +599,11 @@ class TSPipeline:
         X, y.
         """
         if self.task in consts.TASK_LIST_FORECAST:
+            tb = get_tool_box(data)
             if self.covariables is not None:
-                excluded_variables = [self.timestamp] + self.covariables
+                excluded_variables = tb.list_diff(tb.columns_values(data), self.target)
             else:
                 excluded_variables = [self.timestamp]
-            tb = get_tool_box(data)
             data = tb.drop_duplicated_ts_rows(data, ts_name=self.timestamp)
 
             if smooth is not False:
@@ -757,19 +757,29 @@ class TSCompeteExperiment(SteppedExperiment):
                  ensemble_size=10,
                  **kwargs):
 
-        self.freq = freq
-        self.task = task
-        self.mode = mode
-        self.target = target_col
-        self.timestamp = timestamp_col
-        self.history = None
-
         if random_state is None:
             random_state = np.random.randint(0, 65535)
         set_random_state(random_state)
 
         if task is None:
             task = hyper_model.task
+
+        self.freq = freq
+        self.task = task
+        self.mode = mode
+        self.target = target_col
+        self.timestamp = timestamp_col
+        if self.task in consts.TASK_LIST_FORECAST:
+            tb = get_tool_box(X_train, y_train)
+            all_data = tb.concat_df([X_train, y_train], axis=1)
+            if X_eval is not None or y_eval is not None:
+                eval_data = tb.concat_df([X_eval, y_eval], axis=1)
+                all_data = tb.concat_df([all_data, eval_data], axis=0)
+            max_history_length = min(consts.HISTORY_UPPER_LIMIT,
+                                     int(len(all_data)*consts.DEFAULT_EVAL_SIZE))
+            self.history = tb.select_1d_reverse(all_data, max_history_length)
+        else:
+            self.history = None
 
         if covariate_cols is not None and len(covariate_cols) == 2:
             self.covariables = covariate_cols[0]
@@ -837,21 +847,6 @@ class TSCompeteExperiment(SteppedExperiment):
         sk_pipeline = super(TSCompeteExperiment, self).to_estimator(
                             X_train, y_train, X_test, X_eval, y_eval, steps)
 
-        if self.task in consts.TASK_LIST_FORECAST:
-            if self.mode == consts.Mode_STATS:
-                window = 1
-            else:
-                window = sk_pipeline.named_steps.estimator.model.init_kwargs['window']
-            tb = get_tool_box(X_train, y_train)
-            all_data = tb.concat_df([X_train, y_train], axis=1)
-            if X_eval is not None or y_eval is not None:
-                eval_data = tb.concat_df([X_eval, y_eval], axis=1)
-                all_data = tb.concat_df([all_data, eval_data], axis=0)
-            max_history_length = max(window, int(len(all_data)*consts.DEFAULT_EVAL_SIZE))
-            history = all_data.tail(max_history_length)
-        else:
-            history = None
-
         return TSPipeline(sk_pipeline,
                           freq=self.freq,
                           task=self.task,
@@ -859,7 +854,7 @@ class TSCompeteExperiment(SteppedExperiment):
                           timestamp=self.timestamp,
                           covariables=self.covariables,
                           target=self.target,
-                          history=history)
+                          history=self.history)
 
     def _repr_html_(self):
         return self.__repr__()
