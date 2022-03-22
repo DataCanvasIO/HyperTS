@@ -35,7 +35,7 @@ class DeepARWrapper(EstimatorWrapper, WrapperMixin):
     @property
     def classes_(self):
         if self.init_kwargs.get('task') in consts.TASK_LIST_CLASSIFICATION:
-            return self.model.mata.labels_
+            return self.model.meta.labels_
         else:
             return None
 
@@ -77,7 +77,7 @@ class HybirdRNNWrapper(EstimatorWrapper, WrapperMixin):
     @property
     def classes_(self):
         if self.init_kwargs.get('task') in consts.TASK_LIST_CLASSIFICATION:
-            return self.model.mata.labels_
+            return self.model.meta.labels_
         else:
             return None
 
@@ -119,6 +119,6 @@ class LSTNetWrapper(EstimatorWrapper, WrapperMixin):
     @property
     def classes_(self):
         if self.init_kwargs.get('task') in consts.TASK_LIST_CLASSIFICATION:
-            return self.model.mata.labels_
+            return self.model.meta.labels_
         else:
             return None

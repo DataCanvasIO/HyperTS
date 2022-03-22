@@ -1,3 +1,5 @@
+import math
+import tensorflow as tf
 from tensorflow.python.keras import losses
 from tensorflow.python.keras import backend as K
 from tensorflow.python.framework import ops
@@ -32,9 +34,12 @@ class LogGaussianLoss(losses.LossFunctionWrapper):
 def log_gaussian_error(y_true, y_pred):
     y_pred = ops.convert_to_tensor(y_pred)
     y_true = math_ops.cast(y_true, y_pred.dtype)
-    diff = math_ops.abs(y_true - y_pred) / \
-           K.maximum((math_ops.abs(y_true) + math_ops.abs(y_pred)), K.epsilon())
-    return 2.0 * 100. * K.mean(diff, axis=-1)
+    mu = tf.reshape(y_pred[..., 0], shape=y_true.shape)
+    sigma = tf.reshape(y_pred[..., 1], shape=y_true.shape)
+    loss = 0.5 * math_ops.log(math_ops.sqrt(2 * math.pi)) \
+         + 0.5 * math_ops.log(math_ops.square(sigma)) \
+         + math_ops.truediv(math_ops.square(y_true - mu), 2 * math_ops.square(sigma))
+    return math_ops.reduce_mean(math_ops.square(loss))
 
 
 @keras_export('keras.metrics.symmetric_mean_absolute_percentage_error',

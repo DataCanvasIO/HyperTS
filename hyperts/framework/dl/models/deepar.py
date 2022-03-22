@@ -53,7 +53,7 @@ def DeepARModel(task, window, rnn_type, continuous_columns, categorical_columns,
     mu = layers.Dense(nb_outputs*nb_steps, activation='linear', name='dense_mu')(x)
     sigma = layers.Dense(nb_outputs*nb_steps, activation='softplus', name='dense_sigma')(x)
 
-    outputs = layers.Concatenate(axis=-1, name='concat_mu_and_sigma')([mu, sigma])
+    outputs = layers.Lambda(lambda k : K.stack(k, axis=-1), name='stack_mu_and_sigma')([mu, sigma])
 
     all_inputs = list(continuous_inputs.values()) + list(categorical_inputs.values())
     model = Model(inputs=all_inputs, outputs=[outputs], name='DeepAR')
@@ -163,7 +163,7 @@ class DeepAR(BaseDeepEstimator):
                            rnn_units=self.rnn_units,
                            rnn_layers=self.rnn_layers,
                            drop_rate=self.drop_rate,
-                           nb_outputs=self.mata.classes_,
+                           nb_outputs=self.meta.classes_,
                            nb_steps=self.forecast_length,
                            summary=self.summary,
                            **kwargs)
@@ -188,5 +188,4 @@ class DeepAR(BaseDeepEstimator):
     @tf.function(experimental_relax_shapes=True)
     def _predict(self, X):
         y_pred = self.model(X, training=False)
-        mu, sigma = tf.split(y_pred, 2, axis=-1)
-        return tf.expand_dims(mu, axis=1)
+        return tf.expand_dims(y_pred[..., 0], axis=-1)
