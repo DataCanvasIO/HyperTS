@@ -380,6 +380,10 @@ def make_experiment(train_data,
             freq = tb.infer_ts_freq(X_train, ts_name=timestamp)
             if freq is None:
                 raise RuntimeError('Unable to infer correct frequency, please check data or specify frequency.')
+        else:
+            infer_freq = tb.infer_ts_freq(X_train, ts_name=timestamp)
+            if freq != infer_freq:
+                logger.warning(f'The specified frequency is {freq}, but the inferred frequency is {infer_freq}.')
 
     # 7. Covarite Transformer
     if covariables is not None:

@@ -138,7 +138,7 @@ class BaseDeepEstimator(object):
         self.time_columns = None
         self.forecast_start = None
         self.model = None
-        self.mata = None
+        self.meta = None
 
     def _build_estimator(self, **kwargs):
         """Build a time series deep neural net model.
@@ -361,7 +361,7 @@ class BaseDeepEstimator(object):
         X, y = self._preprocessor(X, y)
         tb = get_tool_box(X)
         if validation_data is not None:
-            validation_data = self.mata.transform(*validation_data)
+            validation_data = self.meta.transform(*validation_data)
 
         if validation_data is None:
             if self.task in consts.TASK_LIST_FORECAST:
@@ -435,12 +435,12 @@ class BaseDeepEstimator(object):
                              f'less than forecast length {self.forecast_length}.')
 
         if X.shape[1] >= 1:
-            X = self.mata.transform_X(X)
+            X = self.meta.transform_X(X)
             X_cont_cols, X_cat_cols = [], []
             for c in X.columns:
-                if c in self.mata.cont_column_names:
+                if c in self.meta.cont_column_names:
                     X_cont_cols.append(c)
-                elif c in self.mata.cat_column_names:
+                elif c in self.meta.cat_column_names:
                     X_cat_cols.append(c)
                 else:
                     raise ValueError('Unknown column.')
@@ -449,8 +449,8 @@ class BaseDeepEstimator(object):
         futures = []
         data = self.forecast_start.copy()
         if X.shape[1] >= 1:
-            continuous_length = len(self.mata.cont_column_names)
-            categorical_length = len(self.mata.cat_column_names)
+            continuous_length = len(self.meta.cont_column_names)
+            categorical_length = len(self.meta.cat_column_names)
             for i in range(math.ceil(steps / self.forecast_length)):
                 pred = self._predict(data)
                 futures.append(pred.numpy())
@@ -468,11 +468,14 @@ class BaseDeepEstimator(object):
                 pred = self._predict(data)
                 futures.append(pred.numpy())
                 forcast = pred.numpy()
-                data = np.append(data, forcast).reshape((1, -1, self.mata.classes_))
+                data = np.append(data, forcast).reshape((1, -1, self.meta.classes_))
                 data = data[:, -self.window:, :]
 
+        futures = np.concatenate(futures, axis=0)
+        futures = futures.reshape(-1, len(self.meta.target_columns))[:steps]
+
         logger.info(f'forecast taken {time.time() - start}s')
-        return np.array(futures).reshape(steps, -1)
+        return futures
 
     def predict_proba(self, X, batch_size=128):
         """Inference Function.
@@ -480,7 +483,7 @@ class BaseDeepEstimator(object):
         Task: time series classification/regression.
         """
         probs = []
-        X = self.mata.transform_X(X)
+        X = self.meta.transform_X(X)
         sample_size, iters = X.shape[0], X.shape[0] // batch_size + 1
         for idx in range(iters):
             proba = self._predict(X[idx * batch_size:min((idx + 1) * batch_size, sample_size)])
@@ -512,7 +515,7 @@ class BaseDeepEstimator(object):
 
         if encode_to_label:
             logger.info('reverse indicators to labels.')
-            predict = self.mata.inverse_transform_y(predict)
+            predict = self.meta.inverse_transform_y(predict)
         return predict
 
     def _inject_callbacks(self, callbacks, epochs, reducelr_patience=5, earlystop_patience=10, verbose=1):
@@ -635,27 +638,35 @@ class BaseDeepEstimator(object):
         if task in consts.TASK_LIST_FORECAST:
             tb = get_tool_box(X, y)
             target_length = tb.get_shape(y)[1]
-            continuous_length = len(self.mata.cont_column_names)
-            categorical_length = len(self.mata.cat_column_names)
-            column_names = self.mata.cont_column_names + self.mata.cat_column_names
+            continuous_length = len(self.meta.cont_column_names)
+            categorical_length = len(self.meta.cat_column_names)
+            column_names = self.meta.cont_column_names + self.meta.cat_column_names
             data = tb.concat_df([y, X], axis=1).drop([self.timestamp], axis=1)
             data = tb.df_to_array(data[column_names]).astype(consts.DATATYPE_TENSOR_FLOAT)
-            target_start = window - horizon + 1
+            if window < forecast_length:
+                raise RuntimeError('window must not be smaller than forecast_length.')
+            else:
+                sequence_length = window
+            target_start = sequence_length - horizon + 1
             inputs = data[:-target_start]
             targets = data[target_start:]
-            sequences = from_array_to_timeseries(inputs, targets, forecast_length=forecast_length, sequence_length=window)
-            X_data, y_data = [], []
-            for _, batch in enumerate(sequences):
-                X_batch, y_batch = batch
-                X_data.append(X_batch.numpy())
-                y_data.append(y_batch.numpy())
+            sequences = from_array_to_timeseries(data=inputs,
+                                                 targets=targets,
+                                                 forecast_length=forecast_length,
+                                                 sequence_length=sequence_length)
+
             try:
+                X_data, y_data = [], []
+                for _, batch in enumerate(sequences):
+                    X_batch, y_batch = batch
+                    X_data.append(X_batch.numpy())
+                    y_data.append(y_batch.numpy())
                 X_data = np.concatenate(X_data, axis=0)
                 y_data = np.concatenate(y_data, axis=0)[:, :, :target_length]
             except:
-                raise ValueError(f'Reset forecast_window, which should be less than {len(X)//2}.')
+                raise ValueError(f'Reset forecast window, which should be less than {len(X)//2}.')
             if not is_train:
-                self.forecast_start = data[-window:].reshape(1, window, data.shape[1])
+                self.forecast_start = data[-sequence_length:].reshape(1, sequence_length, data.shape[1])
             if categorical_length != 0:
                 X_cont = X_data[:, :, :continuous_length]
                 X_cat = X_data[:, :, continuous_length:]
@@ -668,7 +679,7 @@ class BaseDeepEstimator(object):
             if is_train:
                 tb = get_tool_box(X)
                 self.window = tb.get_shape(X)[1]
-            X_data = X.astype('float32')
+            X_data = X.astype(consts.DATATYPE_TENSOR_FLOAT)
             y_data = y
         return X_data, y_data
 
@@ -716,15 +727,15 @@ class BaseDeepEstimator(object):
             dtype, input_name) about categorical variables.
         """
         if isinstance(X.iloc[0, 0], (np.ndarray, pd.Series)):
-            self.mata = MetaTSCprocessor()
-            X, y = self.mata.fit_transform(X, y)
-            self.continuous_columns = self.mata.continuous_columns
-            self.categorical_columns = self.mata.categorical_columns
+            self.meta = MetaTSCprocessor()
+            X, y = self.meta.fit_transform(X, y)
+            self.continuous_columns = self.meta.continuous_columns
+            self.categorical_columns = self.meta.categorical_columns
         else:
-            self.mata = MetaTSFprocessor(timestamp=self.timestamp, embedding_output_dim=self.embedding_output_dim)
-            X, y = self.mata.fit_transform(X, y)
-            self.continuous_columns = self.mata.continuous_columns
-            self.categorical_columns = self.mata.categorical_columns
+            self.meta = MetaTSFprocessor(timestamp=self.timestamp, embedding_output_dim=self.embedding_output_dim)
+            X, y = self.meta.fit_transform(X, y)
+            self.continuous_columns = self.meta.continuous_columns
+            self.categorical_columns = self.meta.categorical_columns
         return X, y
 
     @property

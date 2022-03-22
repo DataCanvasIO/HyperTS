@@ -235,7 +235,7 @@ def build_output_tail(x, task, nb_outputs, nb_steps=1):
     return outputs
 
 
-def rnn_forward(x, nb_units, nb_layers, rnn_type, name, drop_rate=0., i=0, activation='tanh'):
+def rnn_forward(x, nb_units, nb_layers, rnn_type, name, drop_rate=0., i=0, activation='tanh', return_sequences=False):
     """Multi-RNN layers.
 
     Parameters
@@ -244,16 +244,18 @@ def rnn_forward(x, nb_units, nb_layers, rnn_type, name, drop_rate=0., i=0, activ
         recurrent neural network.
     nb_layers: int, the number of the layers for recurrent neural network.
     rnn_type: str, type of recurrent neural network,
-        including {'simple_rnn', 'gru', 'lstm}.
+        including {'simple_rnn', 'gru', 'lstm'}.
     name: recurrent neural network name.
     drop_rate: float, the rate of Dropout for neural nets, default 0.
+    return_sequences: bool, whether to return the last output. in the output
+      sequence, or the full sequence. default False.
     """
 
     RnnCell = {'lstm': layers.LSTM, 'gru': layers.GRU, 'simple_rnn': layers.SimpleRNN}[rnn_type]
     for i in range(nb_layers - 1):
         x = RnnCell(units=nb_units, activation=activation, return_sequences=True, name=f'{name}_{i}')(x)
         x = layers.Dropout(rate=drop_rate, name=f'{name}_{i}_dropout')(x)
-    x = RnnCell(units=nb_units, activation=activation, return_sequences=False, name=f'{name}_{i + 1}')(x)
+    x = RnnCell(units=nb_units, activation=activation, return_sequences=return_sequences, name=f'{name}_{i + 1}')(x)
     return x
 
 

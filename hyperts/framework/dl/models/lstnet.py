@@ -244,7 +244,7 @@ class LSTNet(BaseDeepEstimator):
                            skip_period=self.skip_period,
                            ar_order=self.ar_order,
                            drop_rate=self.drop_rate,
-                           nb_outputs=self.mata.classes_,
+                           nb_outputs=self.meta.classes_,
                            nb_steps=self.forecast_length,
                            out_activation=self.out_activation,
                            summary=self.summary,

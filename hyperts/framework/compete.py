@@ -643,14 +643,14 @@ class TSPipeline:
         X = self.sk_pipeline.named_steps.data_preprocessing.transform(X)
         X = self.sk_pipeline.named_steps.estimator.data_pipeline.transform(X)
         y = self.sk_pipeline.named_steps.estimator.model.transform(y)
-        X, y = self.sk_pipeline.named_steps.estimator.model.model.mata.transform(X, y)
+        X, y = self.sk_pipeline.named_steps.estimator.model.model.meta.transform(X, y)
         forecast_start = tb.concat_df([X, y], axis=1)
 
         # 2. perprocessing
         estimator = self.sk_pipeline.named_steps.estimator
-        window = estimator.model.init_kwargs['window']
-        cont_column_names = estimator.model.model.mata.cont_column_names
-        cat_column_names = estimator.model.model.mata.cat_column_names
+        window = estimator.model.model.window
+        cont_column_names = estimator.model.model.meta.cont_column_names
+        cat_column_names = estimator.model.model.meta.cat_column_names
         continuous_length = len(cont_column_names)
         categorical_length = len(cat_column_names)
         column_names = cont_column_names + cat_column_names
