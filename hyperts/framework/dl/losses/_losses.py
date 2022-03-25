@@ -34,8 +34,9 @@ class LogGaussianLoss(losses.LossFunctionWrapper):
 def log_gaussian_error(y_true, y_pred):
     y_pred = ops.convert_to_tensor(y_pred)
     y_true = math_ops.cast(y_true, y_pred.dtype)
-    mu = tf.reshape(y_pred[..., 0], shape=y_true.shape)
-    sigma = tf.reshape(y_pred[..., 1], shape=y_true.shape)
+    reshaped = [-1] + y_true.shape.as_list()[1:]
+    mu = tf.reshape(y_pred[..., 0], shape=reshaped)
+    sigma = tf.reshape(y_pred[..., 1], shape=reshaped)
     loss = 0.5 * math_ops.log(math_ops.sqrt(2 * math.pi)) \
          + 0.5 * math_ops.log(math_ops.square(sigma)) \
          + math_ops.truediv(math_ops.square(y_true - mu), 2 * math_ops.square(sigma))
