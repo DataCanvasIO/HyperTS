@@ -2,13 +2,15 @@
 from hypernets.utils.const import *
 
 TIMESTAMP                          = 'timestamp'
+PSEUDO_DATE_START                  = '2021-11-12'
 DEFAULT_EVAL_SIZE                  = 0.2
 DEFAULT_MIN_EVAL_SIZE              = 0.05
 NAN_DROP_SIZE                      = 0.6
 FINAL_TRAINING_EPOCHS              = 120
 HISTORY_UPPER_LIMIT                = 200
 
-DISCRETE_FORECAST                  = 'Discrete'
+DISCRETE_FORECAST                  = 'null'
+MISSING_TIMESTAMP                  = 'null'
 
 Task_UNIVARIATE_FORECAST           = 'univariate-forecast'
 Task_MULTIVARIATE_FORECAST         = 'multivariate-forecast'
@@ -20,16 +22,16 @@ Task_FORECAST                      = 'forecast'
 Task_CLASSIFICATION                = 'classification'
 Task_REGRESSION                    = 'regression'
 
-TASK_LIST_FORECAST                 = ['forecast',
+TASK_LIST_FORECAST                 = ['forecast', 'tsf',
 'univariate-forecast', 'multivariate-forecast'
 ]
 
-TASK_LIST_CLASSIFICATION           = ['classification',
+TASK_LIST_CLASSIFICATION           = ['classification', 'tsc',
 'univariate-binaryclass', 'multivariate-binaryclass',
 'univariate-multiclass', 'multivariate-multiclass'
 ]
 
-TASK_LIST_REGRESSION               = ['regression'
+TASK_LIST_REGRESSION               = ['regression', 'tsr'
 ]
 
 TASK_LIST_BINARYCLASS              = ['univariate-binaryclass', 'multivariate-binaryclass']
@@ -73,3 +75,4 @@ Metric_LOGLOSS                     = 'logloss'
 
 OptimizerSGD                       = 'sgd'
 OptimizerADAM                      = 'adam'
+OptimizerRMSPROP                   = 'rmsprop'

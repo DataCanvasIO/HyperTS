@@ -354,7 +354,7 @@ class TSPipeline:
             of training data.
     """
 
-    def __init__(self, sk_pipeline, freq, task, mode, timestamp, covariables, target, history=None):
+    def __init__(self, sk_pipeline, freq, task, mode, timestamp, covariables, target, history=None, **kwargs):
         self.freq = freq
         self.task = task
         self.mode = mode
@@ -366,6 +366,8 @@ class TSPipeline:
         if self.task in consts.TASK_LIST_FORECAST:
             self.prior = sk_pipeline.named_steps.estimator.history_prior
             self.history = history
+
+        self.kwargs = kwargs.copy()
 
     def predict(self, X, forecast_start=None):
         """Predicts target for sequences in X.
@@ -391,10 +393,10 @@ class TSPipeline:
                 if X_timestamp_start < forecast_timestamp_end:
                     raise ValueError(f'The start date of X [{X_timestamp_start}] should be after '
                                      f'the end date of forecast_start [{forecast_timestamp_end}].')
-                forecast_start = self._preprocess_forecast_start(forecast_start)
+                forecast_start = self.__preprocess_forecast_start(forecast_start)
                 self.sk_pipeline.named_steps.estimator.model.model.forecast_start = forecast_start
             elif self.mode == consts.Mode_DL and forecast_start is None:
-                forecast_start = self._preprocess_forecast_start(self.history)
+                forecast_start = self.__preprocess_forecast_start(self.history)
                 self.sk_pipeline.named_steps.estimator.model.model.forecast_start = forecast_start
 
             if X[self.timestamp].dtypes == object:
@@ -406,6 +408,9 @@ class TSPipeline:
             forecast = tb.DataFrame(y_pred, columns=self.target)
             forecast = tb.concat_df([X_transformed[[self.timestamp]], forecast], axis=1)
             forecast = tb.join_df(X[[self.timestamp]], forecast, on=self.timestamp)
+
+            if self.kwargs.get('train_end_date') is not None:
+                forecast = tb.drop(forecast, columns=[self.timestamp])
 
             return forecast
         else:
@@ -485,7 +490,10 @@ class TSPipeline:
         requested number of periods.
         """
         tb = get_tool_box(self.history)
-        start_date = self.history[self.timestamp].max() if start_date is None else start_date
+        if self.kwargs.get('train_end_date') is None:
+            start_date = self.history[self.timestamp].max() if start_date is None else start_date
+        else:
+            start_date = self.kwargs.get('train_end_date')
         dates = tb.date_range(start=start_date, periods=periods+1, freq=self.freq)
         dates = dates[dates > start_date]
         dates = dates[:periods]
@@ -531,8 +539,7 @@ class TSPipeline:
         ----------
         fig : 'plotly.graph_objects.Figure'.
         """
-        tb = get_tool_box(forecast)
-        forecast_interval = tb.infer_forecast_interval(forecast[self.target], *self.prior)
+        forecast_interval = self.forecast_interval(forecast)
         history = history if history is not None else self.history
 
         if interactive and enable_plotly:
@@ -558,6 +565,19 @@ class TSPipeline:
                      figsize=figsize)
         else:
             raise ValueError('No install matplotlib or plotly.')
+
+    def forecast_interval(self, forecast, confidence_level=0.9):
+        """infer forecast interval.
+
+        Parameters
+        ----------
+        forecast: 'DataFrame'. The columns need to include the timestamp column
+            and the target columns.
+        confidence_level: float, default 0.9.
+        """
+        tb = get_tool_box(forecast)
+        return tb.infer_forecast_interval(forecast[self.target], *self.prior, confidence_level=confidence_level)
+
 
     def split_X_y(self, data, smooth=False, impute=False):
         """Splits the data into X and y.
@@ -594,12 +614,24 @@ class TSPipeline:
                 2021-03-03    3.4
                 2021-03-04    6.7
                 2021-03-05    2.3
+        skip: Whether to skip generate time DataFrame.
         Returns
         -------
         X, y.
         """
         if self.task in consts.TASK_LIST_FORECAST:
             tb = get_tool_box(data)
+            data = tb.reset_index(data)
+            is_skip = self.timestamp in tb.columns_values(data)
+            if self.kwargs.get('train_end_date') is not None and not is_skip:
+                pseudo_timestamp = tb.DataFrame({f'{self.timestamp}':
+                                   tb.date_range(start=self.kwargs.get('train_end_date'),
+                                                 periods=len(data)+1,
+                                                 freq=self.kwargs.get('generate_freq'))})
+                pseudo_timestamp = tb.select_1d_reverse(pseudo_timestamp, len(data))
+                pseudo_timestamp = tb.reset_index(pseudo_timestamp)
+                data = tb.concat_df([pseudo_timestamp, data], axis=1)
+
             if self.covariables is not None:
                 excluded_variables = tb.list_diff(tb.columns_values(data), self.target)
             else:
@@ -625,7 +657,7 @@ class TSPipeline:
         """
         return self.sk_pipeline.get_params
 
-    def _preprocess_forecast_start(self, forecast_start):
+    def __preprocess_forecast_start(self, forecast_start):
         """Performs data preprocessing for the external forecast_start.
 
         Parameters
@@ -749,6 +781,7 @@ class TSCompeteExperiment(SteppedExperiment):
                  mode='stats',
                  id=None,
                  forecast_train_data_periods=None,
+                 hist_store_upper_limit=consts.HISTORY_UPPER_LIMIT,
                  callbacks=None,
                  log_level=None,
                  random_state=None,
@@ -769,14 +802,16 @@ class TSCompeteExperiment(SteppedExperiment):
         self.mode = mode
         self.target = target_col
         self.timestamp = timestamp_col
+        self.max_window_length = hist_store_upper_limit
+        self.train_end_date = kwargs.pop('train_end_date', None)
+        self.generate_freq = kwargs.pop('generate_freq', None)
         if self.task in consts.TASK_LIST_FORECAST:
             tb = get_tool_box(X_train, y_train)
             all_data = tb.concat_df([X_train, y_train], axis=1)
             if X_eval is not None or y_eval is not None:
                 eval_data = tb.concat_df([X_eval, y_eval], axis=1)
                 all_data = tb.concat_df([all_data, eval_data], axis=0)
-            max_history_length = min(consts.HISTORY_UPPER_LIMIT,
-                                     int(len(all_data)*consts.DEFAULT_EVAL_SIZE))
+            max_history_length = min(hist_store_upper_limit, int(len(all_data)*consts.DEFAULT_EVAL_SIZE))
             self.history = tb.select_1d_reverse(all_data, max_history_length)
         else:
             self.history = None
@@ -840,6 +875,32 @@ class TSCompeteExperiment(SteppedExperiment):
                                            random_state=random_state)
 
     def run(self, **kwargs):
+        """Related parameters that can be reset, mainly involving pipeline stap and model parameters.
+           Including but not limited to the following:
+
+        Parameters
+        ----------
+        max_trials: int, maximum number of tests (model search), optional, (default=3).
+        final_train_epochs: int, the searched best DL model performs the final training epochs, optional, (default=120).
+        epochs: int, DL model training epochs in each trail, optional, (default=120).
+        batch_size: int, number of samples per gradient update, optional, (default is self-adaption).
+        optimizer: str, the optimizer of DL model, optional {'adam', 'sgd', 'rmsprop'}, (default='adam').
+        learning_rate: float, the optimizer's learning rate, optional, (default=0.001).
+        loss: str, the loss function of DL model, optional, (default is searching).
+        drop_rate: float, The rate of Dropout for DL model, optional, (default is searching).
+        dl_forecast_window : int, the sequence length of each sample in DL model, i.e., timestamp of
+            [batch_size, timestamp, dim], optional, (default is searching).
+        dl_forecast_length: int, the forecast length for the future in DL model, optional, (default is searching).
+        seasonality_mode: str, 'additive' (default) or 'multiplicative' in Prophet.
+        period_offset: int, s of seasonal_order(P,D,Q,s) in ARIMA, optional, (default is searching).
+        maxlags: int, maximum number of lags to check for order selection in VAR, optional, (default is searching).
+        ...
+
+        Notes
+        ----------
+        Once the above parameters are specified, the search space cannot be searched.
+        """
+        kwargs = self._reset_run_kwargs(**kwargs)
         run_kwargs = {**self.run_kwargs, **kwargs}
         return super().run(**run_kwargs)
 
@@ -854,7 +915,19 @@ class TSCompeteExperiment(SteppedExperiment):
                           timestamp=self.timestamp,
                           covariables=self.covariables,
                           target=self.target,
-                          history=self.history)
+                          history=self.history,
+                          train_end_date=self.train_end_date,
+                          generate_freq=self.generate_freq)
 
     def _repr_html_(self):
         return self.__repr__()
+
+    def _reset_run_kwargs(self, **kwargs):
+        if kwargs.get('dl_forecast_window') is not None:
+            if kwargs.get('dl_forecast_window') <= self.max_window_length:
+                kwargs['window'] = kwargs.pop('dl_forecast_window')
+            else:
+                raise ValueError(f'dl_window_length cannot be greater than {self.max_window_length}.')
+        if kwargs.get('dl_forecast_length', 0) > 0:
+            kwargs['forecst_length'] = kwargs.pop('dl_forecast_length')
+        return kwargs

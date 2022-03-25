@@ -1,5 +1,7 @@
+import numpy as np
 import pandas as pd
 
+from hyperts.utils import get_tool_box
 from hypernets.utils import logging
 logger = logging.get_logger(__name__)
 
@@ -58,6 +60,8 @@ def plot_plotly(forecast,
     ----------
     fig : 'plotly.graph_objects.Figure'.
     """
+    tb = get_tool_box(forecast)
+
     if not isinstance(target_col, list):
         target_col = [target_col]
 
@@ -69,18 +73,27 @@ def plot_plotly(forecast,
     if isinstance(timestamp_col, list):
         timestamp_col = timestamp_col[0]
 
-    X_forecast, y_forecast = forecast[[timestamp_col]], forecast[target_col]
+    ts_free = False if timestamp_col in tb.columns_values(forecast) else True
 
-    if actual is not None:
-        X_test, y_test = actual[[timestamp_col]], actual[target_col]
-    else:
-        X_test, y_test = None, None
+    y_forecast =forecast[target_col]
+    y_actual = actual[target_col] if actual is not None else None
 
     if history is not None and include_history:
-        X_train, y_train = history[[timestamp_col]], history[target_col]
-        train_end_date = X_train[timestamp_col].iloc[-1]
+        y_train = history[target_col]
+        if not ts_free:
+            X_train = tb.to_datetime(history[timestamp_col])
+            X_forecast =  tb.to_datetime(forecast[timestamp_col])
+            train_end_date = history[timestamp_col].iloc[-1]
+        else:
+            X_train = tb.arange(0, len(history))
+            X_forecast = tb.arange(len(history), len(history)+len(forecast))
+            train_end_date = None
     else:
         X_train, y_train, train_end_date = None, None, None
+        if not ts_free:
+            X_forecast =  tb.to_datetime(forecast[timestamp_col])
+        else:
+            X_forecast = tb.arange(0, len(forecast))
 
     fig = go.Figure()
     plt.set_loglevel('WARNING')
@@ -90,7 +103,7 @@ def plot_plotly(forecast,
 
         lower_bound = go.Scatter(
             name='Lower Bound',
-            x=pd.to_datetime(X_forecast[timestamp_col]),
+            x=X_forecast,
             y=lower_forecast.values[:, var_id],
             mode='lines',
             line=dict(
@@ -102,7 +115,7 @@ def plot_plotly(forecast,
 
         upper_bound = go.Scatter(
             name='Upper Bound',
-            x=pd.to_datetime(X_forecast[timestamp_col]),
+            x=X_forecast,
             y=upper_forecast.values[:, var_id],
             line=dict(
                 width=0.0,
@@ -116,8 +129,8 @@ def plot_plotly(forecast,
 
     if actual is not None:
         actual_trace = go.Scatter(
-            x=pd.to_datetime(X_test[timestamp_col]),
-            y=y_test.values[:, var_id],
+            x=X_forecast,
+            y=y_actual.values[:, var_id],
             mode='lines',
             line=dict(color='rgba(250, 43, 20, 0.7)'),
             name='Actual'
@@ -125,7 +138,7 @@ def plot_plotly(forecast,
         fig.add_trace(actual_trace)
 
     forecast_trace = go.Scatter(
-        x=pd.to_datetime(X_forecast[timestamp_col]),
+        x=X_forecast,
         y=y_forecast.values[:, var_id],
         mode='lines',
         line=dict(color='rgba(31, 119, 180, 0.7)'),
@@ -133,9 +146,9 @@ def plot_plotly(forecast,
     )
     fig.add_trace(forecast_trace)
 
-    if train_end_date is not None:
+    if history is not None and include_history:
         history_trace = go.Scatter(
-            x=pd.to_datetime(X_train[timestamp_col]),
+            x=X_train,
             y=y_train.values[:, var_id],
             mode='lines',
             line=dict(color='rgba(100, 100, 100, 0.7)'),
@@ -143,6 +156,7 @@ def plot_plotly(forecast,
         )
         fig.add_trace(history_trace)
 
+    if train_end_date is not None and include_history:
         new_layout = dict(
             shapes=[dict(
                 type="line",
@@ -235,6 +249,8 @@ def plot_mpl(forecast,
     ----------
     fig : 'matpltlib..pyplot.figure'.
     """
+    tb = get_tool_box(forecast)
+
     if not isinstance(target_col, list):
         target_col = [target_col]
 
@@ -246,34 +262,42 @@ def plot_mpl(forecast,
     if isinstance(timestamp_col, list):
         timestamp_col = timestamp_col[0]
 
-    X_forecast, y_forecast = forecast[[timestamp_col]], forecast[target_col]
+    ts_free = False if timestamp_col in tb.columns_values(forecast) else True
 
-    if actual is not None:
-        X_test, y_test = actual[[timestamp_col]], actual[target_col]
-    else:
-        X_test, y_test = None, None
+    y_forecast =forecast[target_col]
+    y_actual = actual[target_col] if actual is not None else None
 
     if history is not None and include_history:
-        X_train, y_train = history[[timestamp_col]], history[target_col]
+        y_train = history[target_col]
+        if not ts_free:
+            X_train = tb.to_datetime(history[timestamp_col])
+            X_forecast =  tb.to_datetime(forecast[timestamp_col])
+        else:
+            X_train = tb.arange(0, len(history))
+            X_forecast = tb.arange(len(history), len(history)+len(forecast))
     else:
         X_train, y_train = None, None
+        if not ts_free:
+            X_forecast =  tb.to_datetime(forecast[timestamp_col])
+        else:
+            X_forecast = tb.arange(0, len(forecast))
 
     plt.figure(figsize=figsize if figsize is not None else (16, 6))
 
     if include_history:
-        plt.plot(pd.to_datetime(X_train[timestamp_col]),
+        plt.plot(X_train,
                  y_train.values[:, var_id],
                  c='#808080',
                  label='Historical')
 
-    plt.plot(pd.to_datetime(X_forecast[timestamp_col]),
+    plt.plot(X_forecast,
              y_forecast.values[:, var_id],
              c='#1E90FF',
              label='Forecast')
 
     if actual is not None:
-        plt.plot(pd.to_datetime(X_test[timestamp_col]),
-                 y_test.values[:, var_id],
+        plt.plot(X_forecast,
+                 y_actual.values[:, var_id],
                  c='#FF0000',
                  alpha=0.5,
                  label='Actual')
@@ -281,7 +305,7 @@ def plot_mpl(forecast,
     if forecast_interval is not None and show_forecast_interval:
         upper_forecast, lower_forecast = forecast_interval[0], forecast_interval[1]
 
-        plt.fill_between(X_forecast[timestamp_col],
+        plt.fill_between(X_forecast,
                          lower_forecast.values[:, var_id],
                          upper_forecast.values[:, var_id],
                          facecolor='#ADD8E6',

@@ -128,6 +128,20 @@ class TSToolBox(ToolBox):
         return df.sort_values(by=[ts_name])
 
     @staticmethod
+    def drop(df: pd.DataFrame, labels=None, index=None, columns=None, axis: int = 0, inplace: bool = False):
+        """
+        Drop specified labels from rows or columns.
+        """
+        return df.drop(labels=labels, axis=axis, index=index, columns=columns, inplace=inplace)
+
+    @staticmethod
+    def arange(*args):
+        """
+        Return evenly spaced values within a given interval.
+        """
+        return np.arange(*args)
+
+    @staticmethod
     def infer_ts_freq(df: pd.DataFrame, ts_name: str = consts.TIMESTAMP):
         """ Infer the frequency of the time series.
         Parameters
@@ -316,7 +330,7 @@ class TSToolBox(ToolBox):
             window = list(filter(lambda x: x<=max_size, [1, 2, 3, 4, 5, 6, 7]))
         elif freq in ['SM', 'M', 'MS', 'SMS', 'BM', 'CBM', 'CBMS', '15D']:
             window = list(filter(lambda x: x <= max_size, [1, 3, 6, 12, 24]))
-        elif 'Q' in freq or 'Q-' in freq or 'BQ' in freq or 'BQ-' in freq or 'QS-' in freq or 'BQS-':
+        elif 'Q' in freq or 'Q-' in freq or 'BQ' in freq or 'BQ-' in freq or 'QS-' in freq or 'BQS-' in freq:
             window = list(filter(lambda x: x <= max_size, [1, 4, 8, 12, 16]))
         elif freq in ['A', 'Y'] or 'A-' in freq or 'BA-' in freq or 'AS-' in freq or 'BAS-' in freq:
             window = list(filter(lambda x: x<=max_size, [1, 3, 6, 12, 24]))
@@ -324,7 +338,7 @@ class TSToolBox(ToolBox):
             window = list(filter(lambda x: x<=max_size, [1, 5, 10, 30, 60]))
         elif 'H' in freq:
             window = list(filter(lambda x: x<=max_size, [1, 6, 12, 24, 48]))
-        elif 'BH' in freq or '8H':
+        elif 'BH' in freq or '8H' in freq:
             window = list(filter(lambda x: x<=max_size, [1, 4, 8, 16, 24]))
         elif 'D' in freq:
             window = list(filter(lambda x: x<=max_size, [1, 7, 14, 21]))
@@ -335,7 +349,11 @@ class TSToolBox(ToolBox):
         else:
             window = list(filter(lambda x: x <= max_size, [1, 3, 5, 7, 12, 24]))
 
-        return _expand_list(freq=freq, pre_list=window)
+        expand_window = _expand_list(freq=freq, pre_list=window)
+
+        final_win_list = expand_window + [max_size, max_size//2, max_size//4]
+
+        return final_win_list
 
     @staticmethod
     def fft_infer_period(data: pd.DataFrame):
@@ -405,14 +423,14 @@ class TSToolBox(ToolBox):
         return mean, std
 
     @staticmethod
-    def infer_forecast_interval(forecast, prior_mu, prior_sigma, n: int = 5, prediction_interval: float = 0.9):
+    def infer_forecast_interval(forecast, prior_mu, prior_sigma, n: int = 5, confidence_level: float = 0.9):
         """A corruption of Bayes theorem.
         It will be sensitive to the transformations of the data.
 
         """
         from scipy.stats import norm
 
-        p_int = 1 - ((1 - prediction_interval) / 2)
+        p_int = 1 - ((1 - confidence_level) / 2)
         adj = norm.ppf(p_int)
         upper_forecast, lower_forecast = pd.DataFrame(), pd.DataFrame()
         for index, row in forecast.iterrows():

@@ -12,7 +12,7 @@ class Test_Discrete_Time_Series():
         exp = make_experiment(train_data.copy(),
                               mode='dl', # only
                               task='forecast',
-                              freq='Discrete',
+                              freq='null',
                               timestamp='TimeStamp',
                               covariables=['HourSin', 'WeekCos', 'CBWD'],
                               max_trials=3,
@@ -36,7 +36,7 @@ class Test_Discrete_Time_Series():
         exp = make_experiment(train_data.copy(),
                               mode='dl', # only
                               task='forecast',
-                              freq='Discrete',
+                              freq='null',
                               timestamp='TimeStamp',
                               covariables=['HourSin', 'WeekCos', 'CBWD'],
                               max_trials=3,

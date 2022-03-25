@@ -90,7 +90,8 @@ def make_experiment(train_data,
     forecast_train_data_periods : 'int', Cut off a certain period of data from the train data from back to front
         as a train set. (default=None).
     timestamp_format : str, the date format of timestamp col for forecast task, (default='%Y-%m-%d %H:%M:%S').
-    covariables : list[n*str], if the data contains covariables, specify the covariable column names, (default=None).
+    covariables/covariates : list[n*str], if the data contains covariables, specify the covariable column names,
+        (default=None).
     dl_forecast_window : int or None. When selecting 'dl' mode, you can specify window, which is the sequence
         length of each sample, (default=None).
     dl_forecast_horizon : int or None. When selecting 'dl' mode, you can specify horizon, which is the length of
@@ -280,6 +281,16 @@ def make_experiment(train_data,
                                    expected_reward=early_stopping_reward)
         return [es] + cbs
 
+    kwargs = kwargs.copy()
+    kwargs['max_trials'] = max_trials
+    kwargs['eval_size'] = eval_size
+    kwargs['cv'] = cv
+    kwargs['num_folds'] = num_folds
+    kwargs['verbose'] = verbose
+
+    if kwargs.get('covariates') is not None and covariables is None:
+        covariables = kwargs.pop('covariates')
+
     # 1. Check Data and Task and Mode
     assert train_data is not None, 'train data is required.'
     assert eval_data is None or type(eval_data) is type(train_data)
@@ -306,13 +317,6 @@ def make_experiment(train_data,
 
     if freq is consts.DISCRETE_FORECAST and mode is consts.Mode_STATS:
         raise RuntimeError('Note: `stats` mode does not support discrete data forecast.')
-
-    kwargs = kwargs.copy()
-    kwargs['max_trials'] = max_trials
-    kwargs['eval_size'] = eval_size
-    kwargs['cv'] = cv
-    kwargs['num_folds'] = num_folds
-    kwargs['verbose'] = verbose
 
     # 2. Set Log Level
     if log_level is None:
@@ -352,6 +356,21 @@ def make_experiment(train_data,
         X_test = tb.reset_index(test_data) if test_data is not None else None
 
     if task in consts.TASK_LIST_FORECAST:
+        if timestamp is consts.MISSING_TIMESTAMP:
+            timestamp = consts.TIMESTAMP
+            if freq is None or freq is consts.DISCRETE_FORECAST:
+                generate_freq = 'H'
+                freq = consts.DISCRETE_FORECAST
+            else:
+                generate_freq = freq
+            pseudo_timestamp = tb.DataFrame({f'{timestamp}':
+                               tb.date_range(start=consts.PSEUDO_DATE_START,
+                                             periods=len(train_data),
+                                             freq=generate_freq)})
+            train_data = tb.concat_df([pseudo_timestamp, train_data], axis=1)
+            kwargs['train_end_date'] = pseudo_timestamp[timestamp].max()
+            kwargs['generate_freq'] = generate_freq
+
         train_data[timestamp] = tb.datetime_format(train_data[timestamp], format=timestamp_format)
         if eval_data is not None:
             eval_data[timestamp] = tb.datetime_format(eval_data[timestamp], format=timestamp_format)
@@ -380,7 +399,7 @@ def make_experiment(train_data,
             freq = tb.infer_ts_freq(X_train, ts_name=timestamp)
             if freq is None:
                 raise RuntimeError('Unable to infer correct frequency, please check data or specify frequency.')
-        else:
+        elif freq is not None and freq is not consts.DISCRETE_FORECAST:
             infer_freq = tb.infer_ts_freq(X_train, ts_name=timestamp)
             if freq != infer_freq:
                 logger.warning(f'The specified frequency is {freq}, but the inferred frequency is {infer_freq}.')
@@ -399,10 +418,15 @@ def make_experiment(train_data,
     if mode in [consts.Mode_DL, consts.Mode_NAS] and task in consts.TASK_LIST_FORECAST and dl_forecast_window is None:
         if eval_data is not None:
             max_win_size= int(len(X_eval) // 2 - dl_forecast_horizon)
-        elif kwargs.get('eval_size') is not None:
-            max_win_size = int(len(X_train)*kwargs['eval_size'] // 2 - dl_forecast_horizon)
+        elif kwargs.get('eval_size') is not None and not isinstance(kwargs.get('eval_size'), int):
+            max_win_size = int(len(X_train)*(1-kwargs['eval_size'])*0.2//2 - dl_forecast_horizon)
+        elif kwargs.get('eval_size') is not None and isinstance(kwargs.get('eval_size'), int):
+            max_win_size = int((len(X_train)-kwargs['eval_size'])*0.2//2 - dl_forecast_horizon)
         elif isinstance(forecast_train_data_periods, int) and forecast_train_data_periods < len(X_train):
-            max_win_size = int(forecast_train_data_periods * kwargs['eval_size'] // 2 - dl_forecast_horizon)
+            if isinstance(kwargs.get('eval_size'), int):
+                max_win_size = int((forecast_train_data_periods-kwargs['eval_size'])*0.2//2 - dl_forecast_horizon)
+            else:
+                max_win_size = int(forecast_train_data_periods*(1-kwargs['eval_size'])*0.2//2 - dl_forecast_horizon)
         else:
             max_win_size = int(len(X_train)*consts.DEFAULT_EVAL_SIZE // 2 - dl_forecast_horizon)
 
@@ -412,14 +436,17 @@ def make_experiment(train_data,
             mode = consts.Mode_STATS
         else:
             dl_forecast_window = tb.infer_window_size(max_size=max_win_size, freq=freq)
+        hist_store_upper_limit = max_win_size
+    else:
+        hist_store_upper_limit = consts.HISTORY_UPPER_LIMIT
 
     # 9. Task Type Infering
-    if task == consts.Task_FORECAST and len(y_train.columns) == 1:
+    if task in consts.Task_FORECAST and len(y_train.columns) == 1:
         task = consts.Task_UNIVARIATE_FORECAST
-    elif task == consts.Task_FORECAST and len(y_train.columns) > 1:
+    elif task in consts.Task_FORECAST and len(y_train.columns) > 1:
         task = consts.Task_MULTIVARIATE_FORECAST
 
-    if task == consts.Task_CLASSIFICATION:
+    if task in consts.Task_CLASSIFICATION:
         if y_train.nunique() == 2:
             if len(X_train.columns) == 1:
                 task = consts.Task_UNIVARIATE_BINARYCLASS
@@ -502,6 +529,7 @@ def make_experiment(train_data,
                                      freq=freq, log_level=log_level, random_state=random_state,
                                      optimize_direction=optimize_direction, scorer=scorer,
                                      id=id, forecast_train_data_periods=forecast_train_data_periods,
+                                     hist_store_upper_limit=hist_store_upper_limit,
                                      callbacks=callbacks, **kwargs)
 
     # 20. Clear Cache

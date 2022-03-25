@@ -286,8 +286,6 @@ class HyperTSEstimator(Estimator):
                 preds = self.proba2predict(proba)
                 preds = get_tool_box(preds).take_array(np.array(self.classes_), preds, axis=0)
         else:
-            if verbose > 0:
-                logger.info('estimator is predicting the data')
             preds = self.model.predict(X_transformed, **kwargs)
 
         if verbose > 0:
