@@ -191,6 +191,36 @@ class BaseDeepEstimator(object):
             self.earlystop_patience = kwargs.get('earlystop_patience')
         if kwargs.get('embedding_output_dim') is not None and kwargs.get('embedding_output_dim') > 0:
             self.embedding_output_dim = kwargs.get('embedding_output_dim')
+        if kwargs.get('rnn_type') is not None and isinstance(kwargs.get('monitor_metric'), str):
+            self.rnn_type = kwargs.get('rnn_type')
+        if kwargs.get('rnn_units') is not None and kwargs.get('rnn_units') > 0:
+            self.rnn_units = kwargs.get('rnn_units')
+        if kwargs.get('rnn_layers') is not None and kwargs.get('rnn_layers') > 0:
+            self.rnn_layers = kwargs.get('rnn_layers')
+        if kwargs.get('loss') is not None and isinstance(kwargs.get('loss'), str):
+            self.loss = kwargs.get('loss')
+        if kwargs.get('learning_rate') is not None and kwargs.get('learning_rate') > 0:
+            self.learning_rate = kwargs.get('learning_rate')
+        if kwargs.get('lr') is not None and kwargs.get('lr') > 0:
+            self.learning_rate = kwargs.get('lr')
+        if kwargs.get('optimizer') is not None and isinstance(kwargs.get('optimizer'), str):
+            self.optimizer = kwargs.get('optimizer')
+        if kwargs.get('drop_rate') is not None and kwargs.get('drop_rate') >= 0:
+            self.drop_rate = kwargs.get('drop_rate')
+        if kwargs.get('summary') is not None and isinstance(kwargs.get('summary'), str):
+            self.summary = kwargs.get('summary')
+        if kwargs.get('cnn_filters') is not None and kwargs.get('cnn_filters') > 0:
+            self.cnn_filters = kwargs.get('cnn_filters')
+        if kwargs.get('kernel_size') is not None and kwargs.get('kernel_size') > 0:
+            self.kernel_size = kwargs.get('kernel_size')
+        if kwargs.get('skip_rnn_units') is not None and kwargs.get('skip_rnn_units') > 0:
+            self.skip_rnn_units = kwargs.get('skip_rnn_units')
+        if kwargs.get('skip_rnn_layers') is not None and kwargs.get('skip_rnn_layers') > 0:
+            self.skip_rnn_layers = kwargs.get('skip_rnn_layers')
+        if kwargs.get('skip_period') is not None and kwargs.get('skip_period') > 0:
+            self.skip_period = kwargs.get('skip_period')
+        if kwargs.get('ar_order') is not None and kwargs.get('ar_order') > 0:
+            self.ar_order = kwargs.get('ar_order')
 
     def fit(self,
             X,
@@ -223,7 +253,7 @@ class BaseDeepEstimator(object):
             2D DataFrame, shape: (nb_samples, 1) for classification or regression task,
         batch_size: Integer or `None`.
             Number of samples per gradient update.
-            If unspecified, `batch_size` will default to 32.
+            If unspecified, `batch_size` will default to self-adaption based on number of samples.
             Do not specify the `batch_size` if your data is in the
             form of datasets, generators, or `keras.utils.Sequence` instances
             (since they generate batches).
@@ -379,7 +409,19 @@ class BaseDeepEstimator(object):
                 raise ValueError('The valid data length cannot be smaller than the winow plus forecast_length size.')
 
         if batch_size is None:
-            batch_size = min(int(len(X) / 16), 128)
+            data_num = int(len(X))
+            if data_num <= 100:
+                batch_size = max(int(2 ** (0 + int(math.log(data_num, 4)))), 2)
+            elif data_num <= 1000:
+                batch_size = max(int(2 ** (2 + int(math.log(data_num, 5)))), 16)
+            elif data_num <= 60000:
+                batch_size = min(int(2 ** (3 + int(math.log(data_num, 10)))), 128)
+            elif data_num <= 240000:
+                batch_size = min(int(2 ** (4 + int(math.log(data_num, 10)))), 512)
+            else:
+                batch_size = 1024
+        logger.info(f'Fit epochs is {epochs}, batch_size is {batch_size}.')
+
         if steps_per_epoch is None:
             steps_per_epoch = len(X) // batch_size - 1
             if steps_per_epoch == 0:
@@ -599,16 +641,17 @@ class BaseDeepEstimator(object):
                 metrics = [Metrics()['rmse']]
             logger.warning(f"In dl model, {self.metrics} is not supported, "
                            f"so ['{metrics[0].name}'] will be called.")
+        logger.info(f'The compile loss is `{loss.name}`, metrics is `{metrics[0].name}`.')
 
-        if optimizer == 'auto':
-            optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, clipnorm=10.)
-            logger.info("The optimizer is 'auto', default: Adam, learning rate=0.001.")
-        elif optimizer == consts.OptimizerADAM:
-            optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, clipnorm=10.)
-        elif optimizer == consts.OptimizerSGD:
-            optimizer = tf.keras.optimizers.SGD(learning_rate=learning_rate, clipnorm=10.)
+        if optimizer.lower() in ['auto', consts.OptimizerADAM]:
+            optimizer = tf.keras.optimizers.Adam(lr=learning_rate, decay=1e-8, clipnorm=10.)
+        elif optimizer.lower() == consts.OptimizerRMSPROP:
+            optimizer = tf.keras.optimizers.RMSprop(lr=learning_rate, momentum=0.9, decay=1e-8, clipnorm=10.)
+        elif optimizer.lower() == consts.OptimizerSGD:
+            optimizer = tf.keras.optimizers.SGD(lr=learning_rate, momentum=0.9, nesterov=True, decay=1e-8, clipnorm=10.)
         else:
-            raise ValueError(f'Unsupport this optimizer: [optimizer].')
+            raise ValueError(f'Unsupport this optimizer: {optimizer}.')
+        logger.info(f'The compile optimizer is `{optimizer._name}`, learning rate is {learning_rate}.')
 
         model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
         return model
@@ -626,9 +669,9 @@ class BaseDeepEstimator(object):
         X - 3D array-like, shape: (nb_samples, series_length, nb_variables)
         y - 2D array-like, shape: (nb_samples, nb_classes)
 
-        window: 'int' or None, default None, length of the time series sequences for a sample.
+        window: 'int' or None, default 1, length of the time series sequences for a sample.
             This must be specified for a forecast task.
-        horizon: 'int' or None, default None, representing the time interval between the start point
+        horizon: 'int' or None, default 1, representing the time interval between the start point
             of prediction time and the end point of observation time.
             This must be specified for a forecast task.
         forecast_length: 'int', default 1.
