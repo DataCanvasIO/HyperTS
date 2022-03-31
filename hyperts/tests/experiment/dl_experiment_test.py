@@ -28,7 +28,7 @@ class Test_Experiment():
                               reward_metric=reward_metric,
                               optimize_direction=optimize_direction)
 
-        model = exp.run(max_trials=3)
+        model = exp.run(max_trials=3, epochs=2, final_train_epochs=2)
 
         X_test, y_test = model.split_X_y(test_df.copy())
 
@@ -57,7 +57,7 @@ class Test_Experiment():
                               reward_metric=reward_metric,
                               optimize_direction=optimize_direction)
 
-        model = exp.run(max_trials=3)
+        model = exp.run(max_trials=3, epochs=2, final_train_epochs=2)
 
         X_test, y_test = model.split_X_y(test_df.copy())
 
@@ -84,7 +84,7 @@ class Test_Experiment():
                               reward_metric=reward_metric,
                               optimize_direction=optimize_direction)
 
-        model = exp.run(max_trials=3)
+        model = exp.run(max_trials=3, epochs=2, final_train_epochs=2)
 
         X_test, y_test = model.split_X_y(test_df.copy())
 
@@ -113,7 +113,7 @@ class Test_Experiment():
                               reward_metric=reward_metric,
                               optimize_direction=optimize_direction)
 
-        model = exp.run(max_trials=3)
+        model = exp.run(max_trials=3, epochs=2, final_train_epochs=2)
 
         X_test, y_test = model.split_X_y(test_df.copy())
 

@@ -90,7 +90,7 @@ def multivariate_binaryclass(metric):
                           reward_metric=reward_metric,
                           optimize_direction=optimize_direction)
 
-    model = exp.run(max_trials=1)
+    model = exp.run(max_trials=1, epochs=2, final_train_epochs=2)
 
     X_test, y_test = model.split_X_y(test_df.copy())
 
@@ -119,7 +119,7 @@ def multivariate_multiclass(metric):
                           reward_metric=reward_metric,
                           optimize_direction=optimize_direction)
 
-    model = exp.run(max_trials=1)
+    model = exp.run(max_trials=1, epochs=2, final_train_epochs=2)
 
     X_test, y_test = model.split_X_y(test_df.copy())
 

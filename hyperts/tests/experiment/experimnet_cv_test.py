@@ -45,7 +45,7 @@ class Test_HyperTS_Cross_Validation():
                               covariables=['HourSin', 'WeekCos', 'CBWD'],
                               max_trials=3,
                               random_state=2022)
-        model = exp.run(epochs=20)
+        model = exp.run(epochs=2, final_train_epochs=2)
 
         X_test, y_test = model.split_X_y(test_data.copy())
 
@@ -95,7 +95,7 @@ class Test_HyperTS_Cross_Validation():
                                      max_trials=3,
                                      random_state=2022)
 
-        model = experiment.run(epochs=20)
+        model = experiment.run(epochs=2, final_train_epochs=2)
 
         X_test, y_test = model.split_X_y(test_data.copy())
         y_pred = model.predict(X_test)
