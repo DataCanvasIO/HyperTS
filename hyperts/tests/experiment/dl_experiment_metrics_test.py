@@ -75,7 +75,7 @@ class Test_Multivariate_Multiclass_Experiment():
 def multivariate_binaryclass(metric):
     df = load_basic_motions()
     df['target'] = df['target'].map(lambda x: x if x == 'standing' else 'notstanding')
-    train_df, test_df = random_train_test_split(df, test_size=0.2)
+    train_df, test_df = random_train_test_split(df, test_size=0.2, random_state=2022)
 
     target = 'target'
     task = consts.Task_CLASSIFICATION
@@ -104,7 +104,7 @@ def multivariate_binaryclass(metric):
 
 def multivariate_multiclass(metric):
     df = load_basic_motions()
-    train_df, test_df = random_train_test_split(df, test_size=0.2)
+    train_df, test_df = random_train_test_split(df, test_size=0.2, random_state=2022)
 
     target = 'target'
     task = consts.Task_CLASSIFICATION

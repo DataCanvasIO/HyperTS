@@ -8,8 +8,6 @@ from hypernets.utils import logging
 
 logger = logging.get_logger(__name__)
 
-from collections import defaultdict
-from sklearn.metrics._scorer import _PredictScorer
 
 class TSGreedyEnsemble(GreedyEnsemble):
     """
