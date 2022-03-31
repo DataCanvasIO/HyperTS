@@ -52,7 +52,6 @@ class HyperTSEstimator(Estimator):
         self.class_balancing = None
         self.classes_ = None
         self.pos_label = None
-        self.history_prior = None
         self.transients_ = {}
 
         self._build_model(space_sample)
@@ -246,10 +245,6 @@ class HyperTSEstimator(Estimator):
             X_transformed = X
         self.model.fit(X_transformed, y, **kwargs)
 
-        if self.task in consts.TASK_LIST_FORECAST:
-            tb = get_tool_box(y)
-            self.history_prior = tb.df_mean_std(y)
-
         if self.classes_ is None and hasattr(self.model, 'classes_'):
             self.classes_ = self.model.classes_
 
@@ -272,7 +267,7 @@ class HyperTSEstimator(Estimator):
             X_transformed = X
 
         if self.cv_models_ is not None:
-            if self.task in consts.TASK_LIST_FORECAST+consts.TASK_LIST_REGRESSION:
+            if self.task in consts.TASK_LIST_REGRESSION:
                 pred_sum = None
                 for est in self.cv_models_:
                     pred = est.predict(X_transformed)
@@ -382,7 +377,7 @@ class HyperTSEstimator(Estimator):
                 pickle.dump(subself, output, protocol=pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
-    def _load(model_file, mode, cv, num_folds):
+    def _load(model_file, mode):
         if mode == consts.Mode_STATS:
             with fs.open(f'{model_file}', 'rb') as input:
                 estimator = pickle.load(input)
@@ -390,12 +385,11 @@ class HyperTSEstimator(Estimator):
             from hyperts.framework.dl.models import BaseDeepEstimator
             with fs.open(f'{model_file}', 'rb') as input:
                 estimator = pickle.load(input)
-            if not cv:
+            if estimator.cv_models_ is None:
                 model = BaseDeepEstimator.load_model(model_file)
                 estimator.model.model.model = model
             else:
-                for i in num_folds:
-                    est = estimator.cv_models_[i]
+                for est in estimator.cv_models_:
                     model = BaseDeepEstimator.load_model(model_file + '_' + est.group_id)
                     est.model.model = model
         return estimator
@@ -436,8 +430,6 @@ class HyperTS(HyperModel):
     def __init__(self,
                  searcher,
                  task=None,
-                 cv=False,
-                 num_folds=3,
                  mode='stats',
                  dispatcher=None,
                  callbacks=None,
@@ -446,8 +438,6 @@ class HyperTS(HyperModel):
                  data_cleaner_params=None,
                  clear_cache=False):
 
-        self.cv = cv
-        self.num_folds = num_folds
         self.mode = mode
         self.data_cleaner_params = data_cleaner_params
 
@@ -468,7 +458,7 @@ class HyperTS(HyperModel):
         return estimator
 
     def load_estimator(self, model_file):
-        return HyperTSEstimator._load(model_file, self.mode, self.cv, self.num_folds)
+        return HyperTSEstimator._load(model_file, self.mode)
 
     def _get_reward(self, value, key=None):
         def cast_float(value):

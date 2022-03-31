@@ -4,7 +4,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split as sklearn_tts
 from hypernets.tabular.toolbox import ToolBox
 
-from hyperts.utils import tscv_split
+
+from hyperts.utils import tscvsplit, ensemble
 from hyperts.utils import consts, metrics as metrics_
 from hyperts.utils.holidays import get_holidays
 
@@ -617,13 +618,22 @@ class TSToolBox(ToolBox):
 
     metrics = metrics_.Metrics
 
-    _preqfold_cls = tscv_split.PrequentialSplit
+    _preqfold_cls = tscvsplit.PrequentialSplit
+    _greedy_ensemble_cls = ensemble.TSGreedyEnsemble
+
 
     @classmethod
     def preqfold(cls, strategy='preq-bls', base_size=None, n_splits=5, stride=1, *, max_train_size=None,
                  test_size=None, gap_size=0):
         return cls._preqfold_cls(strategy=strategy, base_size=base_size, n_splits=n_splits, stride=stride,
                                  max_train_size=max_train_size, test_size=test_size, gap_size=gap_size)
+
+    @classmethod
+    def greedy_ensemble(cls, task, estimators, need_fit=False, n_folds=5, method='soft', random_state=9527,
+                        target_dims=1, scoring='neg_log_loss', ensemble_size=0):
+        return cls._greedy_ensemble_cls(task, estimators, need_fit=need_fit, n_folds=n_folds, method=method,
+                                        target_dims=target_dims, random_state=random_state, scoring=scoring,
+                                        ensemble_size=ensemble_size)
 
 
 def _infer_ts_freq(df: pd.DataFrame, ts_name: str = consts.TIMESTAMP):

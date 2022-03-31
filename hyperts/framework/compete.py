@@ -28,15 +28,18 @@ class TSFDataPreprocessStep(ExperimentStep):
 
     def __init__(self, experiment, name, timestamp_col=None, freq=None,
                  cv=False, covariate_cols=None, covariate_cleaner=None,
-                 train_data_periods=None):
+                 ensemble_size=None, train_data_periods=None):
         super().__init__(experiment, name)
 
         timestamp_col = [timestamp_col] if isinstance(timestamp_col, str) else timestamp_col
         covariate_cols = [covariate_cols] if isinstance(covariate_cols, str) else covariate_cols
 
         self.cv = cv
+        self.ensemble_size = ensemble_size
+
         self.freq = freq
         self.target_cols = None
+        self.history_prior = None
         self.covariate_cols = covariate_cols
         self.covariate_cleaner = covariate_cleaner
         self.train_data_periods = train_data_periods
@@ -68,12 +71,17 @@ class TSFDataPreprocessStep(ExperimentStep):
         X_train, y_train = train_Xy[excluded_cols], train_Xy[target_cols]
         self.step_progress('fit_transform train set')
 
+        self.history_prior = tb.df_mean_std(y_train)
+
         # 4. eval variables data process
         if not self.cv:
             if X_eval is None or y_eval is None:
                 if self.task in consts.TASK_LIST_FORECAST:
-                    if int(X_train.shape[0]*consts.DEFAULT_MIN_EVAL_SIZE)<=10 or isinstance(self.experiment.eval_size, int):
+                    period = tb.fft_infer_period(y_train.iloc[:, 0])
+                    if isinstance(self.experiment.eval_size, int):
                         eval_horizon = self.experiment.eval_size
+                    elif int(X_train.shape[0] * consts.DEFAULT_MIN_EVAL_SIZE) <= period:
+                        eval_horizon = period
                     else:
                         eval_horizon = consts.DEFAULT_MIN_EVAL_SIZE
                     X_train, X_eval, y_train, y_eval = \
@@ -267,38 +275,74 @@ class TSEnsembleStep(EnsembleStep):
     """Time Series Ensemble.
 
     """
-    def __init__(self, experiment, name, scorer=None, ensemble_size=7):
+    def __init__(self, experiment, name, scorer=None, ensemble_size=7, cv=False, retrain_on_wholedata=False):
         super().__init__(experiment, name, scorer=scorer, ensemble_size=ensemble_size)
+
+        self.cv = cv
+        self.retrain_on_wholedata = retrain_on_wholedata
 
     def build_estimator(self, hyper_model, X_train, y_train, X_eval=None, y_eval=None, **kwargs):
         trials = self.select_trials(hyper_model)
         estimators = [hyper_model.load_estimator(trial.model_file) for trial in trials]
         ensemble = self.get_ensemble(estimators, X_train, y_train)
 
-        if all(['oof' in trial.memo.keys() for trial in trials]):
-            logger.info('ensemble with oofs')
-            oofs = self.get_ensemble_predictions(trials, ensemble)
-            assert oofs is not None
-            if hasattr(oofs, 'shape'):
-                tb = get_tool_box(y_train, oofs)
-                y_, oofs_ = tb.select_valid_oof(y_train, oofs)
-                ensemble.fit(None, y_, oofs_)
-            else:
-                ensemble.fit(None, y_train, oofs)
-        else:
+        if X_eval is not None and y_eval is not None:
             ensemble.fit(X_eval, y_eval)
+        elif self.task in consts.TASK_LIST_FORECAST and self.cv:
+            tb = get_tool_box(X_train, y_train)
+            period = tb.fft_infer_period(y_train.iloc[:, 0])
+            if isinstance(self.experiment.eval_size, int):
+                eval_horizon = self.experiment.eval_size
+            elif int(X_train.shape[0] * consts.DEFAULT_MIN_EVAL_SIZE) <= period:
+                eval_horizon = period
+            else:
+                eval_horizon = consts.DEFAULT_MIN_EVAL_SIZE
+            X_train, X_eval, y_train, y_eval = \
+            tb.temporal_train_test_split(X_train, y_train, test_size=eval_horizon)
+            estimators = self.est_retrain(trials, hyper_model, X_train, y_train, **kwargs)
+            self.retrain_on_wholedata = False
+            ensemble.estimators = list(estimators)
+            ensemble.classes_ = None
+            ensemble.fit(X_eval, y_eval)
+        else:
+            ensemble.fit(X_train, y_train)
+
+        if self.retrain_on_wholedata:
+            estimators = self.est_retrain(trials, hyper_model, X_train, y_train, X_eval, y_eval, **kwargs)
+            ensemble.estimators = list(estimators)
+
+        if not isinstance(ensemble.weights_, list):
+            weights = np.sum(ensemble.weights_, axis=1)
+            estimators = np.where(weights > 0, estimators, None)
+            ensemble.estimators = list(estimators)
 
         return ensemble
 
     def get_ensemble(self, estimators, X_train, y_train):
         tb = get_tool_box(X_train, y_train)
+        target_dims = tb.get_shape(tb.DataFrame(y_train))[1]
         if self.task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_REGRESSION:
             ensemble_task = 'regression'
         elif 'binary' in self.task:
             ensemble_task = 'binary'
         else:
             ensemble_task = 'multiclass'
-        return tb.greedy_ensemble(ensemble_task, estimators, scoring=self.scorer, ensemble_size=self.ensemble_size)
+        return tb.greedy_ensemble(ensemble_task, estimators, target_dims=target_dims,
+                               scoring=self.scorer, ensemble_size=self.ensemble_size)
+
+    def est_retrain(self, trials, hyper_model, X_train, y_train, X_eval=None, y_eval=None, **kwargs):
+        estimators = []
+        if X_eval is not None or y_eval is not None:
+            tb = get_tool_box(X_train, X_eval)
+            X_all = tb.concat_df([X_train, X_eval], axis=0)
+            y_all = tb.concat_df([y_train, y_eval], axis=0)
+        else:
+            X_all, y_all = X_train, y_train
+        logger.info('Retrain the best trial model with all data ...')
+        for trial in trials:
+            estimator = hyper_model.final_train(trial.space_sample, X_all, y_all, **kwargs)
+            estimators.append(estimator)
+        return estimators
 
 
 class TSFinalTrainStep(FinalTrainStep):
@@ -364,7 +408,7 @@ class TSPipeline:
 
         self.sk_pipeline = sk_pipeline
         if self.task in consts.TASK_LIST_FORECAST:
-            self.prior = sk_pipeline.named_steps.estimator.history_prior
+            self.prior = sk_pipeline.named_steps.data_preprocessing.history_prior
             self.history = history
 
         self.kwargs = kwargs.copy()
@@ -386,18 +430,15 @@ class TSPipeline:
         """
         tb = get_tool_box(X)
         if self.task in consts.TASK_LIST_FORECAST:
-            if self.mode == consts.Mode_DL and forecast_start is not None:
-                self.history = copy.deepcopy(forecast_start)
-                X_timestamp_start = tb.to_datetime(tb.df_to_array(X[self.timestamp])[0])
-                forecast_timestamp_end = tb.to_datetime(tb.df_to_array(forecast_start[self.timestamp])[-1])
-                if X_timestamp_start < forecast_timestamp_end:
-                    raise ValueError(f'The start date of X [{X_timestamp_start}] should be after '
-                                     f'the end date of forecast_start [{forecast_timestamp_end}].')
-                forecast_start = self.__preprocess_forecast_start(forecast_start)
-                self.sk_pipeline.named_steps.estimator.model.model.forecast_start = forecast_start
-            elif self.mode == consts.Mode_DL and forecast_start is None:
-                forecast_start = self.__preprocess_forecast_start(self.history)
-                self.sk_pipeline.named_steps.estimator.model.model.forecast_start = forecast_start
+            if self.mode == consts.Mode_DL:
+                if forecast_start is not None:
+                    self.history = copy.deepcopy(forecast_start)
+                    X_timestamp_start = tb.to_datetime(tb.df_to_array(X[self.timestamp])[0])
+                    forecast_timestamp_end = tb.to_datetime(tb.df_to_array(forecast_start[self.timestamp])[-1])
+                    if X_timestamp_start <= forecast_timestamp_end:
+                        raise ValueError(f'The start date of X [{X_timestamp_start}] should be after '
+                                         f'the end date of forecast_start [{forecast_timestamp_end}].')
+                self.__preprocess_forecast_start(self.history)
 
             if X[self.timestamp].dtypes == object:
                 X[self.timestamp] = tb.to_datetime(X[self.timestamp])
@@ -455,6 +496,9 @@ class TSPipeline:
                       'display.max_rows', 10,
                       'display.float_format', lambda x: '%.4f' % x)
 
+        y_true = np.array(y_true) if not isinstance(y_true, np.ndarray) else y_true
+        y_proba = np.array(y_proba) if not isinstance(y_proba, np.ndarray) else y_proba
+
         if self.task in consts.TASK_LIST_FORECAST+consts.TASK_LIST_REGRESSION and metrics is None:
             metrics = ['mae', 'mse', 'rmse', 'mape', 'smape']
         elif self.task in consts.TASK_LIST_CLASSIFICATION and metrics is None:
@@ -464,7 +508,14 @@ class TSPipeline:
             tb = get_tool_box(y_pred)
             y_pred = tb.df_to_array(y_pred[self.target])
 
-        scores = calc_score(y_true, y_pred, y_proba=y_proba, metrics=metrics, task=self.task)
+        if 'binaryclass' in self.task:
+            task = 'binary'
+        elif 'multiclass' in self.task:
+            task = 'multiclass'
+        else:
+            task = self.task
+
+        scores = calc_score(y_true, y_pred, y_proba=y_proba, metrics=metrics, task=task)
 
         scores = pd.DataFrame.from_dict(scores, orient='index', columns=['Score'])
         scores = scores.reset_index().rename(columns={'index': 'Metirc'})
@@ -614,7 +665,6 @@ class TSPipeline:
                 2021-03-03    3.4
                 2021-03-04    6.7
                 2021-03-05    2.3
-        skip: Whether to skip generate time DataFrame.
         Returns
         -------
         X, y.
@@ -669,32 +719,44 @@ class TSPipeline:
             (covariate_1) indicates that it may not exist.
         """
 
+        def preprocess(X, y, estimator):
+            X = copy.deepcopy(X)
+            y = copy.deepcopy(y)
+            X = estimator.data_pipeline.transform(X)
+            y = estimator.model.transform(y)
+            X, y = estimator.model.model.meta.transform(X, y)
+            forecast_start = tb.concat_df([X, y], axis=1)
+
+            window_length = estimator.model.model.window
+            cont_column_names = estimator.model.model.meta.cont_column_names
+            cat_column_names = estimator.model.model.meta.cat_column_names
+            continuous_length = len(cont_column_names)
+            categorical_length = len(cat_column_names)
+            column_names = cont_column_names + cat_column_names
+            data = forecast_start.drop([self.timestamp], axis=1)
+            data = tb.df_to_array(data[column_names]).astype(consts.DATATYPE_TENSOR_FLOAT)
+            forecast_start = data[-window_length:].reshape(1, window_length, data.shape[1])
+            if categorical_length != 0:
+                X_cont_start = forecast_start[:, :, :continuous_length]
+                X_cat_start = forecast_start[:, :, continuous_length:]
+                forecast_start = [X_cont_start, X_cat_start]
+
+            return forecast_start
+
         # 1. transform
         tb = get_tool_box(forecast_start)
         X, y = self.split_X_y(forecast_start, smooth=True, impute=True)
         X = self.sk_pipeline.named_steps.data_preprocessing.transform(X)
-        X = self.sk_pipeline.named_steps.estimator.data_pipeline.transform(X)
-        y = self.sk_pipeline.named_steps.estimator.model.transform(y)
-        X, y = self.sk_pipeline.named_steps.estimator.model.model.meta.transform(X, y)
-        forecast_start = tb.concat_df([X, y], axis=1)
 
         # 2. perprocessing
-        estimator = self.sk_pipeline.named_steps.estimator
-        window = estimator.model.model.window
-        cont_column_names = estimator.model.model.meta.cont_column_names
-        cat_column_names = estimator.model.model.meta.cat_column_names
-        continuous_length = len(cont_column_names)
-        categorical_length = len(cat_column_names)
-        column_names = cont_column_names + cat_column_names
-        data = forecast_start.drop([self.timestamp], axis=1)
-        data = tb.df_to_array(data[column_names]).astype(consts.DATATYPE_TENSOR_FLOAT)
-        forecast_start = data[-window:].reshape(1, window, data.shape[1])
-        if categorical_length != 0:
-            X_cont_start = forecast_start[:, :, :continuous_length]
-            X_cat_start = forecast_start[:, :, continuous_length:]
-            forecast_start = [X_cont_start, X_cat_start]
-
-        return forecast_start
+        if hasattr(self.sk_pipeline.named_steps.estimator, 'ensemble_size'):
+            for estimator in self.sk_pipeline.named_steps.estimator.estimators:
+                if estimator is not None:
+                    forecast_start = preprocess(X, y, estimator)
+                    estimator.model.model.forecast_start = forecast_start
+        else:
+            forecast_start = preprocess(X, y, self.sk_pipeline.named_steps.estimator)
+            self.sk_pipeline.named_steps.estimator.model.model.forecast_start = forecast_start
 
 
 class TSCompeteExperiment(SteppedExperiment):
@@ -833,6 +895,7 @@ class TSCompeteExperiment(SteppedExperiment):
             steps.append(TSFDataPreprocessStep(self, consts.StepName_DATA_PREPROCESSING,
                                                freq=freq,
                                                cv=cv,
+                                               ensemble_size=ensemble_size,
                                                timestamp_col=timestamp_col,
                                                covariate_cols=cleaned_covariables,
                                                covariate_cleaner=covariate_cleaner,
@@ -846,18 +909,21 @@ class TSCompeteExperiment(SteppedExperiment):
                                        cv=cv,
                                        num_folds=num_folds))
 
-        # if ensemble_size is not None and ensemble_size > 1:
-        #     # ensemble step
-        #     tb = get_tool_box(X_train, y_train)
-        #     if scorer is None:
-        #         scorer = tb.metrics.metric_to_scorer(hyper_model.reward_metric, task=task,
-        #                  pos_label=kwargs.get('pos_label'), optimize_direction=optimize_direction)
-        #     steps.append(TSEnsembleStep(self, consts.StepName_FINAL_ENSEMBLE,
-        #                                 scorer=scorer,
-        #                                 ensemble_size=ensemble_size))
-        # else:
-        # final train step
-        steps.append(TSFinalTrainStep(self, consts.StepName_FINAL_TRAINING, retrain_on_wholedata=True))
+        # task not in consts.TASK_LIST_FORECAST and
+        if ensemble_size is not None and ensemble_size > 1:
+            # ensemble step
+            tb = get_tool_box(X_train, y_train)
+            if scorer is None:
+                scorer = tb.metrics.metric_to_scorer(hyper_model.reward_metric, task=task,
+                         pos_label=kwargs.get('pos_label'), optimize_direction=optimize_direction)
+            steps.append(TSEnsembleStep(self, consts.StepName_FINAL_ENSEMBLE,
+                                        scorer=scorer,
+                                        ensemble_size=ensemble_size,
+                                        cv=cv,
+                                        retrain_on_wholedata=False))
+        else:
+            # final train step
+            steps.append(TSFinalTrainStep(self, consts.StepName_FINAL_TRAINING, retrain_on_wholedata=True))
 
         # ignore warnings
         import warnings

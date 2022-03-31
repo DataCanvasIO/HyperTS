@@ -24,6 +24,7 @@ def make_experiment(train_data,
                     eval_size=0.2,
                     cv=False,
                     num_folds=3,
+                    ensemble_size=None,
                     target=None,
                     freq=None,
                     timestamp=None,
@@ -84,6 +85,10 @@ def make_experiment(train_data,
         Target feature name for training, which must be one of the train_data columns for classification[str],
         regression[str] or unvariate forecast task [list]. For multivariate forecast task, it is multiple columns
         of training data.
+    ensemble_size: 'int' or None, default None.
+        The number of estimator to ensemble. During the AutoML process, a lot of models will be generated with different
+        preprocessing pipelines, different models, and different hyperparameters. Usually selecting some of the models
+        that perform well to ensemble can obtain better generalization ability than just selecting the single best model.
     freq : 'str', DateOffset or None, default None.
         Note: If your task is a discontinuous time series, you can specify the freq as 'Discrete'.
     timestamp : str, forecast task 'timestamp' cannot be None, (default=None).
@@ -416,19 +421,29 @@ def make_experiment(train_data,
 
     # 8. Infer Forecast Window for DL Mode
     if mode in [consts.Mode_DL, consts.Mode_NAS] and task in consts.TASK_LIST_FORECAST and dl_forecast_window is None:
+        if forecast_train_data_periods is None:
+            X_train_length = len(X_train)
+        elif isinstance(forecast_train_data_periods, int) and forecast_train_data_periods < len(X_train):
+            X_train_length = forecast_train_data_periods
+        else:
+            raise ValueError(f'forecast_train_data_periods cannot be greater than {len(X_train)}.')
+
+        if cv is not None:
+            X_train_length = int(X_train_length // num_folds)
+
         if eval_data is not None:
-            max_win_size= int(len(X_eval) // 2 - dl_forecast_horizon)
+            max_win_size = min(int(len(X_eval) // 2 - dl_forecast_horizon), X_train_length*0.2//2 - dl_forecast_horizon)
         elif kwargs.get('eval_size') is not None and not isinstance(kwargs.get('eval_size'), int):
-            max_win_size = int(len(X_train)*(1-kwargs['eval_size'])*0.2//2 - dl_forecast_horizon)
+            max_win_size = int(X_train_length*(1-kwargs['eval_size'])*0.2//2 - dl_forecast_horizon)
         elif kwargs.get('eval_size') is not None and isinstance(kwargs.get('eval_size'), int):
-            max_win_size = int((len(X_train)-kwargs['eval_size'])*0.2//2 - dl_forecast_horizon)
+            max_win_size = int((X_train_length-kwargs['eval_size'])*0.2//2 - dl_forecast_horizon)
         elif isinstance(forecast_train_data_periods, int) and forecast_train_data_periods < len(X_train):
             if isinstance(kwargs.get('eval_size'), int):
                 max_win_size = int((forecast_train_data_periods-kwargs['eval_size'])*0.2//2 - dl_forecast_horizon)
             else:
                 max_win_size = int(forecast_train_data_periods*(1-kwargs['eval_size'])*0.2//2 - dl_forecast_horizon)
         else:
-            max_win_size = int(len(X_train)*consts.DEFAULT_EVAL_SIZE // 2 - dl_forecast_horizon)
+            max_win_size = int(X_train_length*consts.DEFAULT_EVAL_SIZE // 2 - dl_forecast_horizon)
 
         if max_win_size < 1:
             logger.warning('The trian data is too short to start dl mode, '
@@ -441,12 +456,12 @@ def make_experiment(train_data,
         hist_store_upper_limit = consts.HISTORY_UPPER_LIMIT
 
     # 9. Task Type Infering
-    if task in consts.Task_FORECAST and len(y_train.columns) == 1:
+    if task in [consts.Task_FORECAST] and len(y_train.columns) == 1:
         task = consts.Task_UNIVARIATE_FORECAST
-    elif task in consts.Task_FORECAST and len(y_train.columns) > 1:
+    elif task in [consts.Task_FORECAST] and len(y_train.columns) > 1:
         task = consts.Task_MULTIVARIATE_FORECAST
 
-    if task in consts.Task_CLASSIFICATION:
+    if task in [consts.Task_CLASSIFICATION]:
         if y_train.nunique() == 2:
             if len(X_train.columns) == 1:
                 task = consts.Task_UNIVARIATE_BINARYCLASS
@@ -519,8 +534,8 @@ def make_experiment(train_data,
     # 18. Define hyper_model
     if hyper_model_options is None:
         hyper_model_options = {}
-    hyper_model = hyper_ts_cls(searcher, mode=mode, reward_metric=reward_metric, task=task, cv=cv,
-                   callbacks=search_callbacks, discriminator=discriminator, **hyper_model_options)
+    hyper_model = hyper_ts_cls(searcher, mode=mode, reward_metric=reward_metric, task=task,
+            callbacks=search_callbacks, discriminator=discriminator, **hyper_model_options)
 
     # 19. Build Experiment
     experiment = TSCompeteExperiment(hyper_model, X_train=X_train, y_train=y_train, X_eval=X_eval, y_eval=y_eval,
@@ -530,7 +545,7 @@ def make_experiment(train_data,
                                      optimize_direction=optimize_direction, scorer=scorer,
                                      id=id, forecast_train_data_periods=forecast_train_data_periods,
                                      hist_store_upper_limit=hist_store_upper_limit,
-                                     callbacks=callbacks, **kwargs)
+                                     ensemble_size=ensemble_size, callbacks=callbacks, **kwargs)
 
     # 20. Clear Cache
     if clear_cache:

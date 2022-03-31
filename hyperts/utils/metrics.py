@@ -199,7 +199,7 @@ def _task_to_average(task):
 
 
 def calc_score(y_true, y_preds, y_proba=None, metrics=('accuracy',), task=const.TASK_BINARY,
-               pos_label=1, classes=None, average=None):
+               pos_label=None, classes=None, average=None):
     score = {}
     if y_proba is None:
         y_proba = y_preds
@@ -218,7 +218,7 @@ def calc_score(y_true, y_preds, y_proba=None, metrics=('accuracy',), task=const.
             recall_options['pos_label'] = 'true'
         else:
             recall_options['pos_label'] = y_true[0]
-        logger.warning(f"pos_label is not specified and defaults to {recall_options['pos_label']}.")
+        logger.info(f"pos_label is not specified and defaults to {recall_options['pos_label']}.")
     elif task in [const.TASK_BINARY, const.TASK_MULTICLASS] and pos_label is not None:
         if pos_label in y_true:
             recall_options['pos_label'] = pos_label
