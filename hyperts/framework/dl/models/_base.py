@@ -191,7 +191,7 @@ class BaseDeepEstimator(object):
             self.earlystop_patience = kwargs.get('earlystop_patience')
         if kwargs.get('embedding_output_dim') is not None and kwargs.get('embedding_output_dim') > 0:
             self.embedding_output_dim = kwargs.get('embedding_output_dim')
-        if kwargs.get('rnn_type') is not None and isinstance(kwargs.get('monitor_metric'), str):
+        if kwargs.get('rnn_type') is not None and isinstance(kwargs.get('rnn_type'), str):
             self.rnn_type = kwargs.get('rnn_type')
         if kwargs.get('rnn_units') is not None and kwargs.get('rnn_units') > 0:
             self.rnn_units = kwargs.get('rnn_units')
@@ -213,6 +213,8 @@ class BaseDeepEstimator(object):
             self.cnn_filters = kwargs.get('cnn_filters')
         if kwargs.get('kernel_size') is not None and kwargs.get('kernel_size') > 0:
             self.kernel_size = kwargs.get('kernel_size')
+        if kwargs.get('skip_rnn_type') is not None and isinstance(kwargs.get('skip_rnn_type'), str):
+            self.skip_rnn_type = kwargs.get('skip_rnn_type')
         if kwargs.get('skip_rnn_units') is not None and kwargs.get('skip_rnn_units') > 0:
             self.skip_rnn_units = kwargs.get('skip_rnn_units')
         if kwargs.get('skip_rnn_layers') is not None and kwargs.get('skip_rnn_layers') > 0:
@@ -436,7 +438,8 @@ class BaseDeepEstimator(object):
         X_valid, y_valid = self._dataloader(self.task, X_val, y_val, self.window, self.horizon, self.forecast_length,
                                             is_train=False)
 
-        callbacks = self._inject_callbacks(callbacks, epochs, self.reducelr_patience, self.earlystop_patience)
+        callbacks = self._inject_callbacks(callbacks, epochs, self.reducelr_patience, self.earlystop_patience,
+                                           verbose=verbose)
 
         model, history = self._fit(X_train, y_train, X_valid, y_valid, epochs=epochs, batch_size=batch_size,
                                    initial_epoch=initial_epoch,

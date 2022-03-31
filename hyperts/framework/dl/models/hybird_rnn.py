@@ -34,7 +34,7 @@ def HybirdRNNModel(task, window, rnn_type, continuous_columns, categorical_colum
     out_activation : Str - Forecast the task output activation function,
                  optional {'linear', 'sigmoid'}, default = 'linear'.
     summary    : Bool - Whether to output network structure information,
-                 default = True.
+                 default = False.
     """
     K.clear_session()
     continuous_inputs, categorical_inputs = layers.build_input_head(window, continuous_columns, categorical_columns)

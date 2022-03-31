@@ -28,10 +28,10 @@ def DeepARModel(task, window, rnn_type, continuous_columns, categorical_columns,
     rnn_units  : Positive Int - The dimensionality of the output space for RNN.
     rnn_layers : Positive Int - The number of the layers for RNN.
     drop_rate  : Float between 0 and 1 - The rate of Dropout for neural nets.
-    nb_outputs : Int, Only and default 1.
-    nb_steps   : Int, The step length of forecast, only and default 1.
+    nb_outputs : Positive Int, Only and default 1.
+    nb_steps   : Positive Int, The step length of forecast, only and default 1.
     summary    : Bool - Whether to output network structure information,
-                 default = True.
+                 default = False.
     """
 
     if task not in consts.TASK_LIST_FORECAST:

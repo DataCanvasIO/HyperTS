@@ -46,7 +46,7 @@ def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categ
     out_activation : Str - Forecast the task output activation function,
                  optional {'linear', 'sigmoid'}, default = 'linear'.
     summary    : Bool - Whether to output network structure information,
-                 default = True.
+                 default = False.
 
     """
     K.clear_session()
