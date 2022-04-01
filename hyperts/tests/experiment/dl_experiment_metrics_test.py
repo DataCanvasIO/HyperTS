@@ -88,6 +88,7 @@ def multivariate_binaryclass(metric):
                           target=target,
                           pos_label='notstanding',
                           reward_metric=reward_metric,
+                          random_state=2022,
                           optimize_direction=optimize_direction)
 
     model = exp.run(max_trials=1, epochs=2, final_train_epochs=2)
@@ -117,6 +118,7 @@ def multivariate_multiclass(metric):
                           target=target,
                           pos_label='standing',
                           reward_metric=reward_metric,
+                          random_state=2022,
                           optimize_direction=optimize_direction)
 
     model = exp.run(max_trials=1, epochs=2, final_train_epochs=2)
