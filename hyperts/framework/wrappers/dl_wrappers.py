@@ -14,7 +14,7 @@ class DeepARWrapper(EstimatorWrapper, WrapperMixin):
     """
     def __init__(self, fit_kwargs, **kwargs):
         super(DeepARWrapper, self).__init__(fit_kwargs, **kwargs)
-        self.update_dl_kwargs()
+        self.update_fit_kwargs()
         self.model = DeepAR(**self.init_kwargs)
 
     def fit(self, X, y=None, **kwargs):
@@ -45,8 +45,9 @@ class HybirdRNNWrapper(EstimatorWrapper, WrapperMixin):
     Adapt: forecast, classification and regression.
     """
     def __init__(self, fit_kwargs, **kwargs):
+        kwargs = self.update_init_kwargs(**kwargs)
         super(HybirdRNNWrapper, self).__init__(fit_kwargs, **kwargs)
-        self.update_dl_kwargs()
+        self.update_fit_kwargs()
         self.model = HybirdRNN(**self.init_kwargs)
 
     def fit(self, X, y=None, **kwargs):
@@ -87,8 +88,9 @@ class LSTNetWrapper(EstimatorWrapper, WrapperMixin):
     Adapt: forecast, classification and regression.
     """
     def __init__(self, fit_kwargs, **kwargs):
+        kwargs = self.update_init_kwargs(**kwargs)
         super(LSTNetWrapper, self).__init__(fit_kwargs, **kwargs)
-        self.update_dl_kwargs()
+        self.update_fit_kwargs()
         self.model = LSTNet(**self.init_kwargs)
 
     def fit(self, X, y=None, **kwargs):

@@ -328,31 +328,31 @@ class TSToolBox(ToolBox):
         freq: str or DateOffset.
         """
         if freq in 'W' or 'W-' in freq or 'WOM-' in freq:
-            window = list(filter(lambda x: x<=max_size, [1, 2, 3, 4, 5, 6, 7]))
+            window = list(filter(lambda x: x<=max_size, [2, 3, 4, 5, 6, 7]))
         elif freq in ['SM', 'M', 'MS', 'SMS', 'BM', 'CBM', 'CBMS', '15D']:
-            window = list(filter(lambda x: x <= max_size, [1, 3, 6, 12, 24]))
+            window = list(filter(lambda x: x <= max_size, [2, 3, 6, 12, 24]))
         elif 'Q' in freq or 'Q-' in freq or 'BQ' in freq or 'BQ-' in freq or 'QS-' in freq or 'BQS-' in freq:
-            window = list(filter(lambda x: x <= max_size, [1, 4, 8, 12, 16]))
+            window = list(filter(lambda x: x <= max_size, [2, 4, 8, 12, 16]))
         elif freq in ['A', 'Y'] or 'A-' in freq or 'BA-' in freq or 'AS-' in freq or 'BAS-' in freq:
-            window = list(filter(lambda x: x<=max_size, [1, 3, 6, 12, 24]))
+            window = list(filter(lambda x: x<=max_size, [2, 3, 6, 12, 24]))
         elif 'S' in freq or 'T' in freq or 'min' in freq:
-            window = list(filter(lambda x: x<=max_size, [1, 5, 10, 30, 60]))
+            window = list(filter(lambda x: x<=max_size, [2, 5, 10, 30, 60]))
         elif 'H' in freq:
-            window = list(filter(lambda x: x<=max_size, [1, 6, 12, 24, 48]))
+            window = list(filter(lambda x: x<=max_size, [2, 6, 12, 24, 48]))
         elif 'BH' in freq or '8H' in freq:
-            window = list(filter(lambda x: x<=max_size, [1, 4, 8, 16, 24]))
+            window = list(filter(lambda x: x<=max_size, [2, 4, 8, 16, 24]))
         elif 'D' in freq:
-            window = list(filter(lambda x: x<=max_size, [1, 7, 14, 21]))
+            window = list(filter(lambda x: x<=max_size, [2, 7, 14, 21]))
         elif freq in ['C', 'B']:
-            window = list(filter(lambda x: x<=max_size, [1, 5, 10, 15, 20]))
+            window = list(filter(lambda x: x<=max_size, [2, 5, 10, 15, 20]))
         elif 'L' in freq or 'U' in freq or 'N' in freq or 'ms' in freq:
-            window = list(filter(lambda x: x <= max_size, [1, 10, 50, 100, 500, 1000]))
+            window = list(filter(lambda x: x <= max_size, [2, 10, 50, 100, 500, 1000]))
         else:
-            window = list(filter(lambda x: x <= max_size, [1, 3, 5, 7, 12, 24]))
+            window = list(filter(lambda x: x <= max_size, [2, 3, 5, 7, 12, 24]))
 
         expand_window = _expand_list(freq=freq, pre_list=window)
 
-        final_win_list = expand_window + [max_size, max_size//2, max_size//4]
+        final_win_list = expand_window + [max_size//2, max_size//3, max_size//4]
 
         return final_win_list
 
@@ -679,7 +679,7 @@ def _impute(values, offsets):
 def _expand_list(freq, pre_list):
     try:
         import re
-        s = int(re.findall('\d+', freq)[0])
+        s = int(re.findall(r'\d+', freq)[0])
         return list(map(lambda x: x // s + 1, pre_list))
     except:
         return pre_list

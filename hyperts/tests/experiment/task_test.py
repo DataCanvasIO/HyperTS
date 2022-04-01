@@ -5,9 +5,9 @@ from hypernets.core.searcher import OptimizeDirection
 from hypernets.searchers.random_searcher import RandomSearcher
 from hyperts.framework.compete import TSCompeteExperiment
 
-from hyperts.micro_search_space import (search_space_univariate_forecast_generator,
-                                       search_space_multivariate_forecast_generator,
-                                       search_space_multivariate_classification)
+from hyperts.framework.search_space.micro_search_space import (search_space_univariate_forecast_generator,
+                                                               search_space_multivariate_forecast_generator,
+                                                               search_space_multivariate_classification)
 
 from hyperts.datasets import (load_random_univariate_forecast_dataset,
                               load_random_multivariate_forecast_dataset,

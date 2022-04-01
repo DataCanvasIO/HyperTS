@@ -7,14 +7,14 @@ import numpy as np
 from hyperts.config import Config as cfg
 from hyperts.utils import consts
 from hyperts.utils.transformers import TimeSeriesHyperTransformer
-from hyperts.estimators import (ProphetForecastEstimator,
-                                ARIMAForecastEstimator,
-                                VARForecastEstimator,
-                                TSFClassificationEstimator,
-                                KNNClassificationEstimator,
-                                DeepARForecastEstimator,
-                                HybirdRNNGeneralEstimator,
-                                LSTNetGeneralEstimator)
+from hyperts.framework.estimators import (ProphetForecastEstimator,
+                                          ARIMAForecastEstimator,
+                                          VARForecastEstimator,
+                                          TSFClassificationEstimator,
+                                          KNNClassificationEstimator,
+                                          DeepARForecastEstimator,
+                                          HybirdRNNGeneralEstimator,
+                                          LSTNetGeneralEstimator)
 
 from hypernets.tabular import column_selector as tcs
 from hypernets.core.ops import HyperInput, ModuleChoice, Optional
@@ -412,7 +412,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
             'y_log': Choice(['logx', 'log-none']),
-            'y_scale': Choice(['min_max', 'max_abs'])
+            'y_scale': Choice(['min_max', 'max_abs', 'z_scale'])
         }
 
     @property
@@ -437,11 +437,10 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'rnn_type': Choice(['simple_rnn', 'gru', 'lstm']),
             'rnn_units': Choice([8, 16, 32, 64, 128, 256]),
             'rnn_layers': Choice([1, 2, 3, 4, 5]),
-            'out_activation': Choice(['linear', 'sigmoid']),
             'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
             'y_log': Choice(['logx', 'log-none']),
-            'y_scale': Choice(['min_max', 'max_abs'])
+            'y_scale': Choice(['min_max', 'max_abs', 'z_scale'])
         }
 
     @property
@@ -471,14 +470,13 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'skip_rnn_units': Choice([8, 16, 32, 64]),
             'rnn_layers': Choice([1, 2, 3, 4, 5]),
             'skip_rnn_layers': Choice([1, 2, 3, 4, 5]),
-            'out_activation': Choice(['linear', 'sigmoid']),
             'drop_rate': Choice([0., 0.1, 0.2]),
             'skip_period': Choice([1, 3, 5]),
             'ar_order': Choice([1, 3, 5]),
             'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
             'y_log': Choice(['logx', 'log-none']),
-            'y_scale': Choice(['min_max', 'max_abs'])
+            'y_scale': Choice(['min_max', 'max_abs', 'z_scale'])
         }
 
     @property

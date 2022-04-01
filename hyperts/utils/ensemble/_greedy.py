@@ -31,7 +31,7 @@ class TSGreedyEnsemble(GreedyEnsemble):
         self.best_stack_ = None
         self.hits_ = None
 
-    def _score(self, y_ture, y_preds, n_jobs=1):
+    def _score(self, y_ture, y_preds, n_jobs=-1):
         fn = joblib.delayed(self.scorer._score_func)
         paral = joblib.Parallel(n_jobs=n_jobs)
         rs = paral(fn(y_ture, p, **self.scorer._kwargs) for p in y_preds)

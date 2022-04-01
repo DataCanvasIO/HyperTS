@@ -145,7 +145,17 @@ class WrapperMixin:
             inverse_X = self.transformers._inverse_transform(X)
         return inverse_X
 
-    def update_dl_kwargs(self):
+    def update_init_kwargs(self, **kwargs):
+        if kwargs.get('y_scale') is not None:
+            if kwargs.get('y_scale') is 'min_max':
+                kwargs['out_activation'] = 'sigmoid'
+            elif kwargs.get('y_scale') is 'max_abs':
+                kwargs['out_activation'] = 'tanh'
+            else:
+                kwargs['out_activation'] = 'linear'
+        return kwargs
+
+    def update_fit_kwargs(self):
         if self.init_kwargs.get('batch_size'):
             self.fit_kwargs.update({'batch_size': self.init_kwargs.pop('batch_size')})
         if self.init_kwargs.get('epochs'):

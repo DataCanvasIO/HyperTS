@@ -286,8 +286,17 @@ class TSEnsembleStep(EnsembleStep):
         estimators = [hyper_model.load_estimator(trial.model_file) for trial in trials]
         ensemble = self.get_ensemble(estimators, X_train, y_train)
 
-        if X_eval is not None and y_eval is not None:
-            ensemble.fit(X_eval, y_eval)
+        if self.task not in consts.TASK_LIST_FORECAST and \
+            all(['oof' in trial.memo.keys() for trial in trials]):
+            logger.info('ensemble with oofs')
+            oofs = self.get_ensemble_predictions(trials, ensemble)
+            assert oofs is not None
+            if hasattr(oofs, 'shape'):
+                tb = get_tool_box(y_train, oofs)
+                y_, oofs_ = tb.select_valid_oof(y_train, oofs)
+                ensemble.fit(None, y_, oofs_)
+            else:
+                ensemble.fit(None, y_train, oofs)
         elif self.task in consts.TASK_LIST_FORECAST and self.cv:
             tb = get_tool_box(X_train, y_train)
             period = tb.fft_infer_period(y_train.iloc[:, 0])
@@ -303,6 +312,8 @@ class TSEnsembleStep(EnsembleStep):
             self.retrain_on_wholedata = False
             ensemble.estimators = list(estimators)
             ensemble.classes_ = None
+            ensemble.fit(X_eval, y_eval)
+        elif X_eval is not None and y_eval is not None:
             ensemble.fit(X_eval, y_eval)
         else:
             ensemble.fit(X_train, y_train)

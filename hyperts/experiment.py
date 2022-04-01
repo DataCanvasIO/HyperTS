@@ -211,11 +211,11 @@ def make_experiment(train_data,
             metrics = 'auto'
 
         if mode == consts.Mode_STATS and task in consts.TASK_LIST_FORECAST:
-            from hyperts.macro_search_space import StatsForecastSearchSpace
+            from hyperts.framework.search_space.macro_search_space import StatsForecastSearchSpace
 
             search_pace = StatsForecastSearchSpace(task=task, timestamp=timestamp, covariables=covariables)
         elif mode == consts.Mode_STATS and task in consts.TASK_LIST_CLASSIFICATION:
-            from hyperts.macro_search_space import StatsClassificationSearchSpace
+            from hyperts.framework.search_space.macro_search_space import StatsClassificationSearchSpace
 
             search_pace = StatsClassificationSearchSpace(task=task, timestamp=timestamp)
         elif mode == consts.Mode_STATS and task in consts.TASK_LIST_REGRESSION:
@@ -223,12 +223,12 @@ def make_experiment(train_data,
                 'STATSRegressionSearchSpace is not implemented yet.'
             )
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_FORECAST:
-            from hyperts.macro_search_space import DLForecastSearchSpace
+            from hyperts.framework.search_space.macro_search_space import DLForecastSearchSpace
 
             search_pace = DLForecastSearchSpace(task=task, timestamp=timestamp, metrics=metrics, covariables=covariables,
                                                 window=dl_forecast_window, horizon=dl_forecast_horizon)
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_CLASSIFICATION:
-            from hyperts.macro_search_space import DLClassificationSearchSpace
+            from hyperts.framework.search_space.macro_search_space import DLClassificationSearchSpace
 
             search_pace = DLClassificationSearchSpace(task=task, timestamp=timestamp, metrics=metrics)
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_REGRESSION:
@@ -426,24 +426,17 @@ def make_experiment(train_data,
         elif isinstance(forecast_train_data_periods, int) and forecast_train_data_periods < len(X_train):
             X_train_length = forecast_train_data_periods
         else:
-            raise ValueError(f'forecast_train_data_periods cannot be greater than {len(X_train)}.')
+            raise ValueError(f'forecast_train_data_periods can not be greater than {len(X_train)}.')
 
-        if cv is not None:
+        if cv:
             X_train_length = int(X_train_length // num_folds)
 
         if eval_data is not None:
-            max_win_size = min(int(len(X_eval) // 2 - dl_forecast_horizon), X_train_length*0.2//2 - dl_forecast_horizon)
-        elif kwargs.get('eval_size') is not None and not isinstance(kwargs.get('eval_size'), int):
-            max_win_size = int(X_train_length*(1-kwargs['eval_size'])*0.2//2 - dl_forecast_horizon)
-        elif kwargs.get('eval_size') is not None and isinstance(kwargs.get('eval_size'), int):
-            max_win_size = int((X_train_length-kwargs['eval_size'])*0.2//2 - dl_forecast_horizon)
-        elif isinstance(forecast_train_data_periods, int) and forecast_train_data_periods < len(X_train):
-            if isinstance(kwargs.get('eval_size'), int):
-                max_win_size = int((forecast_train_data_periods-kwargs['eval_size'])*0.2//2 - dl_forecast_horizon)
-            else:
-                max_win_size = int(forecast_train_data_periods*(1-kwargs['eval_size'])*0.2//2 - dl_forecast_horizon)
+            max_win_size = int((X_train_length + dl_forecast_horizon - 1) / 2)
+        elif isinstance(eval_size, int):
+            max_win_size = int((X_train_length - eval_size + dl_forecast_horizon - 1) / 2)
         else:
-            max_win_size = int(X_train_length*consts.DEFAULT_EVAL_SIZE // 2 - dl_forecast_horizon)
+            max_win_size = int((X_train_length * (1 - eval_size) + dl_forecast_horizon - 1) / 2)
 
         if max_win_size < 1:
             logger.warning('The trian data is too short to start dl mode, '

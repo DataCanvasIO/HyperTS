@@ -395,20 +395,15 @@ class BaseDeepEstimator(object):
         if validation_data is not None:
             validation_data = self.meta.transform(*validation_data)
 
-        if validation_data is None:
-            if self.task in consts.TASK_LIST_FORECAST:
-                validation_split = max(int(len(X)*validation_split), 2*self.window-self.forecast_length+1)
-                X, X_val, y, y_val = tb.temporal_train_test_split(X, y, test_size=validation_split)
-                X = tb.concat_df([X, X_val], axis=0)
-                y = tb.concat_df([y, y_val], axis=0)
-            else:
-                X, X_val, y, y_val = tb.random_train_test_split(X, y, test_size=validation_split)
-        else:
             if len(validation_data) != 2:
                 raise ValueError(f'Unexpected validation_data length, expected 2 but {len(validation_data)}.')
-            X_val, y_val = validation_data[0], validation_data[1]
-            if len(X_val) < 2*self.window-self.forecast_length+1:
-                raise ValueError('The valid data length cannot be smaller than the winow plus forecast_length size.')
+            else:
+                X_val, y_val = validation_data[0], validation_data[1]
+                X = tb.concat_df([X, X_val], axis=0)
+                y = tb.concat_df([y, y_val], axis=0)
+        validation_length = int(len(X) * validation_split)
+        if validation_length <= 0:
+            raise RuntimeError(f'The train set must not be less than {int(1/validation_split)}.')
 
         if batch_size is None:
             data_num = int(len(X))
@@ -428,18 +423,24 @@ class BaseDeepEstimator(object):
             steps_per_epoch = len(X) // batch_size - 1
             if steps_per_epoch == 0:
                 steps_per_epoch = 1
+
         if validation_steps is None:
-            validation_steps = len(X_val) // batch_size - 1
+            validation_steps = validation_length // batch_size - 1
             if validation_steps <= 1:
                 validation_steps = 1
 
-        X_train, y_train = self._dataloader(self.task, X, y, self.window, self.horizon, self.forecast_length,
-                                            is_train=True)
-        X_valid, y_valid = self._dataloader(self.task, X_val, y_val, self.window, self.horizon, self.forecast_length,
-                                            is_train=False)
+        X_train, y_train = self._dataloader(self.task, X, y, self.window, self.horizon, self.forecast_length)
 
-        callbacks = self._inject_callbacks(callbacks, epochs, self.reducelr_patience, self.earlystop_patience,
-                                           verbose=verbose)
+        if self.task in consts.TASK_LIST_FORECAST:
+            if isinstance(X_train, list):
+                X_valid = [x[-validation_length:] for x in X_train]
+            else:
+                X_valid = X_train[-validation_length:]
+            y_valid = y_train[-validation_length:]
+        else:
+            X_train, X_valid, y_train, y_valid = tb.random_train_test_split(X_train, y_train, test_size=validation_length)
+
+        callbacks = self._inject_callbacks(callbacks, epochs, self.reducelr_patience, self.earlystop_patience, verbose)
 
         model, history = self._fit(X_train, y_train, X_valid, y_valid, epochs=epochs, batch_size=batch_size,
                                    initial_epoch=initial_epoch,
@@ -659,7 +660,7 @@ class BaseDeepEstimator(object):
         model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
         return model
 
-    def _dataloader(self, task, X, y, window=1, horizon=1, forecast_length=1, is_train=True):
+    def _dataloader(self, task, X, y, window=1, horizon=1, forecast_length=1, is_train=False):
         """ Load data set.
 
         Parameters
@@ -722,7 +723,7 @@ class BaseDeepEstimator(object):
                     X_cat_start = self.forecast_start[:, :, continuous_length:]
                     self.forecast_start = [X_cont_start, X_cat_start]
         else:
-            if is_train:
+            if not is_train:
                 tb = get_tool_box(X)
                 self.window = tb.get_shape(X)[1]
             X_data = X.astype(consts.DATATYPE_TENSOR_FLOAT)
