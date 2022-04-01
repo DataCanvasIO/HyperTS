@@ -146,7 +146,7 @@ class VARWrapper(EstimatorWrapper, WrapperMixin):
             raise ValueError('The end date of the valid set must be '
                              'less than the end date of the test set.')
         steps = int((last_date - self._end_date).total_seconds() / self._freq)
-        predict_result = self.model.forecast(self.model.y, steps=steps)
+        predict_result = self.model.forecast(self.model.endog, steps=steps)
 
         def calc_index(date):
             r_i = int((date - self._end_date).total_seconds() / self._freq) - 1
