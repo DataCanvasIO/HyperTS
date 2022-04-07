@@ -58,7 +58,7 @@ HyperTS可以被用来解决时序预测、分类及回归任务, 它们公用�
 
 .. code-block:: python
 
-    from hyperts.experiment import make_experiment
+    from hyperts import make_experiment
 
 .. code-block:: python
 

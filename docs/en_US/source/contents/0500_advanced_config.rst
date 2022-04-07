@@ -54,7 +54,7 @@ Example codes:
   
   If the exact task type is known, the specific name is recommended to assign to the function argument. For example, ``task='univariate-forecast'``. If not, using the general type name, ``task='classification'``, also works. 
 
-
+------------------
 
 Select the Run Mode
 =============================
@@ -81,7 +81,7 @@ The deep learning method is based on the Tensorfolw framework, which processes i
                               dl_gpu_usage_strategy=1,
                               ...)                            
 
-
+------------------
 
 Set the Evaluation Metric
 =================================
@@ -108,7 +108,7 @@ Currently, ``reward_metric`` supports the following criterion:
 - Classification: accuracy, auc, f1, precision, recall, logloss。
 - Forecasting and regression: mae, mse, rmse, mape, smape, msle, r2。
 
-
+------------------
 
 Set the Optimization Direction
 ================================
@@ -123,7 +123,7 @@ The searcher needs an indication of the optimization direction ('min' or 'max').
                               optimize_direction='max',
                               ...)                            
 
-
+------------------
 
 Set the Max Search Trials
 ============================
@@ -136,7 +136,7 @@ The default search trials is only three to obtain quick results. In practice, to
                               max_trials=100,
                               ...)                     
 
-
+------------------
 
 Set the Early Stopping Strategy
 ===============================
@@ -154,8 +154,9 @@ The early stopping strategy could define three different criterions to stop the 
                               early_stopping_time_limit=3600 * 3,  # set the max search time is three hours
                               ...)    
                         
+------------------
 
-Define the positive label
+Define the Positive Label
 ============================
 
 To evaluate the performance of binary classification task, most evaluation criterions requre known positive labels. HyperTS could identify regular positive labels, like '1', 'yes',and 'true'. For irregular labels, we recommed to define it by argument ``pos_label``. See example:
@@ -167,6 +168,7 @@ To evaluate the performance of binary classification task, most evaluation crite
                               pos_label='up',
                               ...)   
 
+------------------
 
 Define the Evaluation Dataset
 ==============================
@@ -177,7 +179,9 @@ The evaluation dataset is split from the training dataset by default. Users coul
 
   experiment = make_experiment(train_data, 
                               eval_size=0.3,
-                              ...)                           
+                              ...) 
+
+Note that for time series forecasting tasks, ``eval_size`` can be a positive integer.
 
 Besides, users could define a certain dataset as evaluation dataset by setting the argument ``eval_data``. 
 
@@ -187,7 +191,7 @@ Besides, users could define a certain dataset as evaluation dataset by setting t
                               eval_data=eval_data,
                               ...)                            
 
-
+------------------
 
 Define a Searcher
 ======================
@@ -202,12 +206,12 @@ HyperTS performs the model selection and hyperparameter search by the built-in s
 
 For more details of the search algorithms, please refer to the section `Search Algorithm <https://hypernets.readthedocs.io/en/latest/searchers.html>`_.
 
-
+------------------
 
 Set the Time Frequency
 =======================
 
-For time series forecasting task, users could set the desired time frequency by the argument ``freq``. The provided options are second (`S`), minute('T')、hour('H')、day('D')、week('W')、month('M') and year('Y'). If the frequency information is missing, it will adjust according to ``timestamp``.
+For time series forecasting tasks, users could set the desired time frequency by the argument ``freq``. The provided options are second (`S`), minute('T')、hour('H')、day('D')、week('W')、month('M') and year('Y'). If the frequency information is missing, it will adjust according to ``timestamp``.
 
 .. code-block:: python
 
@@ -217,8 +221,7 @@ For time series forecasting task, users could set the desired time frequency by 
                               freq='H',
                               ...) 
 
-
-
+------------------
 
 Set the Time Window
 =============================
@@ -234,7 +237,7 @@ When selecting the deep learning mode, users could set argument ``dl_forecast_wi
                               dl_forecast_window=24*7,
                               ...)                            
 
-
+------------------
 
 Fix the Random Seed
 ==========================
@@ -247,7 +250,7 @@ Sometimes, the codes need to be re-executed. In order to keep the random numbers
                               random_state=0,
                               ...)                            
 
-
+------------------
 
 Set the Log Level
 =======================
@@ -260,3 +263,99 @@ The progress messages during training can be printed by the argument ``log_level
                               log_level='INFO', 
                               verbose=1,
                               ...)                            
+
+------------------
+
+Discrete Time Series Forecasting
+=================================
+
+In some time series forecasting tasks, there may be no regular time frequency, i.e., discontinuous sampling. At this point, users can set ``mode='dl'`` and ``freq='null'`` to run ``experiment``.
+
+.. code-block:: python
+
+  experiment = make_experiment(train_data, 
+                              task='forecast',
+                              timestamp='TimeStamp',
+                              freq='null',
+                              ...) 
+
+------------------
+
+Forecasting Without Timestamp Column
+=====================================
+
+For some time series forecasting data, there might be timestamp column, that is, only the target columns and covariates are contained. In this case, users could set ``timestamp='null'`` to run ``experiment``.
+
+.. code-block:: python
+
+  experiment = make_experiment(train_data, 
+                              task='forecast',
+                              timestamp='null',
+                              ...) 
+
+In addition, if the sampling frequency of data is known, it is recommeded to specify it by parameter ``freq``, which will facilitate data processing.
+
+------------------
+
+Forecasting Train Data Cut Off
+===============================
+
+In the time series forecasting task, if the early too long historical data is involved in the training of the model, it may affect the final performance due to concept drift. ``forecast_train_data_periods`` can cut off the data for the specified period from the end of the training data forward.
+
+.. code-block:: python
+
+  experiment = make_experiment(train_data, 
+                              task='forecast',
+                              mode='stats',
+                              timestamp='TimeStamp',
+                              forecast_train_data_periods=24*10,
+                              ...)    
+
+------------------
+
+Set Cross Validation
+=====================
+
+To enhance the robustness of the model, users can specify whether to enable cross-validation through the parameter ``cv``. When ``cv`` is set to ``True``, it means that cross-validation is enabled, and the number of folds can be set by the parameter ``num_folds`` (default: 3).
+
+.. code-block:: python
+
+  experiment = make_experiment(train_data, 
+                              cv==True,
+                              num_folds=5,
+                              ...) 
+
+------------------
+
+Ensemble Models
+================
+
+In order to obtain better model performace, ``make_experiment`` can enable the model ensemble feature when creating an experiment, that is, specify the number of optimal models participating in the ensemble through the parameter ``ensemble_size``. When ``ensemble_size`` is set to ``None`` then model fusion is disabled (default).
+
+.. code-block:: python
+
+  experiment = make_experiment(train_data, 
+                              ensemble_size=10,
+                              max_trials=100,
+                              ...)       
+
+
+------------------
+
+Non-Invasive Parameters Tuning
+==============================
+
+The built-in model of HyperTS has some hyperparameters, which are generally fixed or optimized by the searcher from the search space. In some cases, we need to tune certain parameters, such as epochs, batch_size, learning_rate, etc., with minimal cost based on experience. In order to solve this problem, we can achieve this goal by assigning a value to ``run()``, so as to achieve non-invasive control parameters.
+
+.. code-block:: python
+
+  experiment = make_experiment(train_data,
+                              task='forecast' 
+                              mode='dl',
+                              ...) 
+
+  model = experiment.run(epochs=100,
+                        final_train_epochs=200,
+                        batch_size=32, 
+                        learning_rate=0.01,
+                        dl_forecast_window=48)

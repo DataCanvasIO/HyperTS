@@ -1,5 +1,5 @@
 Quick Start
-########
+############
 
 HyperTS is a subtool of DataCanvas AutoML Toolkit(DAT), which is based on the general frameowrk  `Hypernets <https://github.com/DataCanvasIO/Hypernets>`_.  Similar to `HyperGBM <https://github.com/DataCanvasIO/HyperGBM>`_ (another subtool for structured tabular data), HyperTS follows the same rules of both ``make_experiment`` API and ``scikit-learn`` model API. In general, an experiment is created after the data is ready. Then a trained model can be simply obtained by command ``run()``. To analyze the model, HyperTS also supports the functions like ``predict()``, ``evaluate()`` and ``plot()``.  
 The figure below shows the ``make_experiment`` workflow of HyperTS:
@@ -56,7 +56,7 @@ An experiment is firsty created by ``make_experiment`` with several user-defined
 
 .. code-block:: python
 
-    from hyperts.experiment import make_experiment
+    from hyperts import make_experiment
 
 .. code-block:: python
 
@@ -73,9 +73,9 @@ An experiment is firsty created by ``make_experiment`` with several user-defined
     
     - The train_data is defined as ``train_data=train_data.copy()``;
 
-    - The task is time series forecasting： ``task='forecast'``;
+    - The task is time series forecasting: ``task='forecast'``;
 
-    - The name of timestamp column is TimeStamp： ``timestamp='TimeStamp'``;
+    - The name of timestamp column is TimeStamp: ``timestamp='TimeStamp'``;
 
     - The names of the covariates columns are  ``covariables=['HourSin', 'WeekCos', 'CBWD']``;
 

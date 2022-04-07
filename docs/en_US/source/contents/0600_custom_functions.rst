@@ -11,7 +11,7 @@ When creating an experiment, the evaluation criterion could be set by the argume
 
 .. code-block:: python
 
-    from hyperts.experiment import make_experiment
+    from hyperts import make_experiment
 
     experiment = make_experiment(train_data, 
                                 task='forecast',
@@ -79,7 +79,6 @@ Approach two:
     In this case, the ``scorer`` is required. 
 
 
-
 User-defined Search Space
 =========================
 
@@ -105,7 +104,7 @@ Code example:
 .. code-block:: python
 
     from hypernets.core.search_space import Choice, Int, Real
-    from hyperts.macro_search_space import StatsForecastSearchSpace
+    from hyperts.framework.macro_search_space import StatsForecastSearchSpace
 
     custom_search_space = StatsForecastSearchSpace(task='univariate-forecast', 
                                                 timestamp='TimeStamp',
@@ -250,7 +249,7 @@ Estimator connectes the algorithm model and search space. It defines the hyperpa
 
     from hyperts.utils import consts
     from hyperts.framework.wrappers import HybirdRNNWrapper
-    from hyperts.estimators import HyperEstimator
+    from hyperts.framework.estimators import HyperEstimator
 
     class TransformerWrapper(HybirdRNNWrapper):
 
@@ -312,14 +311,14 @@ Estimator connectes the algorithm model and search space. It defines the hyperpa
             return transformer
 
 4.  Build the Search Space
-************
+***************************
 
 Add the estimator to the search space, in which the hyperparameters also could be defined properly to ensure the performance.  
 
 .. code-block:: python
 
     from hypernets.core.search_space import Choice, Real
-    from hyperts.macro_search_space import DLForecastSearchSpace
+    from hyperts.framework.macro_search_space import DLForecastSearchSpace
 
 
     class DLForecastSearchSpacePlusTransformer(DLForecastSearchSpace):
@@ -363,11 +362,11 @@ Add the estimator to the search space, in which the hyperparameters also could b
 
 
 5. Execute the Experiment with Custom Search Space
-**********************
+***************************************************
 
 .. code-block:: python
 
-    from hyperts.experiment import make_experiment
+    from hyperts import make_experiment
     from hyperts.datasets import load_network_traffic
     from sklearn.model_selection import train_test_split
 

@@ -82,7 +82,7 @@ Below is the overview of all features and run modes of HyperTS:
    , Transformer —> DL mode | uni/multi-variate | forecasting/classification/regression  | covariates, , √
    , NAS —> NAS | uni/multi-variate | forecasting/classification/regression  | covariates, , √
    Evaluation methods, Train-Validation-Holdout, √
-   , Rolling-Window-Evaluation, , √
-   Model ensemble, GreedyEnsemble, , √
+   , Rolling-Window-Evaluation, √
+   Model ensemble, GreedyEnsemble, √
    Visualization, Forecasting curve, √
    , Forecasting trends and seasonality, , √

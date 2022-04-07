@@ -78,7 +78,7 @@ HyperTS的功能特性清单及各种的运行模式的支持情况如下表:
    , Transformer —> 深度学习 | 单/多变量 | 预测/分类/回归 | 协变量, , √
    , NAS —> 神经架构搜索 | 单/多变量 | 预测/分类/回归 | 协变量, , √
    评估方法, Train-Validation-Holdout验证, √
-   , Rolling-Window-Evaluation验证, , √
-   模型融合, GreedyEnsemble, , √
+   , Rolling-Window-Evaluation验证, √
+   模型融合, GreedyEnsemble, √
    可视化分析, 绘制预测曲线, √
    , 绘制预测趋势、季节性, , √

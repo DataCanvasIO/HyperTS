@@ -370,7 +370,7 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
 
 .. code-block:: python
 
-    from hyperts.experiment import make_experiment
+    from hyperts import make_experiment
     from hyperts.datasets import load_network_traffic
     from sklearn.model_selection import train_test_split
 
