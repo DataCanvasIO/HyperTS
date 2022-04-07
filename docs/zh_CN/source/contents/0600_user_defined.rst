@@ -10,7 +10,7 @@ HyperTS除了使用内置的算法外, 还支持用户自定义部分功能, 以
 
 .. code-block:: python
 
-    from hyperts.experiment import make_experiment
+    from hyperts import make_experiment
 
     experiment = make_experiment(train_data, 
                                 task='forecast',
@@ -106,7 +106,7 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
 .. code-block:: python
 
     from hypernets.core.search_space import Choice, Int, Real
-    from hyperts.macro_search_space import StatsForecastSearchSpace
+    from hyperts.framework.macro_search_space import StatsForecastSearchSpace
 
     custom_search_space = StatsForecastSearchSpace(task='univariate-forecast', 
                                                 timestamp='TimeStamp',
@@ -251,7 +251,7 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
 
     from hyperts.utils import consts
     from hyperts.framework.wrappers import HybirdRNNWrapper
-    from hyperts.estimators import HyperEstimator
+    from hyperts.framework.estimators import HyperEstimator
 
     class TransformerWrapper(HybirdRNNWrapper):
 
@@ -320,7 +320,7 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
 .. code-block:: python
 
     from hypernets.core.search_space import Choice, Real
-    from hyperts.macro_search_space import DLForecastSearchSpace
+    from hyperts.framework.macro_search_space import DLForecastSearchSpace
 
 
     class DLForecastSearchSpacePlusTransformer(DLForecastSearchSpace):
