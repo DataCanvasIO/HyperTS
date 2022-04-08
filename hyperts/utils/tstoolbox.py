@@ -354,7 +354,13 @@ class TSToolBox(ToolBox):
 
         final_win_list = expand_window + [max_size//2, max_size//3, max_size//4]
 
-        return final_win_list
+        while 0 in final_win_list:
+            final_win_list.remove(0)
+
+        if len(final_win_list) != 0:
+            return final_win_list
+        else:
+            raise RuntimeError('Unable to infer the sliding window size of dl, please specify dl_forecast_window.')
 
     @staticmethod
     def fft_infer_period(data: pd.DataFrame):
