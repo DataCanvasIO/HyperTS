@@ -40,6 +40,7 @@ jobs:
         conda install scikit-learn==0.24.2
         conda install -y -c conda-forge sktime==0.8.1
         conda install -y -c conda-forge prophet==1.0.1
+        conda install -y -c conda-forge python-geohash
         pip install -q featuretools==0.27.1
         pip install -q git+https://github.com/DataCanvasIO/Hypernets
         pip install -q -r requirements.txt

@@ -23,11 +23,13 @@ except ImportError:
 def set_random_state(seed=9527, mode=consts.Mode_STATS):
     import os, random
     import numpy as np
+    from hypernets.core import set_random_state
 
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     os.environ['TF_DETERMINISTIC_OPS'] = '1'
     np.random.seed(seed)
+    set_random_state(seed)
 
     if mode == consts.Mode_DL:
         try:
