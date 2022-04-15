@@ -76,6 +76,8 @@ class Losses(collections.UserDict):
             'log_gaussian_loss': losses.LogGaussianLoss(),
             'mape': losses.MeanAbsolutePercentageError(),
             'mean_absolute_percentage_error': losses.MeanAbsolutePercentageError(),
+            'smape': losses.SymmetricMeanAbsolutePercentageError(),
+            'symmetric_mean_absolute_percentage_error': losses.SymmetricMeanAbsolutePercentageError(),
             'categorical_crossentropy': losses.CategoricalCrossentropy(),
             'binary_crossentropy': losses.BinaryCrossentropy(),
         }
@@ -191,12 +193,6 @@ class BaseDeepEstimator(object):
             self.earlystop_patience = kwargs.get('earlystop_patience')
         if kwargs.get('embedding_output_dim') is not None and kwargs.get('embedding_output_dim') > 0:
             self.embedding_output_dim = kwargs.get('embedding_output_dim')
-        if kwargs.get('rnn_type') is not None and isinstance(kwargs.get('rnn_type'), str):
-            self.rnn_type = kwargs.get('rnn_type')
-        if kwargs.get('rnn_units') is not None and kwargs.get('rnn_units') > 0:
-            self.rnn_units = kwargs.get('rnn_units')
-        if kwargs.get('rnn_layers') is not None and kwargs.get('rnn_layers') > 0:
-            self.rnn_layers = kwargs.get('rnn_layers')
         if kwargs.get('loss') is not None and isinstance(kwargs.get('loss'), str):
             self.loss = kwargs.get('loss')
         if kwargs.get('learning_rate') is not None and kwargs.get('learning_rate') > 0:
@@ -205,24 +201,10 @@ class BaseDeepEstimator(object):
             self.learning_rate = kwargs.get('lr')
         if kwargs.get('optimizer') is not None and isinstance(kwargs.get('optimizer'), str):
             self.optimizer = kwargs.get('optimizer')
-        if kwargs.get('drop_rate') is not None and kwargs.get('drop_rate') >= 0:
-            self.drop_rate = kwargs.get('drop_rate')
-        if kwargs.get('summary') is not None and isinstance(kwargs.get('summary'), str):
+        if kwargs.get('summary') is not None and isinstance(kwargs.get('summary'), bool):
             self.summary = kwargs.get('summary')
-        if kwargs.get('cnn_filters') is not None and kwargs.get('cnn_filters') > 0:
-            self.cnn_filters = kwargs.get('cnn_filters')
-        if kwargs.get('kernel_size') is not None and kwargs.get('kernel_size') > 0:
-            self.kernel_size = kwargs.get('kernel_size')
-        if kwargs.get('skip_rnn_type') is not None and isinstance(kwargs.get('skip_rnn_type'), str):
-            self.skip_rnn_type = kwargs.get('skip_rnn_type')
-        if kwargs.get('skip_rnn_units') is not None and kwargs.get('skip_rnn_units') > 0:
-            self.skip_rnn_units = kwargs.get('skip_rnn_units')
-        if kwargs.get('skip_rnn_layers') is not None and kwargs.get('skip_rnn_layers') > 0:
-            self.skip_rnn_layers = kwargs.get('skip_rnn_layers')
-        if kwargs.get('skip_period') is not None and kwargs.get('skip_period') > 0:
-            self.skip_period = kwargs.get('skip_period')
-        if kwargs.get('ar_order') is not None and kwargs.get('ar_order') > 0:
-            self.ar_order = kwargs.get('ar_order')
+
+        self.model_kwargs = {**self.model_kwargs, **kwargs}
 
     def fit(self,
             X,
@@ -477,7 +459,7 @@ class BaseDeepEstimator(object):
             raise ValueError('X is missing the timestamp columns.')
 
         if steps < self.forecast_length:
-            raise ValueError(f'Forecast steps {steps} cannot be'
+            raise ValueError(f'Forecast steps {steps} cannot be '
                              f'less than forecast length {self.forecast_length}.')
 
         if X.shape[1] >= 1:
@@ -691,17 +673,15 @@ class BaseDeepEstimator(object):
             data = tb.concat_df([y, X], axis=1).drop([self.timestamp], axis=1)
             data = tb.df_to_array(data[column_names]).astype(consts.DATATYPE_TENSOR_FLOAT)
             if window < forecast_length:
-                raise RuntimeError('window must not be smaller than forecast_length.')
-            else:
-                sequence_length = window
-            target_start = sequence_length - horizon + 1
+                logger.warning('window must not be smaller than forecast_length, reset forecast_length=1.')
+                forecast_length = 1
+            target_start = window - horizon + 1
             inputs = data[:-target_start]
             targets = data[target_start:]
             sequences = from_array_to_timeseries(data=inputs,
                                                  targets=targets,
                                                  forecast_length=forecast_length,
-                                                 sequence_length=sequence_length)
-
+                                                 sequence_length=window)
             try:
                 X_data, y_data = [], []
                 for _, batch in enumerate(sequences):
@@ -713,7 +693,7 @@ class BaseDeepEstimator(object):
             except:
                 raise ValueError(f'Reset forecast window, which should be less than {len(X)//2}.')
             if not is_train:
-                self.forecast_start = data[-sequence_length:].reshape(1, sequence_length, data.shape[1])
+                self.forecast_start = data[-window:].reshape(1, window, data.shape[1])
             if categorical_length != 0:
                 X_cont = X_data[:, :, :continuous_length]
                 X_cat = X_data[:, :, continuous_length:]

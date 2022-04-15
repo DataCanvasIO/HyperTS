@@ -13,7 +13,7 @@ logger = logging.get_logger(__name__)
 
 def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categorical_columns,
         cnn_filters, kernel_size, rnn_units, rnn_layers, skip_rnn_units, skip_rnn_layers, skip_period,
-        ar_order, drop_rate=0., nb_outputs=1, nb_steps=1, out_activation='linear', summary=False, **kwargs):
+        ar_order, drop_rate=0., nb_outputs=1, nb_steps=1, out_activation='linear', **kwargs):
     """Long-and Short-term Time-series Network Model (LSTNet).
 
     Parameters
@@ -38,15 +38,13 @@ def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categ
     rnn_layers : Positive Int - The number of the layers for RNN.
     skip_rnn_units : Positive Int - The dimensionality of the output space for skip RNN.
     skip_rnn_layers : Positive Int - The number of the layers for skip RNN.
-    skip_period: Positive Int or None - The length of skip for recurrent neural network.
+    skip_period: Positive Int or 0 - The length of skip for recurrent neural network.
     ar_order   : Positive Int or None - The window size of the autoregressive component.
     drop_rate  : Float between 0 and 1 - The rate of Dropout for neural nets.
     nb_outputs : Int, default 1.
     nb_steps   : Int, The step length of forecast, default 1.
     out_activation : Str - Forecast the task output activation function,
                  optional {'linear', 'sigmoid'}, default = 'linear'.
-    summary    : Bool - Whether to output network structure information,
-                 default = False.
 
     """
     K.clear_session()
@@ -67,8 +65,6 @@ def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categ
         kernel_size = 1
         logger.warning('kernel_size cannot be larger than window, so it is reset to 1.')
 
-    pt = int((window - kernel_size + 1) / skip_period) if skip_period > 0 else 0
-
     c = layers.SeparableConv1D(cnn_filters, kernel_size, activation='relu', name='conv1d')(x)
     c = layers.Dropout(rate=drop_rate, name='conv1d_dropout')(c)
 
@@ -76,7 +72,7 @@ def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categ
     r = layers.Lambda(lambda k: K.reshape(k, (-1, rnn_units)), name=f'lambda_{rnn_type}')(r)
     r = layers.Dropout(rate=drop_rate, name=f'lambda_{rnn_type}_dropout')(r)
 
-    if skip_period*pt > 0:
+    if skip_period > 0:
         pt = max(int((window - kernel_size + 1) / skip_period), 1)
         s = layers.Lambda(lambda k: k[:, int(-pt*skip_period):, :], name=f'lambda_skip_{rnn_type}_0')(c)
         s = layers.Lambda(lambda k: K.reshape(k, (-1, pt, skip_period, cnn_filters)), name=f'lambda_skip_{rnn_type}_1')(s)
@@ -89,6 +85,11 @@ def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categ
                                         name=f'lambda_skip_{rnn_type}_4')(s)
         s = layers.Dropout(rate=drop_rate, name=f'lambda_skip_{rnn_type}_dropout')(s)
         r = layers.Concatenate(name=f'{rnn_type}_concat_skip_{rnn_type}')([r, s])
+    else:
+        s = layers.GRU(skip_rnn_units, return_sequences=True, name='attention_gru')(c)
+        s = layers.FeedForwardAttention(name='ffattention')(s)
+        r = layers.Concatenate(name=f'{rnn_type}_concat_attention_gru')([r, s])
+
     outputs = layers.build_output_tail(r, task, nb_outputs, nb_steps)
 
     if task in consts.TASK_LIST_FORECAST and nb_steps == 1 and ar_order > 0 and ar_order < window:
@@ -102,8 +103,7 @@ def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categ
 
     all_inputs = list(continuous_inputs.values()) + list(categorical_inputs.values())
     model = Model(inputs=all_inputs, outputs=[outputs], name=f'LSTNet')
-    if summary:
-        model.summary()
+
     return model
 
 
@@ -130,8 +130,8 @@ class LSTNet(BaseDeepEstimator):
                  default = 16.
     skip_rnn_layers : Positive Int - The number of the layers for skip recurrent neural network,
                  default = 1.
-    skip_period: Positive Int or None - The length of skip for recurrent neural network,
-                 default = None.
+    skip_period: Positive Int or 0 - The length of skip for recurrent neural network,
+                 default = 0.
     ar_order   : Positive Int or None - The window size of the autoregressive component,
                  default = None.
     drop_rate  : Float between 0 and 1 - The rate of Dropout for neural nets,
@@ -229,26 +229,28 @@ class LSTNet(BaseDeepEstimator):
                                      categorical_columns=categorical_columns)
 
     def _build_estimator(self, **kwargs):
-        return LSTNetModel(task=self.task,
-                           window=self.window,
-                           rnn_type=self.rnn_type,
-                           skip_rnn_type=self.skip_rnn_type,
-                           continuous_columns=self.continuous_columns,
-                           categorical_columns=self.categorical_columns,
-                           cnn_filters=self.cnn_filters,
-                           kernel_size=self.kernel_size,
-                           rnn_units=self.rnn_units,
-                           rnn_layers=self.rnn_layers,
-                           skip_rnn_units=self.skip_rnn_units,
-                           skip_rnn_layers=self.skip_rnn_layers,
-                           skip_period=self.skip_period,
-                           ar_order=self.ar_order,
-                           drop_rate=self.drop_rate,
-                           nb_outputs=self.meta.classes_,
-                           nb_steps=self.forecast_length,
-                           out_activation=self.out_activation,
-                           summary=self.summary,
-                           **kwargs)
+        model_params = {
+            'task': self.task,
+            'window': self.window,
+            'rnn_type': self.rnn_type,
+            'skip_rnn_type': self.skip_rnn_type,
+            'continuous_columns': self.continuous_columns,
+            'categorical_columns': self.categorical_columns,
+            'cnn_filters': self.cnn_filters,
+            'kernel_size': self.kernel_size,
+            'rnn_units': self.rnn_units,
+            'rnn_layers': self.rnn_layers,
+            'skip_rnn_units': self.skip_rnn_units,
+            'skip_rnn_layers': self.skip_rnn_layers,
+            'skip_period': self.skip_period,
+            'ar_order': self.ar_order,
+            'drop_rate': self.drop_rate,
+            'nb_outputs': self.meta.classes_,
+            'nb_steps': self.forecast_length,
+            'out_activation': self.out_activation
+        }
+        model_params = {**model_params, **self.model_kwargs, **kwargs}
+        return LSTNetModel(**model_params)
 
     def _fit(self, train_X, train_y, valid_X, valid_y, **kwargs):
         train_ds = self._from_tensor_slices(X=train_X, y=train_y,
@@ -259,7 +261,12 @@ class LSTNet(BaseDeepEstimator):
                                             batch_size=kwargs.pop('batch_size'),
                                             epochs=kwargs['epochs'],
                                             shuffle=False)
-        model = self._build_estimator()
+        model = self._build_estimator(**kwargs)
+
+        if self.summary and kwargs['verbose'] != 0:
+            model.summary()
+        else:
+            logger.info(f'Number of current LSTNet params: {model.count_params()}')
 
         model = self._compile_model(model, self.optimizer, self.learning_rate)
 

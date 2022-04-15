@@ -7,10 +7,12 @@ from hyperts.utils import consts
 from hyperts.framework.dl import layers
 from hyperts.framework.dl.models import Model, BaseDeepEstimator
 
+from hypernets.utils import logging
+logger = logging.get_logger(__name__)
+
 
 def HybirdRNNModel(task, window, rnn_type, continuous_columns, categorical_columns,
-        rnn_units, rnn_layers, drop_rate=0., nb_outputs=1, nb_steps=1, out_activation='linear',
-        summary=False, **kwargs):
+        rnn_units, rnn_layers, drop_rate=0., nb_outputs=1, nb_steps=1, out_activation='linear', **kwargs):
     """SimpleRNN|GRU|LSTM Model (HybirdRNN).
 
     Parameters
@@ -33,8 +35,6 @@ def HybirdRNNModel(task, window, rnn_type, continuous_columns, categorical_colum
     nb_steps   : Int, The step length of forecast, default 1.
     out_activation : Str - Forecast the task output activation function,
                  optional {'linear', 'sigmoid'}, default = 'linear'.
-    summary    : Bool - Whether to output network structure information,
-                 default = False.
     """
     K.clear_session()
     continuous_inputs, categorical_inputs = layers.build_input_head(window, continuous_columns, categorical_columns)
@@ -54,8 +54,7 @@ def HybirdRNNModel(task, window, rnn_type, continuous_columns, categorical_colum
 
     all_inputs = list(continuous_inputs.values()) + list(categorical_inputs.values())
     model = Model(inputs=all_inputs, outputs=[outputs], name=f'HybirdRNN-{rnn_type}')
-    if summary:
-        model.summary()
+
     return model
 
 
@@ -158,19 +157,21 @@ class HybirdRNN(BaseDeepEstimator):
                                         categorical_columns=categorical_columns)
 
     def _build_estimator(self, **kwargs):
-        return HybirdRNNModel(task=self.task,
-                              window=self.window,
-                              rnn_type=self.rnn_type,
-                              continuous_columns=self.continuous_columns,
-                              categorical_columns=self.categorical_columns,
-                              rnn_units=self.rnn_units,
-                              rnn_layers=self.rnn_layers,
-                              drop_rate=self.drop_rate,
-                              nb_outputs=self.meta.classes_,
-                              nb_steps=self.forecast_length,
-                              out_activation=self.out_activation,
-                              summary=self.summary,
-                              **kwargs)
+        model_params = {
+            'task': self.task,
+            'window': self.window,
+            'rnn_type': self.rnn_type,
+            'continuous_columns': self.continuous_columns,
+            'categorical_columns': self.categorical_columns,
+            'rnn_units': self.rnn_units,
+            'rnn_layers': self.rnn_layers,
+            'drop_rate': self.drop_rate,
+            'nb_outputs': self.meta.classes_,
+            'nb_steps': self.forecast_length,
+            'out_activation': self.out_activation,
+        }
+        model_params = {**model_params, **self.model_kwargs, **kwargs}
+        return HybirdRNNModel(**model_params)
 
     def _fit(self, train_X, train_y, valid_X, valid_y, **kwargs):
         train_ds = self._from_tensor_slices(X=train_X, y=train_y,
@@ -182,6 +183,11 @@ class HybirdRNN(BaseDeepEstimator):
                                             epochs=kwargs['epochs'],
                                             shuffle=False)
         model = self._build_estimator()
+
+        if self.summary and kwargs['verbose'] != 0:
+            model.summary()
+        else:
+            logger.info(f'Number of current Hypird-{self.rnn_type} params: {model.count_params()}')
 
         model = self._compile_model(model, self.optimizer, self.learning_rate)
 

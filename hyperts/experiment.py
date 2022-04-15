@@ -106,7 +106,7 @@ def make_experiment(train_data,
     callbacks: list of ExperimentCallback, optional.
         ExperimentCallback list.
     searcher : str, searcher class, search object, optional.
-        The hypernets Searcher instance to explore search space, default is EvolutionSearcher instance.
+        The hypernets Searcher instance to explore search space, default is MCTSSearcher instance.
         For str, should be one of 'evolution', 'mcts', 'random'.
         For class, should be one of EvolutionSearcher, MCTSSearcher, RandomSearcher, or subclass of hypernets Searcher.
         For other, should be instance of hypernets Searcher.
@@ -156,9 +156,9 @@ def make_experiment(train_data,
     random_state : int or None, default None.
     clear_cache: bool, optional, (default False)
         Clear cache store before running the expeirment.
-    verbose : int, 0, 1, or 2, (default=None).
+    verbose : int, 0, 1, or 2, (default=1).
         0 = silent, 1 = progress bar, 2 = one line per epoch (DL mode).
-        Print order selection output to the screen
+        Print order selection output to the screen.
     log_level : int, str, or None, (default=None),
         Level of logging, possible values:
             -logging.CRITICAL
@@ -188,10 +188,13 @@ def make_experiment(train_data,
 
     def to_search_object(searcher, search_space):
         from hypernets.core.searcher import Searcher as SearcherSpec
-        from hypernets.searchers import EvolutionSearcher
+        from hypernets.searchers import EvolutionSearcher, MCTSSearcher
 
         if searcher is None:
-            searcher = default_searcher(EvolutionSearcher, search_space, searcher_options)
+            if mode == consts.Mode_STATS:
+                searcher = default_searcher(EvolutionSearcher, search_space, searcher_options)
+            else:
+                searcher = default_searcher(MCTSSearcher, search_space, searcher_options)
         elif isinstance(searcher, (type, str)):
             searcher = default_searcher(searcher, search_space, searcher_options)
         elif not isinstance(searcher, SearcherSpec):
@@ -316,7 +319,8 @@ def make_experiment(train_data,
 
     if mode != consts.Mode_STATS:
         try:
-            import tensorflow
+            from tensorflow import __version__
+            logger.info('tensorflow==' + str(__version__))
         except ImportError:
             raise RuntimeError('Please install `tensorflow` package first. command: pip install tensorflow.')
 
@@ -376,6 +380,8 @@ def make_experiment(train_data,
             kwargs['train_end_date'] = pseudo_timestamp[timestamp].max()
             kwargs['generate_freq'] = generate_freq
 
+        if (freq is not None and 'N' in freq) or 'N' in tb.infer_ts_freq(train_data, ts_name=timestamp):
+            timestamp_format = None
         train_data[timestamp] = tb.datetime_format(train_data[timestamp], format=timestamp_format)
         if eval_data is not None:
             eval_data[timestamp] = tb.datetime_format(eval_data[timestamp], format=timestamp_format)
@@ -443,8 +449,17 @@ def make_experiment(train_data,
                            'stats mode has been automatically switched.')
             mode = consts.Mode_STATS
         else:
-            dl_forecast_window = tb.infer_window_size(max_size=max_win_size, freq=freq)
-        hist_store_upper_limit = max_win_size
+            import numpy as np
+            if max_win_size <= 10:
+                dl_forecast_window = list(filter(lambda x: x <= max_win_size, [2, 4, 6, 8, 10]))
+            else:
+                dl_forecast_window = list(filter(lambda x: x <= max_win_size, [12, 24, 48, 60, 72, 96, 168]))
+            periods = [tb.fft_infer_period(y_train[col]) for col in target]
+            period = int(np.argmax(np.bincount(periods)))
+            if period > 0 and period <= max_win_size:
+                dl_forecast_window += [period]
+            logger.info(f'The forecast window length of DL mode list is: {dl_forecast_window}')
+        hist_store_upper_limit = max_win_size + 1
     else:
         hist_store_upper_limit = consts.HISTORY_UPPER_LIMIT
 

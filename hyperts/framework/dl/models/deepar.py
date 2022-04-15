@@ -7,10 +7,12 @@ from hyperts.utils import consts
 from hyperts.framework.dl import layers
 from hyperts.framework.dl.models import Model, BaseDeepEstimator
 
+from hypernets.utils import logging
+logger = logging.get_logger(__name__)
+
 
 def DeepARModel(task, window, rnn_type, continuous_columns, categorical_columns,
-        rnn_units, rnn_layers, drop_rate=0., nb_outputs=1, nb_steps=1,
-        summary=False, **kwargs):
+        rnn_units, rnn_layers, drop_rate=0., nb_outputs=1, nb_steps=1, **kwargs):
     """Deep AutoRegressive Model (DeepAR).
 
     Parameters
@@ -30,8 +32,6 @@ def DeepARModel(task, window, rnn_type, continuous_columns, categorical_columns,
     drop_rate  : Float between 0 and 1 - The rate of Dropout for neural nets.
     nb_outputs : Positive Int, Only and default 1.
     nb_steps   : Positive Int, The step length of forecast, only and default 1.
-    summary    : Bool - Whether to output network structure information,
-                 default = False.
     """
 
     if task not in consts.TASK_LIST_FORECAST:
@@ -57,8 +57,7 @@ def DeepARModel(task, window, rnn_type, continuous_columns, categorical_columns,
 
     all_inputs = list(continuous_inputs.values()) + list(categorical_inputs.values())
     model = Model(inputs=all_inputs, outputs=[outputs], name='DeepAR')
-    if summary:
-        model.summary()
+
     return model
 
 
@@ -122,7 +121,7 @@ class DeepAR(BaseDeepEstimator):
                  monitor_metric='val_loss',
                  optimizer='auto',
                  learning_rate=0.001,
-                 loss='log_gaussian_loss',
+                 loss='auto',
                  reducelr_patience=5,
                  earlystop_patience=10,
                  summary=True,
@@ -155,18 +154,20 @@ class DeepAR(BaseDeepEstimator):
                                      categorical_columns=categorical_columns)
 
     def _bulid_estimator(self, **kwargs):
-        return DeepARModel(task=self.task,
-                           window=self.window,
-                           rnn_type=self.rnn_type,
-                           continuous_columns=self.continuous_columns,
-                           categorical_columns=self.categorical_columns,
-                           rnn_units=self.rnn_units,
-                           rnn_layers=self.rnn_layers,
-                           drop_rate=self.drop_rate,
-                           nb_outputs=self.meta.classes_,
-                           nb_steps=self.forecast_length,
-                           summary=self.summary,
-                           **kwargs)
+        model_params = {
+            'task': self.task,
+            'window': self.window,
+            'rnn_type': self.rnn_type,
+            'continuous_columns': self.continuous_columns,
+            'categorical_columns': self.categorical_columns,
+            'rnn_units': self.rnn_units,
+            'rnn_layers': self.rnn_layers,
+            'drop_rate': self.drop_rate,
+            'nb_outputs': self.meta.classes_,
+            'nb_steps': self.forecast_length
+        }
+        model_params = {**model_params, **self.model_kwargs, **kwargs}
+        return DeepARModel(**model_params)
 
     def _fit(self, train_X, train_y, valid_X, valid_y, **kwargs):
         train_ds = self._from_tensor_slices(X=train_X, y=train_y,
@@ -177,7 +178,12 @@ class DeepAR(BaseDeepEstimator):
                                             batch_size=kwargs.pop('batch_size'),
                                             epochs=kwargs['epochs'],
                                             shuffle=False)
-        model = self._bulid_estimator()
+        model = self._bulid_estimator(**kwargs)
+
+        if self.summary and kwargs['verbose'] != 0:
+            model.summary()
+        else:
+            logger.info(f'Number of current DeepAR params: {model.count_params()}')
 
         model = self._compile_model(model, self.optimizer, self.learning_rate)
 

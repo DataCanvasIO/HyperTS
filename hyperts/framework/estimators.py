@@ -479,7 +479,7 @@ class DeepARForecastEstimator(HyperEstimator):
         if learning_rate is not None and learning_rate != 0.001:
             kwargs['learning_rate'] = learning_rate
         if loss is not None and loss != 'log_gaussian_loss':
-            kwargs['loss'] = 'log_gaussian_loss'
+            kwargs['loss'] = loss
         if reducelr_patience is not None and reducelr_patience != 5:
             kwargs['reducelr_patience'] = reducelr_patience
         if earlystop_patience is not None and earlystop_patience != 10:

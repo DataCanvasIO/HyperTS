@@ -92,7 +92,10 @@ class TSToolBox(ToolBox):
         """Convert datetime format.
 
         """
-        return pd.to_datetime(df).dt.strftime(format)
+        if format != None:
+            return pd.to_datetime(df.astype('str')).dt.strftime(format)
+        else:
+            return pd.to_datetime(df.astype('str'))
 
     @staticmethod
     def select_1d_forward(arr, indices):
@@ -328,31 +331,29 @@ class TSToolBox(ToolBox):
         freq: str or DateOffset.
         """
         if freq in 'W' or 'W-' in freq or 'WOM-' in freq:
-            window = list(filter(lambda x: x<=max_size, [2, 3, 4, 5, 6, 7]))
+            window = list(filter(lambda x: x<=max_size, [2, 3, 4, 5, 6, 7, 7*2, 7*3]))
         elif freq in ['SM', 'M', 'MS', 'SMS', 'BM', 'CBM', 'CBMS', '15D']:
-            window = list(filter(lambda x: x <= max_size, [2, 3, 6, 12, 24]))
+            window = list(filter(lambda x: x <= max_size, [2, 3, 6, 12, 24, 24*2, 24*3]))
         elif 'Q' in freq or 'Q-' in freq or 'BQ' in freq or 'BQ-' in freq or 'QS-' in freq or 'BQS-' in freq:
-            window = list(filter(lambda x: x <= max_size, [2, 4, 8, 12, 16]))
+            window = list(filter(lambda x: x <= max_size, [2, 4, 8, 12, 16, 16*2, 16*3]))
         elif freq in ['A', 'Y'] or 'A-' in freq or 'BA-' in freq or 'AS-' in freq or 'BAS-' in freq:
-            window = list(filter(lambda x: x<=max_size, [2, 3, 6, 12, 24]))
+            window = list(filter(lambda x: x<=max_size, [2, 3, 6, 12, 24, 24*2, 24*3]))
         elif 'S' in freq or 'T' in freq or 'min' in freq:
-            window = list(filter(lambda x: x<=max_size, [2, 5, 10, 30, 60]))
+            window = list(filter(lambda x: x<=max_size, [2, 5, 10, 30, 60, 60*2, 60*3]))
         elif 'H' in freq:
-            window = list(filter(lambda x: x<=max_size, [2, 6, 12, 24, 48]))
+            window = list(filter(lambda x: x<=max_size, [2, 6, 12, 24, 48, 48*2, 24*7]))
         elif 'BH' in freq or '8H' in freq:
-            window = list(filter(lambda x: x<=max_size, [2, 4, 8, 16, 24]))
+            window = list(filter(lambda x: x<=max_size, [2, 4, 8, 16, 24, 24*2, 24*7]))
         elif 'D' in freq:
-            window = list(filter(lambda x: x<=max_size, [2, 7, 14, 21]))
+            window = list(filter(lambda x: x<=max_size, [2, 7, 14, 21, 21*2, 21*3]))
         elif freq in ['C', 'B']:
-            window = list(filter(lambda x: x<=max_size, [2, 5, 10, 15, 20]))
+            window = list(filter(lambda x: x<=max_size, [2, 5, 10, 15, 20, 20*2, 20*3]))
         elif 'L' in freq or 'U' in freq or 'N' in freq or 'ms' in freq:
-            window = list(filter(lambda x: x <= max_size, [2, 10, 50, 100, 500, 1000]))
+            window = list(filter(lambda x: x <= max_size, [2, 10, 50, 100, 200, 500, 1000]))
         else:
-            window = list(filter(lambda x: x <= max_size, [2, 3, 5, 7, 12, 24]))
+            window = list(filter(lambda x: x <= max_size, [2, 3, 5, 7, 12, 24, 24*2, 24*3, 24*7]))
 
-        expand_window = _expand_list(freq=freq, pre_list=window)
-
-        final_win_list = expand_window + [max_size//2, max_size//3, max_size//4]
+        final_win_list = _expand_list(freq=freq, pre_list=window)
 
         while 0 in final_win_list:
             final_win_list.remove(0)
@@ -370,15 +371,18 @@ class TSToolBox(ToolBox):
         ----------
         https://github.com/xuawai/AutoPeriod/blob/master/auto_period.ipynb
         """
-        data = data.values.reshape(-1,)
-        ft = np.fft.rfft(data)
-        freqs = np.fft.rfftfreq(len(data), 1)
-        mags = abs(ft)
-        inflection = np.diff(np.sign(np.diff(mags)))
-        peaks = (inflection < 0).nonzero()[0] + 1
-        peak = peaks[mags[peaks].argmax()]
-        signal_freq = freqs[peak]
-        period = int(1 / signal_freq)
+        try:
+            data = data.values.reshape(-1,)
+            ft = np.fft.rfft(data)
+            freqs = np.fft.rfftfreq(len(data), 1)
+            mags = abs(ft)
+            inflection = np.diff(np.sign(np.diff(mags)))
+            peaks = (inflection < 0).nonzero()[0] + 1
+            peak = peaks[mags[peaks].argmax()]
+            signal_freq = freqs[peak]
+            period = int(1 / signal_freq)
+        except:
+            period = 2
         return period
 
     @staticmethod
@@ -413,10 +417,10 @@ class TSToolBox(ToolBox):
         fds['SeasonStart'] = fds['TimeStamp'].apply(lambda x: x.is_quarter_start * 1)
         fds['SeasonEnd'] = fds['TimeStamp'].apply(lambda x: x.is_quarter_end * 1)
         fds['Weekend'] = fds['TimeStamp'].apply(lambda x: 1 if x.dayofweek in [5, 6] else 0)
-        public_holiday_list = get_holidays(year=int(start_date[:4]))
-        public_holiday_list = public_holiday_list['Date'].to_list()
+        # public_holiday_list = get_holidays(year=int(start_date[:4]))
+        # public_holiday_list = public_holiday_list['Date'].to_list()
         fds['Date'] = fds['TimeStamp'].apply(lambda x: x.strftime('%Y%m%d'))
-        fds['Holiday'] = fds['Date'].apply(lambda x: 1 if x in public_holiday_list else 0)
+        # fds['Holiday'] = fds['Date'].apply(lambda x: 1 if x in public_holiday_list else 0)
         fds.drop(['Date'], axis=1, inplace=True)
         return fds
 

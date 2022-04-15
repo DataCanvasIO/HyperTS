@@ -80,6 +80,52 @@ class WeightedAttention(layers.Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
+class FeedForwardAttention(layers.Layer):
+    """Feed Forward Attention.
+       Follows the work of Raffel et al. [https://arxiv.org/abs/1512.08756]
+
+    input: (none, timesteps, nb_variables)
+    output: (none, nb_variables) or (none, timesteps, nb_variables)
+
+    Parameters
+    ----------
+    return_sequences: Boolean. Whether to return the last output. in the output
+      sequence, or the full sequence. Default: `False`.
+    use_bias: Boolean. Whether the layer uses a bias vector. Default: `False`.
+    activation: Str. Activation function to use. Default: `tanh`.
+
+    Example:
+        model.add(LSTM(64, return_sequences=True))
+        model.add(FFAttention())
+    """
+
+    def __init__(self, return_sequences=False, use_bias=True, activation='tanh', **kwargs):
+        super(FeedForwardAttention, self).__init__(**kwargs)
+        self.use_bias = use_bias
+        self.activation = activation
+        self.return_sequences = return_sequences
+
+        self.dense = layers.Dense(units=1, activation=activation, use_bias=use_bias)
+
+    def call(self, inputs, **kwargs):
+        x = self.dense(inputs)
+        x = tf.squeeze(x, axis=-1)
+        x = tf.nn.softmax(x)
+        x = tf.expand_dims(x, axis=-1)
+        x = tf.multiply(inputs, x)
+        if self.return_sequences:
+            return x
+        else:
+            return tf.reduce_sum(x, axis=1)
+
+    def get_config(self):
+        config = {'use_bias': self.use_bias,
+                  'return_sequences': self.return_sequences,
+                  'activation': self.activation}
+        base_config = super(FeedForwardAttention, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+
 class AutoRegressive(layers.Layer):
     """AutoRegressive Layer based on Dense.
 
@@ -228,7 +274,7 @@ def build_output_tail(x, task, nb_outputs, nb_steps=1):
     elif task in consts.TASK_LIST_MULTICLASS:
         outputs = layers.Dense(units=nb_outputs, activation='softmax', name='dense_out')(x)
     elif task in consts.TASK_LIST_FORECAST:
-        outputs = layers.Dense(units=nb_outputs * nb_steps, activation='linear', name='dense_out')(x)
+        outputs = layers.Dense(units=nb_outputs*nb_steps, activation='linear', name='dense_out')(x)
         outputs = layers.Lambda(lambda k: K.reshape(k, (-1, nb_steps, nb_outputs)), name='lambda_out')(outputs)
     else:
         raise ValueError(f'Unsupported task type {task}.')
@@ -262,6 +308,7 @@ def rnn_forward(x, nb_units, nb_layers, rnn_type, name, drop_rate=0., i=0, activ
 layers_custom_objects = {
     'MultiColEmbedding': MultiColEmbedding,
     'WeightedAttention': WeightedAttention,
+    'FeedForwardAttention': FeedForwardAttention,
     'AutoRegressive': AutoRegressive,
     'Highway': Highway,
 }

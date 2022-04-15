@@ -250,8 +250,8 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
             'seasonal_order': Choice([(1, 0, 0), (1, 0, 1), (1, 0, 1),
                                       (1, 0, 2), (0, 2, 1), (0, 1, 2),
                                       (2, 0, 1), (2, 0, 2), (0, 1, 1)]),
-            'period_offset': Choice([0, 0, 0, 0, 1, -1, 2, -2]),
-            'y_scale': Choice(['min_max', 'max_abs', 'scale-none'])
+            'period_offset': Choice([0, 0, 0, 0, 0, 0, 1, -1, 2, -2]),
+            'y_scale': Choice(['min_max']*8 + ['max_abs']*1 + ['z_scale']*1)
         }
 
     @property
@@ -266,8 +266,8 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
             # 'ic': Choice(['aic', 'fpe', 'hqic', 'bic']),
             'maxlags': Choice([None, 2, 6, 12, 24, 48]),
             'trend': Choice(['c', 'ct', 'ctt', 'nc', 'n']),
-            'y_scale': Choice(['min_max', 'max_abs', 'scale-none']),
-            'y_log': Choice(['logx', 'log-none'])
+            'y_log': Choice(['log-none']*9 + ['logx']*1),
+            'y_scale': Choice(['min_max']*8 + ['max_abs']*1 + ['z_scale']*1)
         }
 
     @property
@@ -405,14 +405,16 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'earlystop_patience': 10,
             'summary': True,
 
-            'rnn_type': Choice(['simple_rnn', 'gru', 'lstm']),
-            'rnn_units': Choice([8, 16, 32, 64, 128, 256]),
-            'rnn_layers': Choice([1, 2, 3]),
-            'drop_rate': Choice([0., 0.1, 0.2]),
+            'loss': Choice(['log_gaussian_loss']*9+['smape']*1),
+            'rnn_type': Choice(['gru']*1+['lstm']*1),
+            'rnn_units': Choice([64]*2+[128]*3+[256]*5),
+            'rnn_layers': Choice([2]*3+[3]*7),
+            'drop_rate': Choice([0.]*4+[0.1]*4+[0.2]*1),
+            'forecast_length': Choice([1]*3+[3, 6]),
             'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
-            'y_log': Choice(['logx', 'log-none']),
-            'y_scale': Choice(['min_max', 'max_abs', 'z_scale'])
+            'y_log': Choice(['log-none']*2 + ['logx']*0),
+            'y_scale': Choice(['min_max']*2 + ['max_abs']*0 + ['z_scale']*0)
         }
 
     @property
@@ -433,14 +435,16 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'earlystop_patience': 10,
             'summary': True,
 
-            'loss': Choice(['mae', 'mse', 'huber_loss']),
-            'rnn_type': Choice(['simple_rnn', 'gru', 'lstm']),
-            'rnn_units': Choice([8, 16, 32, 64, 128, 256]),
-            'rnn_layers': Choice([1, 2, 3, 4, 5]),
+            'loss': Choice(['mae', 'smape', 'huber_loss']),
+            'rnn_type': Choice(['gru']*1+['lstm']*1),
+            'rnn_units': Choice([16, 32]+[64]*2+[128]*3+[256]*2),
+            'rnn_layers': Choice([1]*1+[2]*4+[3]*4),
+            'drop_rate': Choice([0.]*4+[0.1]*4+[0.2]*1),
+            'forecast_length': Choice([1]*3+[3, 6]),
             'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
-            'y_log': Choice(['logx', 'log-none']),
-            'y_scale': Choice(['min_max', 'max_abs', 'z_scale'])
+            'y_log': Choice(['log-none']*1 + ['logx']*1),
+            'y_scale': Choice(['min_max']*1 + ['max_abs']*1 + ['z_scale']*1)
         }
 
     @property
@@ -461,22 +465,23 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'earlystop_patience': 10,
             'summary': True,
 
-            'loss': Choice(['mae', 'mse', 'huber_loss']),
-            'rnn_type': Choice(['simple_rnn', 'gru', 'lstm']),
-            'skip_rnn_type': Choice(['simple_rnn', 'gru', 'lstm']),
-            'cnn_filters': Choice([8, 16, 32, 64, 128]),
-            'kernel_size': Choice([1, 3, 5]),
-            'rnn_units': Choice([8, 16, 32, 64, 128, 256]),
+            'loss': Choice(['mae', 'smape', 'huber_loss']),
+            'rnn_type': Choice(['gru']*1+['lstm']*1),
+            'skip_rnn_type': Choice(['gru']*1+['lstm']*1),
+            'cnn_filters': Choice([16, 32, 64, 128]),
+            'kernel_size': Choice([1]+[3]*3+[6]*3),
+            'rnn_units': Choice([16, 32]+[64]*2+[128]*3+[256]*2),
             'skip_rnn_units': Choice([8, 16, 32, 64]),
-            'rnn_layers': Choice([1, 2, 3, 4, 5]),
-            'skip_rnn_layers': Choice([1, 2, 3, 4, 5]),
-            'drop_rate': Choice([0., 0.1, 0.2]),
-            'skip_period': Choice([1, 3, 5]),
-            'ar_order': Choice([1, 3, 5]),
+            'rnn_layers': Choice([1]*1+[2]*4+[3]*4),
+            'skip_rnn_layers': Choice([1]*1+[2]*4+[3]*4),
+            'drop_rate': Choice([0.]*4+[0.1]*4+[0.2]*1),
+            'skip_period': Choice([0, 2, 3, 5]),
+            'ar_order': Choice([2, 3, 5]),
+            'forecast_length': Choice([1]*3+[3, 6]),
             'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
-            'y_log': Choice(['logx', 'log-none']),
-            'y_scale': Choice(['min_max', 'max_abs', 'z_scale'])
+            'y_log': Choice(['log-none']*9 + ['logx']*1),
+            'y_scale': Choice(['min_max']*8 + ['max_abs']*1 + ['z_scale']*1)
         }
 
     @property
@@ -550,7 +555,7 @@ class DLClassificationSearchSpace(BaseSearchSpaceGenerator):
             'rnn_layers': Choice([1, 2, 3, 4]),
             'drop_rate': Choice([0., 0.1, 0.2]),
 
-            'x_scale': Choice(['z_score', 'min_max', 'max_abs'])
+            'x_scale': Choice(['min_max']*8 + ['max_abs']*1 + ['z_scale']*1)
         }
 
     @property
@@ -578,7 +583,7 @@ class DLClassificationSearchSpace(BaseSearchSpaceGenerator):
             'rnn_layers': Choice([1, 2, 3, 4]),
             'drop_rate': Choice([0., 0.1, 0.2]),
 
-            'x_scale': Choice(['z_score', 'min_max', 'max_abs'])
+            'x_scale': Choice(['min_max']*8 + ['max_abs']*1 + ['z_scale']*1)
         }
 
     @property

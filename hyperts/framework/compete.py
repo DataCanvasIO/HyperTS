@@ -1006,5 +1006,5 @@ class TSCompeteExperiment(SteppedExperiment):
             else:
                 raise ValueError(f'dl_window_length cannot be greater than {self.max_window_length}.')
         if kwargs.get('dl_forecast_length', 0) > 0:
-            kwargs['forecst_length'] = kwargs.pop('dl_forecast_length')
+            kwargs['forecast_length'] = kwargs.pop('dl_forecast_length')
         return kwargs

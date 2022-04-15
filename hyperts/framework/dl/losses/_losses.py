@@ -28,6 +28,27 @@ class LogGaussianLoss(losses.LossFunctionWrapper):
         super(LogGaussianLoss, self).__init__(log_gaussian_error, name=name, **kwargs)
 
 
+@keras_export('keras.losses.SymmetricMeanAbsolutePercentageError')
+class SymmetricMeanAbsolutePercentageError(losses.LossFunctionWrapper):
+    """Symmetric Mean Absolute Percentage Error loss.
+
+    Args:
+        name: (Optional) string name of the metric instance.
+
+    Usage with `compile()` API:
+
+    ```python
+    model.compile(
+      optimizer='sgd',
+      loss=SymmetricMeanAbsolutePercentageLoss(),
+      metrics=['mse'])
+    ```
+    """
+    def __init__(self, name='symmetric_mean_absolute_percentage_loss', **kwargs):
+        super(SymmetricMeanAbsolutePercentageError, self).__init__(
+            symmetric_mean_absolute_percentage_error, name=name, **kwargs)
+
+
 @keras_export('keras.metrics.log_gaussian_error',
               'keras.losses.log_gaussian_error')
 @dispatch.add_dispatch_support
@@ -55,11 +76,12 @@ def symmetric_mean_absolute_percentage_error(y_true, y_pred):
     y_true = math_ops.cast(y_true, y_pred.dtype)
     diff = math_ops.abs(y_true - y_pred) / \
            K.maximum((math_ops.abs(y_true) + math_ops.abs(y_pred)), K.epsilon())
-    return 2.0 * 100. * K.mean(diff, axis=-1)
+    return 2.0 * K.mean(diff, axis=-1)
 
 
 losses_custom_objects = {
     'LogGaussianLoss': LogGaussianLoss,
     'log_gaussian_error': log_gaussian_error,
+    'SymmetricMeanAbsolutePercentageError': SymmetricMeanAbsolutePercentageError,
     'symmetric_mean_absolute_percentage_error': symmetric_mean_absolute_percentage_error,
 }
