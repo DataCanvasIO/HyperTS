@@ -443,8 +443,8 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'forecast_length': Choice([1]*3+[3, 6]),
             'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
-            'y_log': Choice(['log-none']*1 + ['logx']*1),
-            'y_scale': Choice(['min_max']*1 + ['max_abs']*1 + ['z_scale']*1)
+            'y_log': Choice(['log-none']*9 + ['logx']*1),
+            'y_scale': Choice(['min_max']*8 + ['max_abs']*1 + ['z_scale']*1)
         }
 
     @property
