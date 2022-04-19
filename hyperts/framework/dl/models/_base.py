@@ -411,6 +411,9 @@ class BaseDeepEstimator(object):
             if validation_steps <= 1:
                 validation_steps = 1
 
+        if self.window < self.forecast_length:
+            logger.warning('window must not be smaller than forecast_length, reset forecast_length=1.')
+            self.forecast_length = 1
         X_train, y_train = self._dataloader(self.task, X, y, self.window, self.horizon, self.forecast_length)
 
         if self.task in consts.TASK_LIST_FORECAST:
@@ -672,9 +675,6 @@ class BaseDeepEstimator(object):
             column_names = self.meta.cont_column_names + self.meta.cat_column_names
             data = tb.concat_df([y, X], axis=1).drop([self.timestamp], axis=1)
             data = tb.df_to_array(data[column_names]).astype(consts.DATATYPE_TENSOR_FLOAT)
-            if window < forecast_length:
-                logger.warning('window must not be smaller than forecast_length, reset forecast_length=1.')
-                forecast_length = 1
             target_start = window - horizon + 1
             inputs = data[:-target_start]
             targets = data[target_start:]

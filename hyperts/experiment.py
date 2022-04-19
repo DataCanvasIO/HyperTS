@@ -30,7 +30,7 @@ def make_experiment(train_data,
                     timestamp=None,
                     forecast_train_data_periods=None,
                     timestamp_format='%Y-%m-%d %H:%M:%S',
-                    covariables=None,
+                    covariates=None,
                     dl_forecast_window=None,
                     dl_forecast_horizon=1,
                     id=None,
@@ -95,10 +95,10 @@ def make_experiment(train_data,
     forecast_train_data_periods : 'int', Cut off a certain period of data from the train data from back to front
         as a train set. (default=None).
     timestamp_format : str, the date format of timestamp col for forecast task, (default='%Y-%m-%d %H:%M:%S').
-    covariables/covariates : list[n*str], if the data contains covariables, specify the covariable column names,
+    covariates/covariables : list[n*str], if the data contains covariates, specify the covariable column names,
         (default=None).
     dl_forecast_window : int or None. When selecting 'dl' mode, you can specify window, which is the sequence
-        length of each sample, (default=None).
+        length of each sample (lag), (default=None).
     dl_forecast_horizon : int or None. When selecting 'dl' mode, you can specify horizon, which is the length of
         the interval between the input and the target, (default=1).
     id : str or None, (default=None).
@@ -202,7 +202,7 @@ def make_experiment(train_data,
 
         return searcher
 
-    def default_search_space(task, search_space=None, metrics=None, covariables=None):
+    def default_search_space(task, search_space=None, metrics=None, covariates=None):
         if search_space is not None:
             return search_space
 
@@ -216,7 +216,7 @@ def make_experiment(train_data,
         if mode == consts.Mode_STATS and task in consts.TASK_LIST_FORECAST:
             from hyperts.framework.search_space.macro_search_space import StatsForecastSearchSpace
 
-            search_pace = StatsForecastSearchSpace(task=task, timestamp=timestamp, covariables=covariables)
+            search_pace = StatsForecastSearchSpace(task=task, timestamp=timestamp, covariables=covariates)
         elif mode == consts.Mode_STATS and task in consts.TASK_LIST_CLASSIFICATION:
             from hyperts.framework.search_space.macro_search_space import StatsClassificationSearchSpace
 
@@ -228,7 +228,7 @@ def make_experiment(train_data,
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_FORECAST:
             from hyperts.framework.search_space.macro_search_space import DLForecastSearchSpace
 
-            search_pace = DLForecastSearchSpace(task=task, timestamp=timestamp, metrics=metrics, covariables=covariables,
+            search_pace = DLForecastSearchSpace(task=task, timestamp=timestamp, metrics=metrics, covariables=covariates,
                                                 window=dl_forecast_window, horizon=dl_forecast_horizon)
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_CLASSIFICATION:
             from hyperts.framework.search_space.macro_search_space import DLClassificationSearchSpace
@@ -296,10 +296,26 @@ def make_experiment(train_data,
     kwargs['num_folds'] = num_folds
     kwargs['verbose'] = verbose
 
-    if kwargs.get('covariates') is not None and covariables is None:
-        covariables = kwargs.pop('covariates')
+    if kwargs.get('covariables') is not None and covariates is None:
+        covariates = kwargs.pop('covariables')
 
-    # 1. Check Data and Task and Mode
+    # 1. Set Log Level
+    if log_level is None:
+        log_level = logging.WARN
+    logging.set_level(log_level)
+
+    # 2. Set Random State
+    if random_state is not None:
+        set_random_state(seed=random_state, mode=mode)
+
+    if mode != consts.Mode_STATS:
+        try:
+            from tensorflow import __version__
+            logger.info('tensorflow==' + str(__version__))
+        except ImportError:
+            raise RuntimeError('Please install `tensorflow` package first. command: pip install tensorflow.')
+
+    # 3. Check Data ,Task and Mode
     assert train_data is not None, 'train data is required.'
     assert eval_data is None or type(eval_data) is type(train_data)
     assert test_data is None or type(test_data) is type(train_data)
@@ -314,27 +330,11 @@ def make_experiment(train_data,
     if task in consts.TASK_LIST_FORECAST and timestamp is None:
         raise ValueError("Forecast task 'timestamp' cannot be None.")
 
-    if task in consts.TASK_LIST_FORECAST and covariables is None:
-        logger.info('If the data contains covariables, specify the covariable column names.')
-
-    if mode != consts.Mode_STATS:
-        try:
-            from tensorflow import __version__
-            logger.info('tensorflow==' + str(__version__))
-        except ImportError:
-            raise RuntimeError('Please install `tensorflow` package first. command: pip install tensorflow.')
+    if task in consts.TASK_LIST_FORECAST and covariates is None:
+        logger.info('If the data contains covariates, specify the covariable column names.')
 
     if freq is consts.DISCRETE_FORECAST and mode is consts.Mode_STATS:
         raise RuntimeError('Note: `stats` mode does not support discrete data forecast.')
-
-    # 2. Set Log Level
-    if log_level is None:
-        log_level = logging.WARN
-    logging.set_level(log_level)
-
-    # 3. Set Random State
-    if random_state is not None:
-        set_random_state(seed=random_state, mode=mode)
 
     # 4. Set GPU Usage Strategy for DL Mode
     if mode == consts.Mode_DL:
@@ -397,7 +397,7 @@ def make_experiment(train_data,
         if eval_data is not None:
             X_eval, y_eval = eval_data.drop(columns=[target]), eval_data.pop(target)
     elif task in consts.TASK_LIST_FORECAST:
-        excluded_variables = [timestamp] + covariables if covariables is not None else [timestamp]
+        excluded_variables = [timestamp] + covariates if covariates is not None else [timestamp]
         if target is None:
             target = tb.list_diff(train_data.columns.tolist(), excluded_variables)
         elif target is not None and isinstance(target, str):
@@ -416,14 +416,14 @@ def make_experiment(train_data,
                 logger.warning(f'The specified frequency is {freq}, but the inferred frequency is {infer_freq}.')
 
     # 7. Covarite Transformer
-    if covariables is not None:
+    if covariates is not None:
         from hyperts.utils.transformers import CovariateTransformer
-        cs = CovariateTransformer(covariables=covariables).fit(X_train)
-        autual_covariables = cs.covariables_
+        cs = CovariateTransformer(covariables=covariates).fit(X_train)
+        autual_covariates = cs.covariables_
     else:
         from hyperts.utils.transformers import IdentityTransformer
         cs = IdentityTransformer().fit(X_train)
-        autual_covariables = covariables
+        autual_covariates = covariates
 
     # 8. Infer Forecast Window for DL Mode
     if mode in [consts.Mode_DL, consts.Mode_NAS] and task in consts.TASK_LIST_FORECAST and dl_forecast_window is None:
@@ -457,7 +457,7 @@ def make_experiment(train_data,
             periods = [tb.fft_infer_period(y_train[col]) for col in target]
             period = int(np.argmax(np.bincount(periods)))
             if period > 0 and period <= max_win_size:
-                dl_forecast_window += [period]
+                dl_forecast_window.append(period)
             logger.info(f'The forecast window length of DL mode list is: {dl_forecast_window}')
         hist_store_upper_limit = max_win_size + 1
     else:
@@ -513,7 +513,7 @@ def make_experiment(train_data,
     # 13. Get search space
     if (searcher is None or isinstance(searcher, str)) and search_space is None:
         search_space = default_search_space(task=task, search_space=search_space,
-                           metrics=reward_metric, covariables=autual_covariables)
+                           metrics=reward_metric, covariates=autual_covariates)
 
     # 14. Get searcher
     searcher = to_search_object(searcher, search_space)
@@ -548,7 +548,7 @@ def make_experiment(train_data,
     # 19. Build Experiment
     experiment = TSCompeteExperiment(hyper_model, X_train=X_train, y_train=y_train, X_eval=X_eval, y_eval=y_eval,
                                      task=task, mode=mode, timestamp_col=timestamp, target_col=target,
-                                     covariate_cols=[covariables, autual_covariables], covariate_cleaner=cs,
+                                     covariate_cols=[covariates, autual_covariates], covariate_cleaner=cs,
                                      freq=freq, log_level=log_level, random_state=random_state,
                                      optimize_direction=optimize_direction, scorer=scorer,
                                      id=id, forecast_train_data_periods=forecast_train_data_periods,
