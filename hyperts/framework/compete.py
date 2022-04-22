@@ -275,9 +275,9 @@ class TSEnsembleStep(EnsembleStep):
     """Time Series Ensemble.
 
     """
-    def __init__(self, experiment, name, scorer=None, ensemble_size=7, cv=False, retrain_on_wholedata=False):
+    def __init__(self, experiment, name, mode=None, scorer=None, ensemble_size=10, cv=False, retrain_on_wholedata=False):
         super().__init__(experiment, name, scorer=scorer, ensemble_size=ensemble_size)
-
+        self.mode = mode
         self.cv = cv
         self.retrain_on_wholedata = retrain_on_wholedata
 
@@ -353,10 +353,10 @@ class TSEnsembleStep(EnsembleStep):
         else:
             X_all, y_all = X_train, y_train
 
-        if 'final_train_epochs' in kwargs.keys():
-            kwargs.update({'epochs': kwargs.pop('final_train_epochs')})
-        elif 'epochs' in kwargs.keys() and kwargs.get('epochs') != consts.FINAL_TRAINING_EPOCHS:
-            kwargs.update({'epochs': consts.FINAL_TRAINING_EPOCHS})
+        if self.mode is not consts.Mode_STATS:
+            kwargs.update({'epochs': kwargs.pop('final_train_epochs', consts.FINAL_TRAINING_EPOCHS),
+                           'reducelr_patience': 40,
+                           'earlystop_patience': 512})
 
         logger.info('Retrain the best trial model with all data ...')
         weights = [1]*len(trials) if weights is None else weights
@@ -370,9 +370,9 @@ class TSEnsembleStep(EnsembleStep):
 
 
 class TSFinalTrainStep(FinalTrainStep):
-    def __init__(self, experiment, name, retrain_on_wholedata=False):
+    def __init__(self, experiment, name, mode=None, retrain_on_wholedata=False):
         super().__init__(experiment, name)
-
+        self.mode = mode
         self.retrain_on_wholedata = retrain_on_wholedata
 
     def build_estimator(self, hyper_model, X_train, y_train, X_test=None, X_eval=None, y_eval=None, **kwargs):
@@ -385,10 +385,10 @@ class TSFinalTrainStep(FinalTrainStep):
             else:
                 X_all, y_all = X_train, y_train
 
-            if 'final_train_epochs' in kwargs.keys():
-                kwargs.update({'epochs': kwargs.pop('final_train_epochs')})
-            elif 'epochs' in kwargs.keys() and kwargs.get('epochs') != consts.FINAL_TRAINING_EPOCHS:
-                kwargs.update({'epochs': consts.FINAL_TRAINING_EPOCHS})
+            if self.mode is not consts.Mode_STATS:
+                kwargs.update({'epochs': kwargs.pop('final_train_epochs', consts.FINAL_TRAINING_EPOCHS),
+                               'reducelr_patience': 40,
+                               'earlystop_patience': 512})
 
             logger.info('Retrain the best trial model with all data ...')
             estimator = hyper_model.final_train(trial.space_sample, X_all, y_all, **kwargs)
@@ -944,6 +944,7 @@ class TSCompeteExperiment(SteppedExperiment):
                 scorer = tb.metrics.metric_to_scorer(hyper_model.reward_metric, task=task,
                          pos_label=kwargs.get('pos_label'), optimize_direction=optimize_direction)
             steps.append(TSEnsembleStep(self, consts.StepName_FINAL_ENSEMBLE,
+                                        mode=mode,
                                         scorer=scorer,
                                         ensemble_size=ensemble_size,
                                         cv=cv,
@@ -951,6 +952,7 @@ class TSCompeteExperiment(SteppedExperiment):
         else:
             # final train step
             steps.append(TSFinalTrainStep(self, consts.StepName_FINAL_TRAINING,
+                                          mode=mode,
                                           retrain_on_wholedata=final_retrain_on_wholedata))
 
         # ignore warnings

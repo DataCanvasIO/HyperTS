@@ -15,12 +15,41 @@ from tensorflow.python.util.tf_export import keras_export
 
 @keras_export('keras.optimizers.AdamP')
 class AdamP(optimizer_v2.OptimizerV2):
-    """
+    """Construct a new AdamP optimizer.
+
     Follows the work of Byeongho Heo et al. [https://arxiv.org/abs/2006.08217]
+
+    Parameters
+    ----------
+       learning_rate: A `Tensor`, floating point value, or a schedule that is a
+          `tf.keras.optimizers.schedules.LearningRateSchedule`, or a callable
+          that takes no arguments and returns the actual value to use, The
+          learning rate. Defaults to 0.001.
+       beta_1: A float value or a constant float tensor, or a callable
+          that takes no arguments and returns the actual value to use. The
+          exponential decay rate for the 1st moment estimates. Defaults to 0.9.
+       beta_2: A float value or a constant float tensor, or a callable
+          that takes no arguments and returns the actual value to use, The
+          exponential decay rate for the 2nd moment estimates. Defaults to 0.999.
+       epsilon: A small constant for numerical stability. This epsilon is
+          "epsilon hat" in the Kingma and Ba paper (in the formula just before
+          Section 2.1), not the epsilon in Algorithm 1 of the paper. Defaults to
+          1e-8.
+       weight_decay: A Tensor or a floating point value. The weight decay. Defaults to 0.
+       delta : threhold that determines whether a set of parameters is scale invariant or
+          not. Defaults to 0.1.
+       wd_ratio : relative weight decay applied on scale-invariant parameters compared to
+          that applied on scale-variant parameters. Defaults to 0.1.
+       name: Optional name for the operations created when applying gradients.
+          Defaults to `"AdamP"`.
+       **kwargs: Keyword arguments. Allowed to be one of
+          `"clipnorm"` or `"clipvalue"`.
+          `"clipnorm"` (float) clips gradients by norm; `"clipvalue"` (float) clips
+          gradients by value.
 
     References
     -----------
-    https://github.com/taki0112/AdamP-Tensorflow
+        https://github.com/taki0112/AdamP-Tensorflow
     """
 
     _HAS_AGGREGATE_GRAD = True
@@ -31,7 +60,9 @@ class AdamP(optimizer_v2.OptimizerV2):
                  beta_2=0.999,
                  epsilon=1e-8,
                  weight_decay=0.0,
-                 delta=0.1, wd_ratio=0.1, nesterov=False,
+                 delta=0.1,
+                 wd_ratio=0.1,
+                 nesterov=False,
                  name='AdamP',
                  **kwargs):
 
@@ -122,7 +153,7 @@ class AdamP(optimizer_v2.OptimizerV2):
 
         # Projection
         wd_ratio = 1
-        if len(var.shape) > 1:
+        if len(var.shape) > 1 and grad.shape[0] is not None:
             perturb, wd_ratio = self._projection(var, grad, perturb, coefficients['delta'], coefficients['wd_ratio'], coefficients['epsilon'])
 
         # Weight decay
@@ -171,7 +202,7 @@ class AdamP(optimizer_v2.OptimizerV2):
 
         # Projection
         wd_ratio = 1
-        if len(var.shape) > 1:
+        if len(var.shape) > 1 and grad.shape[0] is not None:
             perturb, wd_ratio = self._projection(var, grad, perturb, coefficients['delta'], coefficients['wd_ratio'], coefficients['epsilon'])
 
         # Weight decay

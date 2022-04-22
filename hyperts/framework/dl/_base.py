@@ -415,7 +415,6 @@ class BaseDeepEstimator(object):
                 batch_size = min(int(2 ** (4 + int(math.log(data_num, 10)))), 512)
             else:
                 batch_size = 1024
-        logger.info(f'Fit epochs is {epochs}, batch_size is {batch_size}.')
 
         if steps_per_epoch is None:
             steps_per_epoch = len(y_train) // batch_size - 1
@@ -426,6 +425,11 @@ class BaseDeepEstimator(object):
             validation_steps = validation_length // batch_size - 1
             if validation_steps <= 1:
                 validation_steps = 1
+
+        if steps_per_epoch < 16 and epochs == consts.FINAL_TRAINING_EPOCHS:
+            epochs = epochs * 2
+
+        logger.info(f'Fit epochs is {epochs}, batch_size is {batch_size}.')
 
         callbacks = self._inject_callbacks(callbacks, epochs, self.reducelr_patience, self.earlystop_patience, verbose)
 
@@ -637,7 +641,7 @@ class BaseDeepEstimator(object):
         if optimizer.lower() in ['auto', consts.OptimizerADAM]:
             optimizer = optimizers.Adam(lr=learning_rate, decay=1e-8, clipnorm=10.)
         elif optimizer.lower() == consts.OptimizerADAMP:
-            optimizer = optimizers.AdamP(lr=learning_rate, weight_decay=1e-2)
+            optimizer = optimizers.AdamP(lr=learning_rate, weight_decay=0.025)
         elif optimizer.lower() == consts.OptimizerRMSPROP:
             optimizer = optimizers.RMSprop(lr=learning_rate, momentum=0.9, decay=1e-8, clipnorm=10.)
         elif optimizer.lower() == consts.OptimizerSGD:

@@ -377,6 +377,8 @@ class DeepARForecastEstimator(HyperEstimator):
                  default = 16.
     rnn_layers : Positive Int - The number of the layers for recurrent neural network,
                  default = 1.
+    out_activation : Str - Forecast the task output activation function, optional {'linear', 'sigmoid'},
+                 default = 'linear'.
     drop_rate  : Float between 0 and 1 - The rate of Dropout for neural nets,
                  default = 0.
     window     : Positive Int - Length of the time series sequences for a sample,
@@ -441,7 +443,7 @@ class DeepARForecastEstimator(HyperEstimator):
     """
 
     def __init__(self, fit_kwargs=None, timestamp=None, task='univariate-forecast',
-                 rnn_type='gru', rnn_units=16, rnn_layers=1,
+                 rnn_type='gru', rnn_units=16, rnn_layers=1, out_activation='linear',
                  drop_rate=0., window=3, horizon=1, forecast_length=1, metrics='auto',
                  monitor='val_loss', optimizer='auto', learning_rate=0.001, loss='log_gaussian_loss',
                  reducelr_patience=5, earlystop_patience=10, summary=True,
@@ -464,6 +466,8 @@ class DeepARForecastEstimator(HyperEstimator):
             kwargs['rnn_layers'] = rnn_layers
         if drop_rate is not None and drop_rate != 0.:
             kwargs['drop_rate'] = drop_rate
+        if out_activation is not None and out_activation != 'linear':
+            kwargs['out_activation'] = out_activation
         if window is not None and window != 7:
             kwargs['window'] = window
         if horizon is not None and horizon != 1:

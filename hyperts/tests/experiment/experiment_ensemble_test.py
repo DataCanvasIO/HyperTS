@@ -105,7 +105,7 @@ def tsc_ensemble_test(binary=False, mode='stats', cv=False, ensemble_size=None):
                                  random_state=2022,
                                  log_level='info')
 
-    model = experiment.run(epochs=1)
+    model = experiment.run(epochs=1, final_train_epochs=2)
 
     X_test, y_test = model.split_X_y(test_data.copy())
     y_pred = model.predict(X_test)

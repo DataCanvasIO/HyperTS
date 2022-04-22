@@ -7,7 +7,7 @@ DEFAULT_EVAL_SIZE                  = 0.2
 DEFAULT_MIN_EVAL_SIZE              = 0.05
 NAN_DROP_SIZE                      = 0.6
 TRAINING_EPOCHS                    = 60
-FINAL_TRAINING_EPOCHS              = 120
+FINAL_TRAINING_EPOCHS              = 240
 HISTORY_UPPER_LIMIT                = 200
 
 DISCRETE_FORECAST                  = 'null'

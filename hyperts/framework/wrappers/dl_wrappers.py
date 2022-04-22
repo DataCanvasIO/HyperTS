@@ -13,6 +13,7 @@ class DeepARWrapper(EstimatorWrapper, WrapperMixin):
     Adapt: univariate forecast.
     """
     def __init__(self, fit_kwargs, **kwargs):
+        kwargs = self.update_init_kwargs(**kwargs)
         super(DeepARWrapper, self).__init__(fit_kwargs, **kwargs)
         self.update_fit_kwargs()
         self.model = DeepAR(**self.init_kwargs)

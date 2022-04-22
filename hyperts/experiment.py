@@ -22,9 +22,9 @@ def make_experiment(train_data,
                     mode='stats',
                     max_trials=3,
                     eval_size=0.2,
-                    cv=True,
+                    cv=False,
                     num_folds=3,
-                    ensemble_size=None,
+                    ensemble_size=10,
                     target=None,
                     freq=None,
                     timestamp=None,
@@ -39,7 +39,7 @@ def make_experiment(train_data,
                     search_callbacks=None,
                     searcher_options=None,
                     callbacks=None,
-                    early_stopping_rounds=10,
+                    early_stopping_rounds=20,
                     early_stopping_time_limit=3600,
                     early_stopping_reward=None,
                     reward_metric=None,
@@ -440,7 +440,10 @@ def make_experiment(train_data,
         if eval_data is not None:
             max_win_size = int((X_train_length + dl_forecast_horizon - 1) / 2)
         elif isinstance(eval_size, int):
-            max_win_size = int((X_train_length - eval_size + dl_forecast_horizon - 1) / 2)
+            if X_train_length > eval_size - dl_forecast_horizon + 1:
+                max_win_size = int((X_train_length - eval_size + dl_forecast_horizon - 1) / 2)
+            else:
+                raise ValueError(f'eval_size has to be less than {X_train_length+dl_forecast_horizon-1}.')
         else:
             max_win_size = int((X_train_length * (1 - eval_size) + dl_forecast_horizon - 1) / 2)
 
@@ -455,7 +458,8 @@ def make_experiment(train_data,
                 if max_win_size <= 10:
                     dl_forecast_window = list(filter(lambda x: x <= max_win_size, [2, 4, 6, 8, 10]))
                 else:
-                    dl_forecast_window = list(filter(lambda x: x <= max_win_size, [12, 24, 30, 48, 60, 72, 96, 168]))
+                    candidate_windows = [12, 24, 30]*3 + [48, 60]*2 + [8, 72, 96, 168]*1
+                    dl_forecast_window = list(filter(lambda x: x <= max_win_size, candidate_windows))
                 periods = [tb.fft_infer_period(y_train[col]) for col in target]
                 period = int(np.argmax(np.bincount(periods)))
                 if period > 0 and period <= max_win_size:

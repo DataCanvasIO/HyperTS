@@ -12,7 +12,7 @@ logger = logging.get_logger(__name__)
 
 
 def DeepARModel(task, window, rnn_type, continuous_columns, categorical_columns,
-        rnn_units, rnn_layers, drop_rate=0., nb_outputs=1, nb_steps=1, **kwargs):
+        rnn_units, rnn_layers, drop_rate=0., nb_outputs=1, nb_steps=1, out_activation='linear', **kwargs):
     """Deep AutoRegressive Model (DeepAR).
 
     Parameters
@@ -50,7 +50,7 @@ def DeepARModel(task, window, rnn_type, continuous_columns, categorical_columns,
 
     # backbone
     x = layers.rnn_forward(x, rnn_units, rnn_layers, rnn_type, name=rnn_type, drop_rate=drop_rate)
-    mu = layers.Dense(nb_outputs*nb_steps, activation='linear', name='dense_mu')(x)
+    mu = layers.Dense(nb_outputs*nb_steps, activation=out_activation, name='dense_mu')(x)
     sigma = layers.Dense(nb_outputs*nb_steps, activation='softplus', name='dense_sigma')(x)
 
     outputs = layers.Lambda(lambda k : K.stack(k, axis=-1), name='stack_mu_and_sigma')([mu, sigma])
@@ -114,6 +114,7 @@ class DeepAR(BaseDeepEstimator):
                  rnn_units=16,
                  rnn_layers=1,
                  drop_rate=0.,
+                 out_activation='linear',
                  window=3,
                  horizon=1,
                  forecast_length=1,
@@ -135,6 +136,7 @@ class DeepAR(BaseDeepEstimator):
         self.rnn_units = rnn_units
         self.rnn_layers = rnn_layers
         self.drop_rate = drop_rate
+        self.out_activation = out_activation
         self.metrics = metrics
         self.optimizer = optimizer
         self.learning_rate = learning_rate
@@ -164,7 +166,8 @@ class DeepAR(BaseDeepEstimator):
             'rnn_layers': self.rnn_layers,
             'drop_rate': self.drop_rate,
             'nb_outputs': self.meta.classes_,
-            'nb_steps': self.forecast_length
+            'nb_steps': self.forecast_length,
+            'out_activation': self.out_activation,
         }
         model_params = {**model_params, **self.model_kwargs, **kwargs}
         return DeepARModel(**model_params)
