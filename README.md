@@ -68,7 +68,7 @@ model = make_experiment(train_data.copy(),
                         task='multivariate-forecast',
                         mode='stats',
                         timestamp='TimeStamp',
-                        covariables=['HourSin', 'WeekCos', 'CBWD']).run()
+                        covariates=['HourSin', 'WeekCos', 'CBWD']).run()
 
 X_test, y_test = model.split_X_y(test_data.copy())
 
@@ -95,11 +95,15 @@ HyperTS supports the following features:
 
 **Covariates Support:** Deep learning models support covariates as input featues for time series forecasting. 
 
-**Probabilistic intervals Support:** Time series forecsting visualization can show confidence intervals.
+**Probabilistic Intervals Support:** Time series forecsting visualization can show confidence intervals.
 
 **Abundant Metrics:** A variety of performance metrics to evaluate results and guide models optimization, including MSE, SMAPE, Accuracy, F1-Score,etc. 
 
-**Powerful search strategies:** Adapting Grid Search, Monte Carlo Tree Search, Evolution Algorithm combined with a meta-learner to enable a powerful and effective TS pipeline.
+**Powerful Search Strategies:** Adapting Grid Search, Monte Carlo Tree Search, Evolution Algorithm combined with a meta-learner to enable a powerful and effective TS pipeline.
+
+**Ensemble:** Refinement greedy emsemble glues the most powerful models.
+
+**Cross Validation** Multiple time series cross-validation strategies ensure generalization ability.
 
 ## Communication
 If you wish to contribute to this project, please refer to [CONTRIBUTING](CONTRIBUTING.md).

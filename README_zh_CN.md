@@ -66,7 +66,7 @@ model = make_experiment(train_data.copy(),
                         task='multivariate-forecast',
                         mode='stats',
                         timestamp='TimeStamp',
-                        covariables=['HourSin', 'WeekCos', 'CBWD']).run()
+                        covariates=['HourSin', 'WeekCos', 'CBWD']).run()
 
 X_test, y_test = model.split_X_y(test_data.copy())
 
@@ -101,6 +101,9 @@ HyperTS支持以下特性:
 
 **强大的搜索策略:** 采用网格搜索、蒙特卡罗树搜索、进化算法，并结合元学习器，为时间序列分析提供了强大而有效的管道。
 
+**贪婪融合:** 精细化的贪婪融合组合出最强大的模型。
+
+**交叉验证:** 多种时序交叉验证策略保证模型的泛化性。
 
 ## 贡献
 如果您想为HyperTS做一些贡献, 请参考 [CONTRIBUTING](CONTRIBUTING.md).

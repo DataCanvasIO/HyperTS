@@ -106,7 +106,7 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
 .. code-block:: python
 
     from hypernets.core.search_space import Choice, Int, Real
-    from hyperts.framework.macro_search_space import StatsForecastSearchSpace
+    from hyperts.framework.search_space.macro_search_space import StatsForecastSearchSpace
 
     custom_search_space = StatsForecastSearchSpace(task='univariate-forecast', 
                                                 timestamp='TimeStamp',
@@ -169,9 +169,10 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
 
 .. code-block:: python
 
+    import tensorflow as tf
     import tensorflow.keras.backend as K
     from hyperts.framework.dl import layers
-    from hyperts.framework.dl.models import Model, HybirdRNN
+    from hyperts.framework.dl.models import HybirdRNN
 
     class Transformer(HybirdRNN):
 
@@ -234,11 +235,11 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
             x = layers.GlobalAveragePooling1D(data_format="channels_first")(x)
             ##################################################################################################
 
-            outputs = layers.build_output_tail(x, self.task, nb_outputs=self.mata.classes_, nb_steps=self.forecast_length)
+            outputs = layers.build_output_tail(x, self.task, nb_outputs=self.meta.classes_, nb_steps=self.forecast_length)
             outputs = layers.Activation(self.out_activation, name=f'output_activation_{self.out_activation}')(outputs)
 
             all_inputs = list(continuous_inputs.values()) + list(categorical_inputs.values())
-            model = Model(inputs=all_inputs, outputs=[outputs], name=f'Transformer')
+            model = tf.keras.models.Model(inputs=all_inputs, outputs=[outputs], name=f'Transformer')
             model.summary()
             return model
 
@@ -250,7 +251,7 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
 .. code-block:: python
 
     from hyperts.utils import consts
-    from hyperts.framework.wrappers import HybirdRNNWrapper
+    from hyperts.framework.wrappers.dl_wrappers import HybirdRNNWrapper
     from hyperts.framework.estimators import HyperEstimator
 
     class TransformerWrapper(HybirdRNNWrapper):
@@ -320,7 +321,7 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
 .. code-block:: python
 
     from hypernets.core.search_space import Choice, Real
-    from hyperts.framework.macro_search_space import DLForecastSearchSpace
+    from hyperts.framework.search_space.macro_search_space import DLForecastSearchSpace
 
 
     class DLForecastSearchSpacePlusTransformer(DLForecastSearchSpace):
