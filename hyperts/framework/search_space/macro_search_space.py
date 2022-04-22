@@ -225,13 +225,11 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
     @property
     def default_prophet_init_kwargs(self):
         return {
-            # 'seasonality_prior_scale': Choice([True, False]),
-            # 'daily_seasonality': Choice(['auto', True, False]),
-            # 'weekly_seasonality': Choice(['auto', True, False]),
-            # 'yearly_seasonality': Choice(['auto', 0, 1, 2, 5, 10]),
             'seasonality_mode': Choice(['additive', 'multiplicative']),
-            'n_changepoints': Choice([25, 35, 45]),
-            'interval_width': Choice([0.6, 0.7, 0.8])
+            'changepoint_prior_scale': Choice([0.001, 0.01, 0.1, 0.5]),
+            'seasonality_prior_scale': Choice([0.01, 0.1, 1.0, 10.0]),
+            'holidays_prior_scale': Choice([0.01, 0.1, 1.0, 10.0]),
+            'changepoint_range': Choice([0.8, 0.85, 0.9, 0.95]),
         }
 
     @property
@@ -322,7 +320,7 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
     def default_tsf_init_kwargs(self):
         return {
             'min_interval': Choice([3, 5, 7]),
-            'n_estimators': Choice([50, 100, 200, 300]),
+            'n_estimators': Choice([50, 100, 200, 300, 500]),
         }
 
     @property
@@ -334,7 +332,7 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
     @property
     def default_knn_init_kwargs(self):
         return {
-            'n_neighbors': Choice([1, 3, 5, 7, 9]),
+            'n_neighbors': Choice([1, 3, 5, 7, 9, 15]),
             'weights': Choice(['uniform', 'distance']),
             'distance': Choice(['dtw', 'ddtw', 'lcss', 'msm']),
             'x_scale': Choice(['z_score', 'scale-none'])
@@ -402,25 +400,25 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'metrics': self.metrics,
             'horizon': self.horizon,
             'reducelr_patience': 5,
-            'earlystop_patience': 10,
+            'earlystop_patience': 15,
             'summary': True,
 
-            'loss': Choice(['log_gaussian_loss']*9+['smape']*1),
-            'rnn_type': Choice(['simple_rnn']*1+['gru']*4+['lstm']*4),
-            'rnn_units': Choice([64]*2+[128]*3+[256]*5),
-            'rnn_layers': Choice([2]*3+[3]*7),
-            'drop_rate': Choice([0.]*4+[0.1]*4+[0.2]*1),
-            'forecast_length': Choice([1]*3+[3, 6]),
+            'optimizer': 'adam',
+            'rnn_type': Choice(['gru', 'lstm']),
+            'rnn_units': Choice([64]*2+[128]*3+[256]*2),
+            'rnn_layers': Choice([2, 3]),
+            'drop_rate': Choice([0., 0.1, 0.2]),
+            'forecast_length': Choice([1]*8+[3, 6]),
             'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
             'y_log': Choice(['log-none']*9+['logx']*1),
-            'y_scale': Choice(['min_max']*8+['max_abs']*1+['z_scale']*1)
+            'y_scale': Choice(['min_max']*8+['z_scale']*1)
         }
 
     @property
     def default_deepar_fit_kwargs(self):
         return {
-            'epochs': 60,
+            'epochs': consts.TRAINING_EPOCHS,
             'batch_size': None,
             'verbose': 1,
         }
@@ -432,15 +430,16 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'task': self.task,
             'metrics': self.metrics,
             'reducelr_patience': 5,
-            'earlystop_patience': 10,
+            'earlystop_patience': 15,
             'summary': True,
 
-            'loss': Choice(['mae', 'smape', 'huber_loss']),
-            'rnn_type': Choice(['simple_rnn']*1+['gru']*4+['lstm']*4),
-            'rnn_units': Choice([16, 32]+[64]*2+[128]*3+[256]*2),
-            'rnn_layers': Choice([1]*1+[2]*4+[3]*4),
-            'drop_rate': Choice([0.]*4+[0.1]*4+[0.2]*1),
-            'forecast_length': Choice([1]*3+[3, 6]),
+            'optimizer': 'adam',
+            'loss': Choice(['mae', 'mse', 'huber_loss']),
+            'rnn_type': Choice(['gru', 'lstm']),
+            'rnn_units': Choice([64]*2+[128]*3+[256]*2),
+            'rnn_layers': Choice([2, 3]),
+            'drop_rate': Choice([0., 0.1, 0.2]),
+            'forecast_length': Choice([1]*8+[3, 6]),
             'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
             'y_log': Choice(['log-none']*9+['logx']*1),
@@ -450,7 +449,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
     @property
     def default_hybirdrnn_fit_kwargs(self):
         return {
-            'epochs': 60,
+            'epochs': consts.TRAINING_EPOCHS,
             'batch_size': None,
             'verbose': 1,
         }
@@ -462,22 +461,23 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
             'task': self.task,
             'metrics': self.metrics,
             'reducelr_patience': 5,
-            'earlystop_patience': 10,
+            'earlystop_patience': 15,
             'summary': True,
 
-            'loss': Choice(['mae', 'smape', 'huber_loss']),
-            'rnn_type': Choice(['simple_rnn']*1+['gru']*4+['lstm']*4),
-            'skip_rnn_type': Choice(['gru']*1+['lstm']*1),
-            'cnn_filters': Choice([16, 32, 64, 128]),
+            'optimizer': 'adam',
+            'loss': Choice(['mae', 'mse', 'huber_loss']),
+            'rnn_type': Choice(['gru', 'lstm']),
+            'skip_rnn_type': Choice(['gru', 'lstm']),
+            'cnn_filters': Choice([64]*2+[128]*3+[256]*2),
             'kernel_size': Choice([1]+[3]*3+[6]*3),
-            'rnn_units': Choice([16, 32]+[64]*2+[128]*3+[256]*2),
-            'skip_rnn_units': Choice([8, 16, 32, 64]),
+            'rnn_units': Choice([64]*2+[128]*3+[256]*2),
+            'skip_rnn_units': Choice([32]*2+[64]*3+[128]*2),
             'rnn_layers': Choice([1]*1+[2]*4+[3]*4),
             'skip_rnn_layers': Choice([1]*1+[2]*4+[3]*4),
-            'drop_rate': Choice([0.]*4+[0.1]*4+[0.2]*1),
+            'drop_rate': Choice([0., 0.1, 0.2]),
             'skip_period': Choice([0, 2, 3, 5]),
             'ar_order': Choice([2, 3, 5]),
-            'forecast_length': Choice([1]*3+[3, 6]),
+            'forecast_length': Choice([1]*8+[3, 6]),
             'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
             'y_log': Choice(['log-none']*9+['logx']*1),
@@ -487,7 +487,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
     @property
     def default_lstnet_fit_kwargs(self):
         return {
-            'epochs': 60,
+            'epochs': consts.TRAINING_EPOCHS,
             'batch_size': None,
             'verbose': 1,
         }
@@ -547,11 +547,11 @@ class DLClassificationSearchSpace(BaseSearchSpaceGenerator):
             'task': self.task,
             'metrics': self.metrics,
             'reducelr_patience': 5,
-            'earlystop_patience': 10,
+            'earlystop_patience': 15,
             'summary': True,
 
-            'rnn_type': Choice(['simple_rnn', 'gru', 'lstm']),
-            'rnn_units': Choice([16, 32]+[64]*2+[128]*3+[256]*2),
+            'rnn_type': Choice(['gru', 'lstm']),
+            'rnn_units': Choice([64]*2+[128]*3+[256]*2),
             'rnn_layers': Choice([1]*1+[2]*4+[3]*4+[4]*1),
             'drop_rate': Choice([0.]*4+[0.1]*4+[0.2]*1),
 
@@ -561,7 +561,7 @@ class DLClassificationSearchSpace(BaseSearchSpaceGenerator):
     @property
     def default_hybirdrnn_fit_kwargs(self):
         return {
-            'epochs': 60,
+            'epochs': consts.TRAINING_EPOCHS,
             'batch_size': None,
             'verbose': 1,
         }
@@ -573,13 +573,13 @@ class DLClassificationSearchSpace(BaseSearchSpaceGenerator):
             'task': self.task,
             'metrics': self.metrics,
             'reducelr_patience': 5,
-            'earlystop_patience': 10,
+            'earlystop_patience': 15,
             'summary': True,
 
-            'rnn_type': Choice(['simple_rnn', 'gru', 'lstm']),
-            'cnn_filters': Choice([16, 32, 64, 128]),
+            'rnn_type': Choice(['gru', 'lstm']),
+            'cnn_filters': Choice([64]*2+[128]*3+[256]*2),
             'kernel_size': Choice([1, 3, 5, 8]),
-            'rnn_units': Choice([16, 32]+[64]*2+[128]*3+[256]*2),
+            'rnn_units': Choice([64]*2+[128]*3+[256]*2),
             'rnn_layers': Choice([1]*1+[2]*4+[3]*4+[4]*1),
             'drop_rate': Choice([0.]*4+[0.1]*4+[0.2]*1),
             'skip_period': 0,
@@ -590,7 +590,7 @@ class DLClassificationSearchSpace(BaseSearchSpaceGenerator):
     @property
     def default_lstnet_fit_kwargs(self):
         return {
-            'epochs': 60,
+            'epochs': consts.TRAINING_EPOCHS,
             'batch_size': None,
             'verbose': 1,
         }

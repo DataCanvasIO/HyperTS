@@ -6,6 +6,7 @@ PSEUDO_DATE_START                  = '2021-11-12'
 DEFAULT_EVAL_SIZE                  = 0.2
 DEFAULT_MIN_EVAL_SIZE              = 0.05
 NAN_DROP_SIZE                      = 0.6
+TRAINING_EPOCHS                    = 60
 FINAL_TRAINING_EPOCHS              = 120
 HISTORY_UPPER_LIMIT                = 200
 
@@ -75,4 +76,5 @@ Metric_LOGLOSS                     = 'logloss'
 
 OptimizerSGD                       = 'sgd'
 OptimizerADAM                      = 'adam'
+OptimizerADAMP                     = 'adamp'
 OptimizerRMSPROP                   = 'rmsprop'

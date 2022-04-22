@@ -382,7 +382,7 @@ class HyperTSEstimator(Estimator):
             with fs.open(f'{model_file}', 'rb') as input:
                 estimator = pickle.load(input)
         else:
-            from hyperts.framework.dl.models import BaseDeepEstimator
+            from hyperts.framework.dl import BaseDeepEstimator
             with fs.open(f'{model_file}', 'rb') as input:
                 estimator = pickle.load(input)
             if estimator.cv_models_ is None:

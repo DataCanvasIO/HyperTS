@@ -331,27 +331,27 @@ class TSToolBox(ToolBox):
         freq: str or DateOffset.
         """
         if freq in 'W' or 'W-' in freq or 'WOM-' in freq:
-            window = list(filter(lambda x: x<=max_size, [2, 3, 4, 5, 6, 7, 7*2, 7*3]))
+            window = list(filter(lambda x: x<=max_size, [7, 7*2, 7*3, 7*4, 52]))
         elif freq in ['SM', 'M', 'MS', 'SMS', 'BM', 'CBM', 'CBMS', '15D']:
-            window = list(filter(lambda x: x <= max_size, [2, 3, 6, 12, 24, 24*2, 24*3]))
+            window = list(filter(lambda x: x <= max_size, [6, 12, 24, 36, 48]))
         elif 'Q' in freq or 'Q-' in freq or 'BQ' in freq or 'BQ-' in freq or 'QS-' in freq or 'BQS-' in freq:
-            window = list(filter(lambda x: x <= max_size, [2, 4, 8, 12, 16, 16*2, 16*3]))
+            window = list(filter(lambda x: x <= max_size, [4, 8, 12, 16, 16*2, 16*3]))
         elif freq in ['A', 'Y'] or 'A-' in freq or 'BA-' in freq or 'AS-' in freq or 'BAS-' in freq:
-            window = list(filter(lambda x: x<=max_size, [2, 3, 6, 12, 24, 24*2, 24*3]))
+            window = list(filter(lambda x: x<=max_size, [3, 6, 12, 24]))
         elif 'S' in freq or 'T' in freq or 'min' in freq:
-            window = list(filter(lambda x: x<=max_size, [2, 5, 10, 30, 60, 60*2, 60*3]))
+            window = list(filter(lambda x: x<=max_size, [10, 30, 60, 60*2, 60*3]))
         elif 'H' in freq:
-            window = list(filter(lambda x: x<=max_size, [2, 6, 12, 24, 48, 48*2, 24*7]))
+            window = list(filter(lambda x: x<=max_size, [24, 48, 48*2, 24*7]))
         elif 'BH' in freq or '8H' in freq:
-            window = list(filter(lambda x: x<=max_size, [2, 4, 8, 16, 24, 24*2, 24*7]))
+            window = list(filter(lambda x: x<=max_size, [8, 16, 24, 24*2, 24*7]))
         elif 'D' in freq:
-            window = list(filter(lambda x: x<=max_size, [2, 7, 14, 21, 21*2, 21*3]))
+            window = list(filter(lambda x: x<=max_size, [7, 14, 21, 21*2, 21*3]))
         elif freq in ['C', 'B']:
-            window = list(filter(lambda x: x<=max_size, [2, 5, 10, 15, 20, 20*2, 20*3]))
+            window = list(filter(lambda x: x<=max_size, [10, 15, 20, 20*2, 20*3]))
         elif 'L' in freq or 'U' in freq or 'N' in freq or 'ms' in freq:
-            window = list(filter(lambda x: x <= max_size, [2, 10, 50, 100, 200, 500, 1000]))
+            window = list(filter(lambda x: x <= max_size, [50, 100, 200, 500, 1000]))
         else:
-            window = list(filter(lambda x: x <= max_size, [2, 3, 5, 7, 12, 24, 24*2, 24*3, 24*7]))
+            window = list(filter(lambda x: x <= max_size, [5, 7, 12, 24, 24*2, 24*3, 24*7]))
 
         final_win_list = _expand_list(freq=freq, pre_list=window)
 

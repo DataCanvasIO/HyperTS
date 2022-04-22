@@ -5,7 +5,7 @@ import tensorflow.keras.backend as K
 
 from hyperts.utils import consts
 from hyperts.framework.dl import layers
-from hyperts.framework.dl.models import Model, BaseDeepEstimator
+from hyperts.framework.dl import BaseDeepEstimator
 
 from hypernets.utils import logging
 logger = logging.get_logger(__name__)
@@ -53,7 +53,7 @@ def HybirdRNNModel(task, window, rnn_type, continuous_columns, categorical_colum
         outputs = layers.Activation(out_activation, name=f'output_activation_{out_activation}')(outputs)
 
     all_inputs = list(continuous_inputs.values()) + list(categorical_inputs.values())
-    model = Model(inputs=all_inputs, outputs=[outputs], name=f'HybirdRNN-{rnn_type}')
+    model = tf.keras.models.Model(inputs=all_inputs, outputs=[outputs], name=f'HybirdRNN-{rnn_type}')
 
     return model
 

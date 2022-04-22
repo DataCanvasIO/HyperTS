@@ -125,7 +125,7 @@ def _test_univariate_binaryclass_metric(metric):
     df = load_arrow_head()
     df = df[df.target.isin(['0', '1'])]
     tb = get_tool_box(df)
-    train_df, test_df = tb.random_train_test_split(df, test_size=0.2)
+    train_df, test_df = tb.random_train_test_split(df, test_size=0.2, random_state=9527)
 
     target = 'target'
     task = consts.Task_CLASSIFICATION
@@ -139,6 +139,7 @@ def _test_univariate_binaryclass_metric(metric):
                           eval_data=test_df.copy(),
                           target=target,
                           reward_metric=reward_metric,
+                          random_state=9527,
                           optimize_direction=optimize_direction, **params)
 
     model = exp.run(max_trials=1)

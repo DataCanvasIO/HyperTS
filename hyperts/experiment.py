@@ -22,7 +22,7 @@ def make_experiment(train_data,
                     mode='stats',
                     max_trials=3,
                     eval_size=0.2,
-                    cv=False,
+                    cv=True,
                     num_folds=3,
                     ensemble_size=None,
                     target=None,
@@ -48,6 +48,7 @@ def make_experiment(train_data,
                     hyper_model_options=None,
                     dl_gpu_usage_strategy=0,
                     dl_memory_limit=2048,
+                    final_retrain_on_wholedata=True,
                     verbose=1,
                     log_level=None,
                     random_state=None,
@@ -72,7 +73,7 @@ def make_experiment(train_data,
     max_trials : int, maximum number of tests (model search), optional, (default=3).
     eval_size : float or int, When the eval_data is None, customize the ratio to split the eval_data from
         the train_data. int indicates the prediction length of the forecast task. (default=0.2 or 10).
-    cv : bool, default False.
+    cv : bool, default True.
         If True, use cross-validation instead of evaluation set reward to guide the search process.
     num_folds : int, default 3.
         Number of cross-validated folds, only valid when cv is true.
@@ -120,7 +121,7 @@ def make_experiment(train_data,
         If log_level < WARNNING, defalult is EarlyStoppingCallback plus SummaryCallback.
     early_stopping_rounds : int optional.
         Setting of EarlyStoppingCallback, is used if EarlyStoppingCallback instance not found from search_callbacks.
-        Set zero or None to disable it, default is 10.
+        Set zero or None to disable it, default is 20.
     early_stopping_time_limit : int, optional.
         Setting of EarlyStoppingCallback, is used if EarlyStoppingCallback instance not found from search_callbacks.
         Set zero or None to disable it, default is 3600 seconds.
@@ -153,6 +154,8 @@ def make_experiment(train_data,
         Deep neural net models(tensorflow) gpu usage strategy.
         0:cpu | 1:gpu-memory growth | 2: gpu-memory limit.
     dl_memory_limit : int, GPU memory limit, default 2048.
+    final_retrain_on_wholedata : bool, after the search, whether to retrain the optimal model on the whole data set.
+        default True.
     random_state : int or None, default None.
     clear_cache: bool, optional, (default False)
         Clear cache store before running the expeirment.
@@ -188,13 +191,10 @@ def make_experiment(train_data,
 
     def to_search_object(searcher, search_space):
         from hypernets.core.searcher import Searcher as SearcherSpec
-        from hypernets.searchers import EvolutionSearcher, MCTSSearcher
+        from hypernets.searchers import EvolutionSearcher
 
         if searcher is None:
-            if mode == consts.Mode_STATS:
-                searcher = default_searcher(EvolutionSearcher, search_space, searcher_options)
-            else:
-                searcher = default_searcher(MCTSSearcher, search_space, searcher_options)
+            searcher = default_searcher(EvolutionSearcher, search_space, searcher_options)
         elif isinstance(searcher, (type, str)):
             searcher = default_searcher(searcher, search_space, searcher_options)
         elif not isinstance(searcher, SearcherSpec):
@@ -426,7 +426,7 @@ def make_experiment(train_data,
         autual_covariates = covariates
 
     # 8. Infer Forecast Window for DL Mode
-    if mode in [consts.Mode_DL, consts.Mode_NAS] and task in consts.TASK_LIST_FORECAST and dl_forecast_window is None:
+    if mode in [consts.Mode_DL, consts.Mode_NAS] and task in consts.TASK_LIST_FORECAST:
         if forecast_train_data_periods is None:
             X_train_length = len(X_train)
         elif isinstance(forecast_train_data_periods, int) and forecast_train_data_periods < len(X_train):
@@ -448,18 +448,27 @@ def make_experiment(train_data,
             logger.warning('The trian data is too short to start dl mode, '
                            'stats mode has been automatically switched.')
             mode = consts.Mode_STATS
+            hist_store_upper_limit = consts.HISTORY_UPPER_LIMIT
         else:
-            import numpy as np
-            if max_win_size <= 10:
-                dl_forecast_window = list(filter(lambda x: x <= max_win_size, [2, 4, 6, 8, 10]))
+            if dl_forecast_window is None:
+                import numpy as np
+                if max_win_size <= 10:
+                    dl_forecast_window = list(filter(lambda x: x <= max_win_size, [2, 4, 6, 8, 10]))
+                else:
+                    dl_forecast_window = list(filter(lambda x: x <= max_win_size, [12, 24, 30, 48, 60, 72, 96, 168]))
+                periods = [tb.fft_infer_period(y_train[col]) for col in target]
+                period = int(np.argmax(np.bincount(periods)))
+                if period > 0 and period <= max_win_size:
+                    dl_forecast_window.append(period)
+            elif isinstance(dl_forecast_window, int):
+                assert dl_forecast_window < max_win_size, f'The slide window can not be greater than {max_win_size}'
+            elif isinstance(dl_forecast_window, list):
+                assert max(
+                    dl_forecast_window) < max_win_size, f'The slide window can not be greater than {max_win_size}'
             else:
-                dl_forecast_window = list(filter(lambda x: x <= max_win_size, [12, 24, 48, 60, 72, 96, 168]))
-            periods = [tb.fft_infer_period(y_train[col]) for col in target]
-            period = int(np.argmax(np.bincount(periods)))
-            if period > 0 and period <= max_win_size:
-                dl_forecast_window.append(period)
+                raise ValueError(f'This type of {dl_forecast_window} is not supported.')
             logger.info(f'The forecast window length of DL mode list is: {dl_forecast_window}')
-        hist_store_upper_limit = max_win_size + 1
+            hist_store_upper_limit = max(dl_forecast_window) + 1
     else:
         hist_store_upper_limit = consts.HISTORY_UPPER_LIMIT
 
@@ -553,7 +562,8 @@ def make_experiment(train_data,
                                      optimize_direction=optimize_direction, scorer=scorer,
                                      id=id, forecast_train_data_periods=forecast_train_data_periods,
                                      hist_store_upper_limit=hist_store_upper_limit,
-                                     ensemble_size=ensemble_size, callbacks=callbacks, **kwargs)
+                                     ensemble_size=ensemble_size, callbacks=callbacks,
+                                     final_retrain_on_wholedata=final_retrain_on_wholedata, **kwargs)
 
     # 20. Clear Cache
     if clear_cache:

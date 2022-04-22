@@ -24,7 +24,7 @@ class Test_Experiment():
                               timestamp=timestamp,
                               covariables=covariables,
                               task=task,
-                              callbacks=None,
+                              cv=False,
                               reward_metric=reward_metric,
                               optimize_direction=optimize_direction)
 
@@ -53,7 +53,7 @@ class Test_Experiment():
                               timestamp=timestamp,
                               covariables=covariables,
                               task=task,
-                              callbacks=None,
+                              cv=False,
                               reward_metric=reward_metric,
                               optimize_direction=optimize_direction)
 
@@ -69,7 +69,7 @@ class Test_Experiment():
     def test_univariate_classification(self):
         df = load_arrow_head()
         tb = get_tool_box(df)
-        train_df, test_df = tb.random_train_test_split(df, test_size=0.2)
+        train_df, test_df = tb.random_train_test_split(df, test_size=0.2, random_state=9527)
 
         target = 'target'
         task = consts.Task_CLASSIFICATION
@@ -79,9 +79,11 @@ class Test_Experiment():
         exp = make_experiment(train_df.copy(),
                               mode='dl',
                               task=task,
+                              cv=False,
                               eval_data=test_df.copy(),
                               target=target,
                               reward_metric=reward_metric,
+                              random_state=9527,
                               optimize_direction=optimize_direction)
 
         model = exp.run(max_trials=3, epochs=2, final_train_epochs=2)
@@ -98,7 +100,7 @@ class Test_Experiment():
     def test_multivariate_classification(self):
         df = load_basic_motions()
         tb = get_tool_box(df)
-        train_df, test_df = tb.random_train_test_split(df, test_size=0.2)
+        train_df, test_df = tb.random_train_test_split(df, test_size=0.2, random_state=9527)
 
         target = 'target'
         task = consts.Task_CLASSIFICATION
@@ -108,9 +110,11 @@ class Test_Experiment():
         exp = make_experiment(train_df.copy(),
                               mode='dl',
                               task=task,
+                              cv=False,
                               eval_data=test_df.copy(),
                               target=target,
                               reward_metric=reward_metric,
+                              random_state=9527,
                               optimize_direction=optimize_direction)
 
         model = exp.run(max_trials=3, epochs=2, final_train_epochs=2)

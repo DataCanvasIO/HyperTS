@@ -11,7 +11,7 @@ from tensorflow.keras.utils import plot_model
 from tensorflow.keras.models import save_model, load_model
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
 
-from hyperts.framework.dl import layers, losses, metrics
+from hyperts.framework.dl import layers, losses, metrics, optimizers
 from hyperts.framework.dl.dl_utils.timeseries import from_array_to_timeseries
 from hyperts.framework.dl.dl_utils.metainfo import MetaTSFprocessor, MetaTSCprocessor
 
@@ -78,6 +78,7 @@ class Losses(collections.UserDict):
             'mean_absolute_percentage_error': losses.MeanAbsolutePercentageError(),
             'smape': losses.SymmetricMeanAbsolutePercentageError(),
             'symmetric_mean_absolute_percentage_error': losses.SymmetricMeanAbsolutePercentageError(),
+            'log_cosh': losses.LogCosh(),
             'categorical_crossentropy': losses.CategoricalCrossentropy(),
             'binary_crossentropy': losses.BinaryCrossentropy(),
         }
@@ -387,8 +388,23 @@ class BaseDeepEstimator(object):
         if validation_length <= 0:
             raise RuntimeError(f'The train set must not be less than {int(1/validation_split)}.')
 
+        if self.window < self.forecast_length:
+            logger.warning('window must not be smaller than forecast_length, reset forecast_length=1.')
+            self.forecast_length = 1
+
+        X_train, y_train = self._dataloader(self.task, X, y, self.window, self.horizon, self.forecast_length)
+
+        if self.task in consts.TASK_LIST_FORECAST:
+            if isinstance(X_train, list):
+                X_valid = [x[-validation_length:] for x in X_train]
+            else:
+                X_valid = X_train[-validation_length:]
+            y_valid = y_train[-validation_length:]
+        else:
+            X_train, X_valid, y_train, y_valid = tb.random_train_test_split(X_train, y_train, test_size=validation_length)
+
         if batch_size is None:
-            data_num = int(len(X))
+            data_num = int(len(y_train))
             if data_num <= 100:
                 batch_size = max(int(2 ** (0 + int(math.log(data_num, 4)))), 2)
             elif data_num <= 1000:
@@ -402,7 +418,7 @@ class BaseDeepEstimator(object):
         logger.info(f'Fit epochs is {epochs}, batch_size is {batch_size}.')
 
         if steps_per_epoch is None:
-            steps_per_epoch = len(X) // batch_size - 1
+            steps_per_epoch = len(y_train) // batch_size - 1
             if steps_per_epoch == 0:
                 steps_per_epoch = 1
 
@@ -410,20 +426,6 @@ class BaseDeepEstimator(object):
             validation_steps = validation_length // batch_size - 1
             if validation_steps <= 1:
                 validation_steps = 1
-
-        if self.window < self.forecast_length:
-            logger.warning('window must not be smaller than forecast_length, reset forecast_length=1.')
-            self.forecast_length = 1
-        X_train, y_train = self._dataloader(self.task, X, y, self.window, self.horizon, self.forecast_length)
-
-        if self.task in consts.TASK_LIST_FORECAST:
-            if isinstance(X_train, list):
-                X_valid = [x[-validation_length:] for x in X_train]
-            else:
-                X_valid = X_train[-validation_length:]
-            y_valid = y_train[-validation_length:]
-        else:
-            X_train, X_valid, y_train, y_valid = tb.random_train_test_split(X_train, y_train, test_size=validation_length)
 
         callbacks = self._inject_callbacks(callbacks, epochs, self.reducelr_patience, self.earlystop_patience, verbose)
 
@@ -633,11 +635,13 @@ class BaseDeepEstimator(object):
         logger.info(f'The compile loss is `{loss.name}`, metrics is `{metrics[0].name}`.')
 
         if optimizer.lower() in ['auto', consts.OptimizerADAM]:
-            optimizer = tf.keras.optimizers.Adam(lr=learning_rate, decay=1e-8, clipnorm=10.)
+            optimizer = optimizers.Adam(lr=learning_rate, decay=1e-8, clipnorm=10.)
+        elif optimizer.lower() == consts.OptimizerADAMP:
+            optimizer = optimizers.AdamP(lr=learning_rate, weight_decay=1e-2)
         elif optimizer.lower() == consts.OptimizerRMSPROP:
-            optimizer = tf.keras.optimizers.RMSprop(lr=learning_rate, momentum=0.9, decay=1e-8, clipnorm=10.)
+            optimizer = optimizers.RMSprop(lr=learning_rate, momentum=0.9, decay=1e-8, clipnorm=10.)
         elif optimizer.lower() == consts.OptimizerSGD:
-            optimizer = tf.keras.optimizers.SGD(lr=learning_rate, momentum=0.9, nesterov=True, decay=1e-8, clipnorm=10.)
+            optimizer = optimizers.SGD(lr=learning_rate, momentum=0.9, nesterov=True, decay=1e-8, clipnorm=10.)
         else:
             raise ValueError(f'Unsupport this optimizer: {optimizer}.')
         logger.info(f'The compile optimizer is `{optimizer._name}`, learning rate is {learning_rate}.')
@@ -830,6 +834,7 @@ class BaseDeepEstimator(object):
         custom_objects.update(layers.layers_custom_objects)
         custom_objects.update(losses.losses_custom_objects)
         custom_objects.update(metrics.metrics_custom_objects)
+        custom_objects.update(optimizers.optimizer_custom_objects)
 
         if model_file.endswith('.pkl'):
             model_file = os.path.splitext(model_file)[0]

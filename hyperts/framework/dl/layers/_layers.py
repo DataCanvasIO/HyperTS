@@ -145,7 +145,7 @@ class AutoRegressive(layers.Layer):
             layers.Lambda(lambda k: K.permute_dimensions(k, (0, 2, 1))),
             layers.Lambda(lambda k: K.reshape(k, (-1, self.order)))
         ])
-        self.dense = layers.Dense(1, kernel_initializer='he_normal')
+        self.dense = layers.Dense(1)
 
     def call(self, inputs, **kwargs):
         x = self.transform(inputs)
@@ -171,7 +171,7 @@ class Highway(layers.Layer):
     def __init__(self, nb_variables, **kwargs):
         super(Highway, self).__init__(**kwargs)
         self.nb_variables = nb_variables
-        self.nin = layers.Conv1D(nb_variables, 1, activation='relu')
+        self.nin = layers.Conv1D(nb_variables, 1, activation='relu', kernel_initializer='he_normal')
         self.pool = layers.GlobalAveragePooling1D()
 
     def call(self, inputs, **kwargs):
@@ -300,8 +300,8 @@ def rnn_forward(x, nb_units, nb_layers, rnn_type, name, drop_rate=0., i=0, activ
     RnnCell = {'lstm': layers.LSTM, 'gru': layers.GRU, 'simple_rnn': layers.SimpleRNN}[rnn_type]
     for i in range(nb_layers - 1):
         x = RnnCell(units=nb_units, activation=activation, return_sequences=True, name=f'{name}_{i}')(x)
-        x = layers.Dropout(rate=drop_rate, name=f'{name}_{i}_dropout')(x)
-    x = RnnCell(units=nb_units, activation=activation, return_sequences=return_sequences, name=f'{name}_{i + 1}')(x)
+        x = layers.BatchNormalization(name=f'{name}_{i}_norm')(x) if drop_rate > 0 else x
+    x = RnnCell(units=nb_units, activation=activation, return_sequences=return_sequences, name=f'{name}_{i+1}')(x)
     return x
 
 

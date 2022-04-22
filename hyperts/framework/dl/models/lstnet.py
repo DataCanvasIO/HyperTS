@@ -5,7 +5,7 @@ import tensorflow.keras.backend as K
 
 from hyperts.utils import consts
 from hyperts.framework.dl import layers
-from hyperts.framework.dl.models import Model, BaseDeepEstimator
+from hyperts.framework.dl import BaseDeepEstimator
 
 from hypernets.utils import logging
 logger = logging.get_logger(__name__)
@@ -102,7 +102,7 @@ def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categ
         outputs = layers.Activation(out_activation, name=f'output_activation_{out_activation}')(outputs)
 
     all_inputs = list(continuous_inputs.values()) + list(categorical_inputs.values())
-    model = Model(inputs=all_inputs, outputs=[outputs], name=f'LSTNet')
+    model = tf.keras.models.Model(inputs=all_inputs, outputs=[outputs], name=f'LSTNet')
 
     return model
 

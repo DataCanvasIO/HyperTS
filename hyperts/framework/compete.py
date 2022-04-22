@@ -309,7 +309,7 @@ class TSEnsembleStep(EnsembleStep):
             X_train, X_eval, y_train, y_eval = \
             tb.temporal_train_test_split(X_train, y_train, test_size=eval_horizon)
             estimators = self.est_retrain(trials, hyper_model, X_train, y_train, **kwargs)
-            self.retrain_on_wholedata = False
+            # self.retrain_on_wholedata = False
             ensemble.estimators = list(estimators)
             ensemble.classes_ = None
             ensemble.fit(X_eval, y_eval)
@@ -318,14 +318,17 @@ class TSEnsembleStep(EnsembleStep):
         else:
             ensemble.fit(X_train, y_train)
 
-        if self.retrain_on_wholedata:
-            estimators = self.est_retrain(trials, hyper_model, X_train, y_train, X_eval, y_eval, **kwargs)
-            ensemble.estimators = list(estimators)
-
         if not isinstance(ensemble.weights_, list):
             weights = np.sum(ensemble.weights_, axis=1)
+        else:
+            weights = ensemble.weights_
+
+        if self.retrain_on_wholedata:
+            estimators = self.est_retrain(trials, hyper_model, X_train, y_train, X_eval, y_eval, weights, **kwargs)
+        else:
             estimators = np.where(weights > 0, estimators, None)
-            ensemble.estimators = list(estimators)
+
+        ensemble.estimators = list(estimators)
 
         return ensemble
 
@@ -341,7 +344,7 @@ class TSEnsembleStep(EnsembleStep):
         return tb.greedy_ensemble(ensemble_task, estimators, target_dims=target_dims,
                                scoring=self.scorer, ensemble_size=self.ensemble_size)
 
-    def est_retrain(self, trials, hyper_model, X_train, y_train, X_eval=None, y_eval=None, **kwargs):
+    def est_retrain(self, trials, hyper_model, X_train, y_train, X_eval=None, y_eval=None, weights=None, **kwargs):
         estimators = []
         if X_eval is not None or y_eval is not None:
             tb = get_tool_box(X_train, X_eval)
@@ -349,18 +352,27 @@ class TSEnsembleStep(EnsembleStep):
             y_all = tb.concat_df([y_train, y_eval], axis=0)
         else:
             X_all, y_all = X_train, y_train
+
+        if 'final_train_epochs' in kwargs.keys():
+            kwargs.update({'epochs': kwargs.pop('final_train_epochs')})
+        elif 'epochs' in kwargs.keys() and kwargs.get('epochs') != consts.FINAL_TRAINING_EPOCHS:
+            kwargs.update({'epochs': consts.FINAL_TRAINING_EPOCHS})
+
         logger.info('Retrain the best trial model with all data ...')
-        for trial in trials:
-            estimator = hyper_model.final_train(trial.space_sample, X_all, y_all, **kwargs)
-            estimators.append(estimator)
+        weights = [1]*len(trials) if weights is None else weights
+        for trial, weight in zip(trials, weights):
+            if weight > 0:
+                estimator = hyper_model.final_train(trial.space_sample, X_all, y_all, **kwargs)
+                estimators.append(estimator)
+            else:
+                estimators.append(None)
         return estimators
 
 
 class TSFinalTrainStep(FinalTrainStep):
-    def __init__(self, experiment, name, mode=None, retrain_on_wholedata=False):
+    def __init__(self, experiment, name, retrain_on_wholedata=False):
         super().__init__(experiment, name)
 
-        self.mode = mode
         self.retrain_on_wholedata = retrain_on_wholedata
 
     def build_estimator(self, hyper_model, X_train, y_train, X_test=None, X_eval=None, y_eval=None, **kwargs):
@@ -373,9 +385,10 @@ class TSFinalTrainStep(FinalTrainStep):
             else:
                 X_all, y_all = X_train, y_train
 
-            if self.mode != consts.Mode_STATS:
-                final_train_epochs = kwargs.pop('final_train_epochs', consts.FINAL_TRAINING_EPOCHS)
-                kwargs.update({'epochs': final_train_epochs})
+            if 'final_train_epochs' in kwargs.keys():
+                kwargs.update({'epochs': kwargs.pop('final_train_epochs')})
+            elif 'epochs' in kwargs.keys() and kwargs.get('epochs') != consts.FINAL_TRAINING_EPOCHS:
+                kwargs.update({'epochs': consts.FINAL_TRAINING_EPOCHS})
 
             logger.info('Retrain the best trial model with all data ...')
             estimator = hyper_model.final_train(trial.space_sample, X_all, y_all, **kwargs)
@@ -839,6 +852,8 @@ class TSCompeteExperiment(SteppedExperiment):
         The number of estimator to ensemble. During the AutoML process, a lot of models will be generated with different
         preprocessing pipelines, different models, and different hyperparameters. Usually selecting some of the models
         that perform well to ensemble can obtain better generalization ability than just selecting the single best model.
+    final_retrain_on_wholedata: bool, after the search, whether to retrain the optimal model on the whole data set.
+        default True.
     """
 
     def __init__(self, hyper_model, X_train, y_train, X_eval=None, y_eval=None, X_test=None,
@@ -861,6 +876,7 @@ class TSCompeteExperiment(SteppedExperiment):
                  scorer=None,
                  optimize_direction=None,
                  ensemble_size=10,
+                 final_retrain_on_wholedata=True,
                  **kwargs):
 
         if random_state is None:
@@ -870,6 +886,7 @@ class TSCompeteExperiment(SteppedExperiment):
         if task is None:
             task = hyper_model.task
 
+        self.cv = cv
         self.freq = freq
         self.task = task
         self.mode = mode
@@ -884,8 +901,7 @@ class TSCompeteExperiment(SteppedExperiment):
             if X_eval is not None or y_eval is not None:
                 eval_data = tb.concat_df([X_eval, y_eval], axis=1)
                 all_data = tb.concat_df([all_data, eval_data], axis=0)
-            max_history_length = min(hist_store_upper_limit, int(len(all_data)*consts.DEFAULT_EVAL_SIZE))
-            self.history = tb.select_1d_reverse(all_data, max_history_length)
+            self.history = tb.select_1d_reverse(all_data, hist_store_upper_limit)
         else:
             self.history = None
 
@@ -931,10 +947,11 @@ class TSCompeteExperiment(SteppedExperiment):
                                         scorer=scorer,
                                         ensemble_size=ensemble_size,
                                         cv=cv,
-                                        retrain_on_wholedata=False))
+                                        retrain_on_wholedata=final_retrain_on_wholedata))
         else:
             # final train step
-            steps.append(TSFinalTrainStep(self, consts.StepName_FINAL_TRAINING, retrain_on_wholedata=True))
+            steps.append(TSFinalTrainStep(self, consts.StepName_FINAL_TRAINING,
+                                          retrain_on_wholedata=final_retrain_on_wholedata))
 
         # ignore warnings
         import warnings
@@ -1007,4 +1024,8 @@ class TSCompeteExperiment(SteppedExperiment):
                 raise ValueError(f'dl_window_length cannot be greater than {self.max_window_length}.')
         if kwargs.get('dl_forecast_length', 0) > 0:
             kwargs['forecast_length'] = kwargs.pop('dl_forecast_length')
+
+        if self.cv and kwargs.get('epochs') is None:
+            kwargs['epochs'] = consts.TRAINING_EPOCHS // 2
+
         return kwargs
