@@ -22,7 +22,7 @@ def make_experiment(train_data,
                     mode='stats',
                     max_trials=3,
                     eval_size=0.2,
-                    cv=False,
+                    cv=True,
                     num_folds=3,
                     ensemble_size=10,
                     target=None,
@@ -86,7 +86,7 @@ def make_experiment(train_data,
         Target feature name for training, which must be one of the train_data columns for classification[str],
         regression[str] or unvariate forecast task [list]. For multivariate forecast task, it is multiple columns
         of training data.
-    ensemble_size: 'int' or None, default None.
+    ensemble_size: 'int' or None, default 10.
         The number of estimator to ensemble. During the AutoML process, a lot of models will be generated with different
         preprocessing pipelines, different models, and different hyperparameters. Usually selecting some of the models
         that perform well to ensemble can obtain better generalization ability than just selecting the single best model.

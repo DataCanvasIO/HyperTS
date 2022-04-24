@@ -242,12 +242,11 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
     def default_arima_init_kwargs(self):
         return {
             'p': Choice([0, 1, 2]),
-            'd': Choice([0, 1, 2]),
+            'd': Choice([0, 1]),
             'q': Choice([0, 1, 2]),
             'trend': Choice(['n', 'c', 't', 'ct']),
-            'seasonal_order': Choice([(1, 0, 0), (1, 0, 1), (1, 0, 1),
-                                      (1, 0, 2), (0, 2, 1), (0, 1, 2),
-                                      (2, 0, 1), (2, 0, 2), (0, 1, 1)]),
+            'seasonal_order': Choice([(1, 0, 0), (1, 0, 1), (1, 1, 1),
+                                      (0, 1, 2), (2, 0, 1), (0, 1, 1)]),
             # 'period_offset': Choice([0, 0, 0, 0, 0, 0, 1, -1, 2, -2]),
             'y_scale': Choice(['min_max']*8 + ['max_abs']*1 + ['z_scale']*1)
         }
