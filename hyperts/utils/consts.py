@@ -74,6 +74,8 @@ Metric_AUC                         = 'auc'
 Metric_F1                          = 'f1'
 Metric_LOGLOSS                     = 'logloss'
 
+POSLABEL_REQUIRED                  = ['recall', 'recall_score', 'precision', 'precision_score', 'f1', 'f1_score']
+
 OptimizerSGD                       = 'sgd'
 OptimizerADAM                      = 'adam'
 OptimizerADAMP                     = 'adamp'

@@ -626,6 +626,30 @@ class TSToolBox(ToolBox):
         else:
             return p
 
+    @staticmethod
+    def infer_pos_label(y_true, task, pos_label=None):
+        y_true = np.array(y_true) if not isinstance(y_true, np.ndarray) else y_true
+
+        if task in consts.TASK_LIST_CLASSIFICATION and pos_label is None:
+            if 1 in y_true:
+                pos_label = 1
+            elif 'yes' in y_true:
+                pos_label = 'yes'
+            elif 'true' in y_true:
+                pos_label = 'true'
+            else:
+                pos_label = y_true[0]
+        elif task in consts.TASK_LIST_CLASSIFICATION and pos_label is not None:
+            if pos_label in y_true:
+                pos_label = pos_label
+            else:
+                pos_label = y_true[0]
+        else:
+            pos_label = None
+
+        return pos_label
+
+
     metrics = metrics_.Metrics
 
     _preqfold_cls = tscvsplit.PrequentialSplit

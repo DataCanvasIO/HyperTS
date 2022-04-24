@@ -511,6 +511,7 @@ def make_experiment(train_data,
 
     # 11. Get scorer
     if kwargs.get('scorer') is None:
+        kwargs['pos_label'] = tb.infer_pos_label(y_train, task, kwargs.get('pos_label'))
         scorer = tb.metrics.metric_to_scorer(reward_metric, task=task, pos_label=kwargs.get('pos_label'),
                                                                   optimize_direction=optimize_direction)
     else:

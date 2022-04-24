@@ -302,6 +302,7 @@ def calc_score(y_true, y_preds, y_proba=None, metrics=('accuracy',), task=const.
 
 metric2scoring = {
     'auc': 'roc_auc_ovo',
+    'roc_auc_score': 'roc_auc_ovo',
     'accuracy': 'accuracy',
     'accuracy_score': 'accuracy',
     'recall': 'recall',
@@ -360,31 +361,39 @@ greater_is_better = {
 }
 
 def metric_to_scorer(metric, task, pos_label=None, **options):
-    if pos_label is not None:
-        options['pos_label'] = pos_label
-    options['average'] = _task_to_average(task)
+    optimize_direction = options.pop('optimize_direction')
 
     if isinstance(metric, str) and isinstance(metric2scoring[metric], str):
-        return get_scorer(metric2scoring[metric])
+        scorer =  get_scorer(metric2scoring[metric])
     elif isinstance(metric, str) and callable(metric2scoring[metric]):
         options.update({'greater_is_better': greater_is_better[metric]})
-        return make_scorer(metric2scoring[metric], **options)
+        scorer = make_scorer(metric2scoring[metric], **options)
     elif callable(metric) and metric.__name__ in metric2scoring.keys():
         if isinstance(metric2scoring[metric.__name__], str):
-            return get_scorer(metric2scoring[metric.__name__])
+            scorer = get_scorer(metric2scoring[metric.__name__])
         else:
             options.update({'greater_is_better': greater_is_better[metric.__name__]})
-            return make_scorer(metric2scoring[metric.__name__], **options)
+            scorer = make_scorer(metric2scoring[metric.__name__], **options)
     elif callable(metric) and metric.__name__ not in metric2scoring.keys():
-        if options.get('optimize_direction') is not None:
+        if optimize_direction is not None:
             options.update({'greater_is_better': True
-                    if options.get('optimize_direction') == 'max' else False})
-            return make_scorer(metric, **options)
+            if optimize_direction.lower() == 'max' else False})
+            scorer = make_scorer(metric, **options)
         else:
             raise ValueError('Note that custom reward_metric need to provide '
                              'optimize_direction.')
     else:
         raise ValueError('The reward_metric definition might be wrong.')
+
+    if (isinstance(metric, str) and metric in const.POSLABEL_REQUIRED) or \
+       (callable(metric) and metric.__name__ in const.POSLABEL_REQUIRED):
+        average = _task_to_average(task)
+        scorer._kwargs['average'] = average
+        if average is 'binary':
+            scorer._kwargs['pos_label'] = pos_label
+        logger.info(f"pos_label is {pos_label}.")
+
+    return scorer
 
 class Metrics(metrics.Metrics):
     calc_score = calc_score

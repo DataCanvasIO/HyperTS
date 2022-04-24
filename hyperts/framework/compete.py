@@ -941,8 +941,9 @@ class TSCompeteExperiment(SteppedExperiment):
             # ensemble step
             tb = get_tool_box(X_train, y_train)
             if scorer is None:
+                kwargs['pos_label'] = tb.infer_pos_label(y_train, task, kwargs.get('pos_label'))
                 scorer = tb.metrics.metric_to_scorer(hyper_model.reward_metric, task=task,
-                         pos_label=kwargs.get('pos_label'), optimize_direction=optimize_direction)
+                 pos_label=kwargs.get('pos_label'), optimize_direction=optimize_direction)
             steps.append(TSEnsembleStep(self, consts.StepName_FINAL_ENSEMBLE,
                                         mode=mode,
                                         scorer=scorer,
