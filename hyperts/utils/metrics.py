@@ -389,7 +389,7 @@ def metric_to_scorer(metric, task, pos_label=None, **options):
        (callable(metric) and metric.__name__ in const.POSLABEL_REQUIRED):
         average = _task_to_average(task)
         scorer._kwargs['average'] = average
-        if average is 'binary':
+        if average == 'binary':
             scorer._kwargs['pos_label'] = pos_label
         logger.info(f"pos_label is {pos_label}.")
 

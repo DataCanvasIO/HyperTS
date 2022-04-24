@@ -248,7 +248,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
             'seasonal_order': Choice([(1, 0, 0), (1, 0, 1), (1, 0, 1),
                                       (1, 0, 2), (0, 2, 1), (0, 1, 2),
                                       (2, 0, 1), (2, 0, 2), (0, 1, 1)]),
-            'period_offset': Choice([0, 0, 0, 0, 0, 0, 1, -1, 2, -2]),
+            # 'period_offset': Choice([0, 0, 0, 0, 0, 0, 1, -1, 2, -2]),
             'y_scale': Choice(['min_max']*8 + ['max_abs']*1 + ['z_scale']*1)
         }
 

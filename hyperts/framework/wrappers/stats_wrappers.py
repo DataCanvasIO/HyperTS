@@ -78,21 +78,23 @@ class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
         q = self.init_kwargs.pop('q', 1)
         trend = self.init_kwargs.pop('trend', 'c')
         seasonal_order = self.init_kwargs.pop('seasonal_order', (1, 1, 1))
-        period_offset = self.init_kwargs.pop('period_offset', 0)
-        if period != 2 and period+period_offset > 1:
-            period = min(period+period_offset, 30)
-        else:
-            period = 3
+        # period_offset = self.init_kwargs.pop('period_offset', 0)
+        # if period != 2 and period+period_offset > 1:
+        #     period = min(period+period_offset, 30)
+        # else:
+        #     period = 3
         period = kwargs.get('period', period)
-        seasonal_order = seasonal_order + (period,)
+        if period > 2 and period <= 12:
+            seasonal_order = seasonal_order + (period,)
+        else:
+            seasonal_order = (0, 0, 0, 0)
 
         try:
             model = ARIMA(endog=y, order=(p, d, q), trend=trend, freq=freq,
                           seasonal_order=seasonal_order, dates=X[self.timestamp])
-            self.model = model.fit(**self.init_kwargs)
         except:
             model = ARIMA(endog=y, order=(p, d, q), trend=trend, freq=freq, dates=X[self.timestamp])
-            self.model = model.fit(**self.init_kwargs)
+        self.model = model.fit(**self.init_kwargs)
 
     def predict(self, X, **kwargs):
         last_date = X[self.timestamp].tail(1).to_list()[0].to_pydatetime()
