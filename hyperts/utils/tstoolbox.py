@@ -180,7 +180,7 @@ class TSToolBox(ToolBox):
             offsets = [-1, -2, -3, -4, 1, 2, 3, 4]
         elif offsets is None and freq in ['SM', '15D', 'SMS']:
             offsets = [-1, -2, -4, -6, -8, 1, 2, 4, 6, 8]
-        elif offsets is None and 'Q' in freq or 'Q-' in freq or 'BQ' in freq or 'BQ-' in freq or 'QS-' in freq or 'BQS-':
+        elif offsets is None and 'Q' in freq or 'Q-' in freq or 'BQ' in freq or 'BQ-' in freq or 'QS-' in freq or 'BQS-' in freq:
             offsets = [-1, -4, -8, -12, 1, 4, 8, 12]
         elif offsets is None and freq in ['A', 'Y'] or 'A-' in freq or 'BA-' in freq or 'AS-' in freq or 'BAS-' in freq:
             offsets = [-1, -2, -3, -4, 1, 2, 3, 4]
