@@ -73,4 +73,4 @@ or
 
     ValueError: In models with integration (d > 0) or seasonal integration (D > 0)...
 
-Please check the ``statsmodels`` version and control that it is not greater than 0.12.2.
+Please check the ``statsmodels`` version and control that it is not greater than 0.12.1.
