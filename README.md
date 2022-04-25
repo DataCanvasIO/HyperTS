@@ -103,7 +103,7 @@ HyperTS supports the following features:
 
 **Ensemble:** Refinement greedy emsemble glues the most powerful models.
 
-**Cross Validation** Multiple time series cross-validation strategies ensure generalization ability.
+**Cross Validation:** Multiple time series cross-validation strategies ensure generalization ability.
 
 ## Communication
 If you wish to contribute to this project, please refer to [CONTRIBUTING](CONTRIBUTING.md).

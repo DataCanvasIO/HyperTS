@@ -70,3 +70,11 @@ conda安装
     This error may indicate that you're trying to pass a Tensor to a NumPy call, which is not supported.
 
 您可以注意一下numpy版本和正在使用的tensorflow版本的兼容性, 适当降低numpy版本(如1.19.5), 也许会避免不必要的调试。
+
+6. 在使用stats模型做单变量预测时，也许会遇到如下一些问题:
+
+.. code-block:: none
+
+    ValueError: In models with integration (d > 0) or seasonal integration (D > 0)...
+
+建议您检查 ``statsmodels`` 的版本并控制其版为0.12.2。

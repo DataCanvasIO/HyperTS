@@ -65,4 +65,12 @@ or
 .. code-block:: none
 
      NotImplementedError: Cannot convert a symbolic Tensor (gru_1/strided_slice:0) to a numpy array. 
-     This error may indicate that you're trying to pass a Tensor to a NumPy call, which is not supported.  
+     This error may indicate that you're trying to pass a Tensor to a NumPy call, which is not supported.
+
+6. When using the STATS model for univariate forecasting, you may encounter the following problems:
+
+.. code-block:: none
+
+    ValueError: In models with integration (d > 0) or seasonal integration (D > 0)...
+
+Please check the ``statsmodels`` version and control that it is not greater than 0.12.2.

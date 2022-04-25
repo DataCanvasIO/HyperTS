@@ -56,3 +56,27 @@ HyperTS is an AutoML and AutoDL tool which focuses on processing time series dat
   - Human interactive plot
   - Plot options: historical data, forecasting data and actural data
   - Confidence intervals 
+
+
+Version 0.1.2.1
+******************
+
+Details of the HypertTS update are as follows:
+
+- Supports cross validation.
+
+- Supports greedy ensemble.
+
+- Supports time series forecasting data without timestamp column.
+
+- Supports time series forecasting truncation training set to train.
+
+- Supports time series forecasting of discrete data (no  fixed time frequency).
+
+- Supports Fourier inference period.
+
+- Supports non-invasive parameters tuning.
+
+- Optimizes search space and architecture.
+
+- Fixes some bugs.
