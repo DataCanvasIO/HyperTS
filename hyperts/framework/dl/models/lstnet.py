@@ -65,6 +65,8 @@ def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categ
         kernel_size = 1
         logger.warning('kernel_size cannot be larger than window, so it is reset to 1.')
 
+    pt = int((window - kernel_size + 1) / skip_period) if skip_period > 0 else 0
+
     c = layers.SeparableConv1D(cnn_filters, kernel_size, activation='relu', name='conv1d')(x)
     c = layers.Dropout(rate=drop_rate, name='conv1d_dropout')(c)
 
@@ -72,8 +74,7 @@ def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categ
     r = layers.Lambda(lambda k: K.reshape(k, (-1, rnn_units)), name=f'lambda_{rnn_type}')(r)
     r = layers.Dropout(rate=drop_rate, name=f'lambda_{rnn_type}_dropout')(r)
 
-    if skip_period > 0:
-        pt = max(int((window - kernel_size + 1) / skip_period), 1)
+    if skip_period*pt > 0:
         s = layers.Lambda(lambda k: k[:, int(-pt*skip_period):, :], name=f'lambda_skip_{rnn_type}_0')(c)
         s = layers.Lambda(lambda k: K.reshape(k, (-1, pt, skip_period, cnn_filters)), name=f'lambda_skip_{rnn_type}_1')(s)
         s = layers.Lambda(lambda k: K.permute_dimensions(k, (0, 2, 1, 3)), name=f'lambda_skip_{rnn_type}_2')(s)
