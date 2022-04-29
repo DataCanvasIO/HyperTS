@@ -9,6 +9,7 @@ try:
 except:
     is_prophet_installed = False
 
+from statsmodels.tsa.api import SARIMAX
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.vector_ar.var_model import VAR
 from sktime.classification.interval_based import TimeSeriesForestClassifier
@@ -90,11 +91,13 @@ class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
             seasonal_order = (0, 0, 0, 0)
 
         try:
-            model = ARIMA(endog=y, order=(p, d, q), trend=trend, freq=freq,
-                          seasonal_order=seasonal_order, dates=X[self.timestamp])
+            model = SARIMAX(endog=y, order=(p, d, q), seasonal_order=seasonal_order,
+                            trend=trend, freq=freq, dates=X[self.timestamp])
+            self.model = model.fit(disp=False, **self.init_kwargs)
         except:
-            model = ARIMA(endog=y, order=(p, d, q), trend=trend, freq=freq, dates=X[self.timestamp])
-        self.model = model.fit(**self.init_kwargs)
+            model = ARIMA(endog=y, order=(p, d, q),
+                          trend=trend, freq=freq, dates=X[self.timestamp])
+            self.model = model.fit(**self.init_kwargs)
 
     def predict(self, X, **kwargs):
         last_date = X[self.timestamp].tail(1).to_list()[0].to_pydatetime()
