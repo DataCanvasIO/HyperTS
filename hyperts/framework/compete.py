@@ -725,7 +725,7 @@ class TSPipeline:
         return X, y
 
     @property
-    def get_params(self):
+    def get_pipeline_params(self):
         """Gets sklearn pipeline parameters.
 
         """
@@ -1015,6 +1015,18 @@ class TSCompeteExperiment(SteppedExperiment):
                           history=self.history,
                           train_end_date=self.train_end_date,
                           generate_freq=self.generate_freq)
+
+    def report_best_trial_params(self):
+        """Gets experiment best trial parameters.
+
+        """
+        if self.hyper_model_ is not None:
+            best_trial = self.hyper_model_.get_best_trial()
+            best_trial_params = best_trial.to_df(include_params=True).T
+            best_trial_params.rename(columns={0: 'value'}, inplace=True)
+            return best_trial_params
+        else:
+            raise RuntimeError('The best trial parameters can be obtained only after running.')
 
     def _repr_html_(self):
         return self.__repr__()
