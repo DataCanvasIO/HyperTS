@@ -121,12 +121,12 @@ class BaseSearchSpaceGenerator:
 
     @property
     def estimators(self):
-        raise NotImplementedError
+        raise NotImplementedError('Please define estimators in here.')
 
     def create_preprocessor(self, hyper_input, options):
         dataframe_mapper_default = options.pop('dataframe_mapper_default', False)
-        covariables = options.pop('covariables', None)
-        timestamp = options.pop('timestamp', None)
+        covariables = options.pop('covariables', self.covariables)
+        timestamp = options.pop('timestamp', self.timestamp)
         pipelines = []
 
         if covariables is not None:
@@ -201,19 +201,77 @@ class BaseSearchSpaceGenerator:
         return f'{type(self).__name__}({repr_})'
 
 
+class SearchSpaceMixin:
+
+    def __init__(self):
+        self.task = None
+        self.timestamp = None
+        self.covariables = None
+        self.metrics = None
+        self.window = None
+        self.horizon = None
+
+    def update_init_params(self, **kwargs):
+        if self.task is None and kwargs.get('task') is not None:
+            self.task = kwargs.get('task')
+        if self.timestamp is None and kwargs.get('timestamp') is not None:
+            self.timestamp = kwargs.get('timestamp')
+        if self.covariables is None and kwargs.get('covariables') is not None:
+            self.covariables = kwargs.get('covariables')
+        if self.metrics is None and kwargs.get('metrics') is not None:
+            self.metrics = kwargs.get('metrics')
+        if self.window is None and kwargs.get('window') is not None:
+            self.window = kwargs.get('window')
+        if self.horizon == 1 and kwargs.get('horizon') is not None:
+            self.horizon = kwargs.get('horizon')
+
+
 ##################################### Define Specific Search Space Generator #####################################
 
-class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
+class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
     """
-    Note:
-        If other parameters exist, set them directly. For example, covariables=['is_holiday'].
+    Parameters
+    ----------
+    task: str or None, optional, default None. If not None, it must be 'univariate-forecast' or
+        'multivariate-forecast'.
+    timestamp: str or None, optional, default None.
+    metrics: str or None, optional, default None. Support mse, mae, rmse, mape, smape, msle, and so on.
+    enable_prophet: bool, default True.
+    enable_arima: bool, default True.
+    enable_var: bool, default True.
+    prophet_init_kwargs: dict or None, optional, default None. If not None, you can customize
+        the hyper-parameters by which prophet is searched.
+    arima_init_kwargs: dict or None, optional, default None. If not None, you can customize
+        the hyper-parameters by which arima is searched.
+    var_init_kwargs: dict or None, optional, default None. If not None, you can customize
+        the hyper-parameters by which var is searched.
+
+    Return
+    ----------
+    search space.
+
+    Note
+    ----------
+    1. For the hyper-parameters of deepar_init_kwargs, hybirdrnn_init_kwargs and lstnet_init_kwargs,
+        you can refer to `hyperts.framework.estimators.ProphetForecastEstimator,
+        hyperts.framework.estimators.ARIMAForecastEstimator, and
+        hyperts.framework.estimators.VARForecastEstimator.`
+    2. If other parameters exist, set them directly. For example, covariables=['is_holiday'].
     """
-    def __init__(self, task, timestamp=None,
+    def __init__(self, task=None, timestamp=None,
                  enable_prophet=True,
                  enable_arima=True,
                  enable_var=True,
+                 prophet_init_kwargs=None,
+                 arima_init_kwargs=None,
+                 var_init_kwargs=None,
                  **kwargs):
-        kwargs['timestamp'] = timestamp
+        if enable_prophet and prophet_init_kwargs is not None:
+            kwargs['prophet_init_kwargs'] = prophet_init_kwargs
+        if enable_arima and arima_init_kwargs is not None:
+            kwargs['arima_init_kwargs'] = arima_init_kwargs
+        if enable_var and var_init_kwargs is not None:
+            kwargs['var_init_kwargs'] = var_init_kwargs
         super(StatsForecastSearchSpace, self).__init__(task, **kwargs)
 
         self.task = task
@@ -297,17 +355,44 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator):
                              f' or {consts.Task_MULTIVARIATE_FORECAST}.')
 
 
-class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
+class StatsClassificationSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
     """
-    Note:
-    If other parameters exist, set them directly. For example, n_estimators=200.
+    Parameters
+    ----------
+    task: str or None, optional, default None. If not None, it must be 'univariate-binaryclass',
+        'univariate-multiclass', 'multivariate-binaryclass, or ’multivariate-multiclass’.
+    timestamp: str or None, optional, default None.
+    metrics: str or None, optional, default None. Support accuracy, f1, auc, recall, precision.
+    enable_tsf: bool, default True.
+    enable_knn: bool, default True.
+    tsf_init_kwargs: dict or None, optional, default None. If not None, you can customize
+        the hyper-parameters by which tsf is searched.
+    knn_init_kwargs: dict or None, optional, default None. If not None, you can customize
+        the hyper-parameters by which knn is searched.
+
+    Return
+    ----------
+    search space.
+
+    Note
+    ----------
+    1. For the hyper-parameters of tsf_init_kwargs, knn_init_kwargs,
+        you can refer to `hyperts.framework.estimators.TSFClassificationEstimator, and
+        hyperts.framework.estimators.KNNClassificationEstimator.`
+    2. If other parameters exist, set them directly. For example, n_estimators=200.
     """
-    def __init__(self, task, timestamp=None,
+    def __init__(self, task=None, timestamp=None,
                  enable_tsf=True,
                  enable_knn=True,
+                 tsf_init_kwargs=None,
+                 knn_init_kwargs=None,
                  **kwargs):
         if hasattr(kwargs, 'covariables'):
             kwargs.pop('covariables', None)
+        if enable_tsf and tsf_init_kwargs is not None:
+            kwargs['tsf_init_kwargs'] = tsf_init_kwargs
+        if enable_knn and knn_init_kwargs is not None:
+            kwargs['knn_init_kwargs'] = knn_init_kwargs
         super(StatsClassificationSearchSpace, self).__init__(task, **kwargs)
 
         self.task = task
@@ -367,19 +452,51 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator):
                              f', or {consts.Task_MULTIVARIATE_MULTICALSS}.')
 
 
-class DLForecastSearchSpace(BaseSearchSpaceGenerator):
+class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
     """
-    Note:
-    If other parameters exist, set them directly. For example, covariables=['is_holiday'].
+    Parameters
+    ----------
+    task: str or None, optional, default None. If not None, it must be 'univariate-forecast' or
+        'multivariate-forecast'.
+    timestamp: str or None, optional, default None.
+    metrics: str or None, optional, default None. Support mse, mae, rmse, mape, smape, msle, and so on.
+    enable_deepar: bool, default True.
+    enable_hybirdrnn: bool, default True.
+    enable_lstnet: bool, default True.
+    deepar_init_kwargs: dict or None, optional, default None. If not None, you can customize
+        the hyper-parameters by which deepar is searched.
+    hybirdrnn_init_kwargs: dict or None, optional, default None. If not None, you can customize
+        the hyper-parameters by which hybirdrnn is searched.
+    lstnet_init_kwargs: dict or None, optional, default None. If not None, you can customize
+        the hyper-parameters by which lstnet is searched.
+
+    Return
+    ----------
+    search space.
+
+    Note
+    ----------
+    1. For the hyper-parameters of deepar_init_kwargs, hybirdrnn_init_kwargs and lstnet_init_kwargs,
+        you can refer to `hyperts.framework.estimators.DeepARForecastEstimator,
+        hyperts.framework.estimators.HybirdRNNGeneralEstimator, and
+        hyperts.framework.estimators.LSTNetGeneralEstimator.`
+    2. If other parameters exist, set them directly. For example, covariables=['is_holiday'].
     """
-    def __init__(self, task, timestamp=None, metrics=None,
+    def __init__(self, task=None, timestamp=None, metrics=None,
                  window=None, horizon=1,
                  enable_deepar=True,
                  enable_hybirdrnn=True,
                  enable_lstnet=True,
+                 deepar_init_kwargs=None,
+                 hybirdrnn_init_kwargs=None,
+                 lstnet_init_kwargs=None,
                  **kwargs):
-        kwargs['timestamp'] = timestamp
-
+        if enable_deepar and deepar_init_kwargs is not None:
+            kwargs['deepar_init_kwargs'] = deepar_init_kwargs
+        if enable_hybirdrnn and hybirdrnn_init_kwargs is not None:
+            kwargs['hybirdrnn_init_kwargs'] = hybirdrnn_init_kwargs
+        if enable_lstnet and lstnet_init_kwargs is not None:
+            kwargs['lstnet_init_kwargs'] = lstnet_init_kwargs
         super(DLForecastSearchSpace, self).__init__(task, **kwargs)
 
         self.task = task
@@ -519,18 +636,44 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator):
                              f' or {consts.Task_MULTIVARIATE_FORECAST}.')
 
 
-class DLClassificationSearchSpace(BaseSearchSpaceGenerator):
+class DLClassificationSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
     """
-    Note:
-    If other parameters exist, set them directly. For example, n_estimators=200.
+    Parameters
+    ----------
+    task: str or None, optional, default None. If not None, it must be 'univariate-binaryclass',
+        'univariate-multiclass', 'multivariate-binaryclass, or ’multivariate-multiclass’.
+    timestamp: str or None, optional, default None.
+    metrics: str or None, optional, default None. Support accuracy, f1, auc, recall, precision.
+    enable_hybirdrnn: bool, default True.
+    enable_lstnet: bool, default True.
+    hybirdrnn_init_kwargs: dict or None, optional, default None. If not None, you can customize
+        the hyper-parameters by which hybirdrnn is searched.
+    lstnet_init_kwargs: dict or None, optional, default None. If not None, you can customize
+        the hyper-parameters by which lstnet is searched.
+
+    Return
+    ----------
+    search space.
+
+    Note
+    ----------
+    1. For the hyper-parameters of deepar_init_kwargs, hybirdrnn_init_kwargs and lstnet_init_kwargs,
+        you can refer to `hyperts.framework.estimators.HybirdRNNGeneralEstimator, and
+        hyperts.framework.estimators.LSTNetGeneralEstimator.`
+    2. If other parameters exist, set them directly. For example, n_estimators=200.
     """
-    def __init__(self, task, timestamp=None, metrics=None,
+    def __init__(self, task=None, timestamp=None, metrics=None,
                  enable_hybirdrnn=True,
                  enable_lstnet=True,
+                 hybirdrnn_init_kwargs=None,
+                 lstnet_init_kwargs=None,
                  **kwargs):
         if hasattr(kwargs, 'covariables'):
             kwargs.pop('covariables', None)
-
+        if enable_hybirdrnn and hybirdrnn_init_kwargs is not None:
+            kwargs['hybirdrnn_init_kwargs'] = hybirdrnn_init_kwargs
+        if enable_lstnet and lstnet_init_kwargs is not None:
+            kwargs['lstnet_init_kwargs'] = lstnet_init_kwargs
         super(DLClassificationSearchSpace, self).__init__(task, **kwargs)
 
         self.task = task

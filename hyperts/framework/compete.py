@@ -724,7 +724,6 @@ class TSPipeline:
             y = X.pop(self.target)
         return X, y
 
-    @property
     def get_pipeline_params(self):
         """Gets sklearn pipeline parameters.
 

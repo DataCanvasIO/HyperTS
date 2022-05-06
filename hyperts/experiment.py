@@ -202,38 +202,39 @@ def make_experiment(train_data,
 
         return searcher
 
-    def default_search_space(task, search_space=None, metrics=None, covariates=None):
-        if search_space is not None:
-            return search_space
-
+    def to_metric_str(metrics):
         if callable(metrics):
             metrics = [metrics.__name__]
         elif isinstance(metrics, str):
             metrics = [metrics.lower()]
         else:
             metrics = 'auto'
+        return metrics
+
+    def default_search_space(task, metrics=None, covariates=None):
+        metrics = to_metric_str(metrics)
 
         if mode == consts.Mode_STATS and task in consts.TASK_LIST_FORECAST:
-            from hyperts.framework.search_space.macro_search_space import StatsForecastSearchSpace
+            from hyperts.framework.search_space import StatsForecastSearchSpace
 
-            search_pace = StatsForecastSearchSpace(task=task, timestamp=timestamp, covariables=covariates)
+            search_space = StatsForecastSearchSpace(task=task, timestamp=timestamp, covariables=covariates)
         elif mode == consts.Mode_STATS and task in consts.TASK_LIST_CLASSIFICATION:
-            from hyperts.framework.search_space.macro_search_space import StatsClassificationSearchSpace
+            from hyperts.framework.search_space import StatsClassificationSearchSpace
 
-            search_pace = StatsClassificationSearchSpace(task=task, timestamp=timestamp)
+            search_space = StatsClassificationSearchSpace(task=task, timestamp=timestamp)
         elif mode == consts.Mode_STATS and task in consts.TASK_LIST_REGRESSION:
             raise NotImplementedError(
                 'STATSRegressionSearchSpace is not implemented yet.'
             )
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_FORECAST:
-            from hyperts.framework.search_space.macro_search_space import DLForecastSearchSpace
+            from hyperts.framework.search_space import DLForecastSearchSpace
 
-            search_pace = DLForecastSearchSpace(task=task, timestamp=timestamp, metrics=metrics, covariables=covariates,
-                                                window=dl_forecast_window, horizon=dl_forecast_horizon)
+            search_space = DLForecastSearchSpace(task=task, timestamp=timestamp, metrics=metrics,
+                           covariables=covariates, window=dl_forecast_window, horizon=dl_forecast_horizon)
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_CLASSIFICATION:
-            from hyperts.framework.search_space.macro_search_space import DLClassificationSearchSpace
+            from hyperts.framework.search_space import DLClassificationSearchSpace
 
-            search_pace = DLClassificationSearchSpace(task=task, timestamp=timestamp, metrics=metrics)
+            search_space = DLClassificationSearchSpace(task=task, timestamp=timestamp, metrics=metrics)
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_REGRESSION:
             raise NotImplementedError(
                 'DLRegressionSearchSpace is not implemented yet.'
@@ -253,7 +254,7 @@ def make_experiment(train_data,
         else:
             raise ValueError('The default search space was not found!')
 
-        return search_pace
+        return search_space
 
     def default_searcher(cls, search_space, options):
         assert search_space is not None, '"search_space" should be specified when "searcher" is None or str.'
@@ -419,11 +420,11 @@ def make_experiment(train_data,
     if covariates is not None:
         from hyperts.utils.transformers import CovariateTransformer
         cs = CovariateTransformer(covariables=covariates).fit(X_train)
-        autual_covariates = cs.covariables_
+        actual_covariates = cs.covariables_
     else:
         from hyperts.utils.transformers import IdentityTransformer
         cs = IdentityTransformer().fit(X_train)
-        autual_covariates = covariates
+        actual_covariates = covariates
 
     # 8. Infer Forecast Window for DL Mode
     if mode in [consts.Mode_DL, consts.Mode_NAS] and task in consts.TASK_LIST_FORECAST:
@@ -526,8 +527,16 @@ def make_experiment(train_data,
 
     # 13. Get search space
     if (searcher is None or isinstance(searcher, str)) and search_space is None:
-        search_space = default_search_space(task=task, search_space=search_space,
-                           metrics=reward_metric, covariates=autual_covariates)
+        search_space = default_search_space(task=task, metrics=reward_metric, covariates=actual_covariates)
+    else:
+        search_space.update_init_params(
+            task=task,
+            timestamp=timestamp,
+            metrics=to_metric_str(reward_metric),
+            covariables=actual_covariates,
+            window=dl_forecast_window,
+            horizon=dl_forecast_horizon
+        )
 
     # 14. Get searcher
     searcher = to_search_object(searcher, search_space)
@@ -562,7 +571,7 @@ def make_experiment(train_data,
     # 19. Build Experiment
     experiment = TSCompeteExperiment(hyper_model, X_train=X_train, y_train=y_train, X_eval=X_eval, y_eval=y_eval,
                                      task=task, mode=mode, timestamp_col=timestamp, target_col=target,
-                                     covariate_cols=[covariates, autual_covariates], covariate_cleaner=cs,
+                                     covariate_cols=[covariates, actual_covariates], covariate_cleaner=cs,
                                      freq=freq, log_level=log_level, random_state=random_state,
                                      optimize_direction=optimize_direction, scorer=scorer,
                                      id=id, forecast_train_data_periods=forecast_train_data_periods,
