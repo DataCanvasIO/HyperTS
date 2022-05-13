@@ -291,13 +291,14 @@ class TSToolBox(ToolBox):
         return df
 
     @staticmethod
-    def clip_to_outliers(df: pd.DataFrame, std_threshold: int = 3):
+    def clip_to_outliers(df, std_threshold: int = 3):
         """Replace outliers above threshold with that threshold.
         Parameters
         ----------
         std_threshold: 'float', the number of standard deviations away from mean to count as outlier.
         """
-        assert isinstance(df, pd.DataFrame)
+        if not isinstance(df, pd.DataFrame):
+            df = pd.DataFrame(df)
         df_std = df.std(axis=0, skipna=True)
         df_mean = df.mean(axis=0, skipna=True)
         lower = df_mean - (df_std * std_threshold)
@@ -307,13 +308,14 @@ class TSToolBox(ToolBox):
         return df_outlier
 
     @staticmethod
-    def nan_to_outliers(df: pd.DataFrame, std_threshold: int = 3):
+    def nan_to_outliers(df, std_threshold: int = 3):
         """Replace outliers above threshold with that threshold.
         Parameters
         ----------
         std_threshold: 'float', the number of standard deviations away from mean to count as outlier.
         """
-        assert isinstance(df, pd.DataFrame)
+        if not isinstance(df, pd.DataFrame):
+            df = pd.DataFrame(df)
         df_outlier = df.copy()
         df_std = df.std(axis=0, skipna=True)
         df_mean = df.mean(axis=0, skipna=True)
@@ -364,7 +366,7 @@ class TSToolBox(ToolBox):
             raise RuntimeError('Unable to infer the sliding window size of dl, please specify dl_forecast_window.')
 
     @staticmethod
-    def fft_infer_period(data: pd.DataFrame):
+    def fft_infer_period(data):
         """Fourier inference period.
 
         References
@@ -372,7 +374,8 @@ class TSToolBox(ToolBox):
         https://github.com/xuawai/AutoPeriod/blob/master/auto_period.ipynb
         """
         try:
-            data = data.values.reshape(-1,)
+            if isinstance(data, pd.DataFrame):
+                data = data.values.reshape(-1,)
             ft = np.fft.rfft(data)
             freqs = np.fft.rfftfreq(len(data), 1)
             mags = abs(ft)

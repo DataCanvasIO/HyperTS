@@ -383,6 +383,52 @@ class CovariateTransformer(BaseEstimator, TransformerMixin):
         return X
 
 
+class OutliersTransformer(BaseEstimator, TransformerMixin):
+    """Remove outliers.
+
+    Parameters
+    ----------
+    method: str, 'clip' or 'fill'.
+    std_threshold: int, the threshold of std.
+    freq: str, DateOffset or None, default None.
+    copy : bool, default=True.
+        Set to False to perform inplace row normalization and avoid a copy.
+    """
+    def __init__(self, method='clip', std_threshold=3, freq=None, copy=True):
+        super(OutliersTransformer, self).__init__()
+        self.method = method
+        self.std_threshold = std_threshold
+        self.freq = freq
+        self.copy = copy
+
+    def fit(self, X, y=None, **kwargs):
+        return self
+
+    def transform(self, X, y=None, **kwargs):
+        tb = get_tool_box(X)
+        if self.copy:
+            X = copy.deepcopy(X)
+
+        # periods = [tb.fft_infer_period(X[:, col]) for col in range(X.shape[1])]
+        # period = int(np.argmax(np.bincount(periods)))
+
+        if self.method == 'fill':
+            X = tb.nan_to_outliers(X, std_threshold=self.std_threshold)
+            if self.freq is not None:
+                # X = tb.forward_period_imputer(X, period)
+                X = tb.multi_period_loop_imputer(X, freq=self.freq)
+            else:
+                X = tb.simple_numerical_imputer(X)
+        else:
+            X = tb.clip_to_outliers(X, std_threshold=self.std_threshold)
+        X = tb.df_to_array(X)
+
+        return X
+
+    def inverse_transform(self, X, y=None, **kwargs):
+        return X
+
+
 ##################################### Define Hyper Transformer #####################################
 class TimeSeriesHyperTransformer(HyperTransformer):
 
