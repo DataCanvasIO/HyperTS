@@ -4,7 +4,7 @@ from hypernets.utils.const import *
 TIMESTAMP                          = 'timestamp'
 PSEUDO_DATE_START                  = '2021-11-12'
 DEFAULT_EVAL_SIZE                  = 0.2
-DEFAULT_MIN_EVAL_SIZE              = 0.05
+DEFAULT_MIN_EVAL_SIZE              = 0.08
 NAN_DROP_SIZE                      = 0.6
 TRAINING_EPOCHS                    = 60
 FINAL_TRAINING_EPOCHS              = 240

@@ -107,7 +107,7 @@ class Test_User_Defined_Search_Space():
         df = load_basic_motions()
         train_data, test_data = random_train_test_split(df, test_size=0.2, random_state=2022)
 
-        my_dl_ssearch_space = DLClassificationSearchSpace(
+        my_dl_search_space = DLClassificationSearchSpace(
             hybirdrnn_init_kwargs={
                 'rnn_units': Choice([32, 64, 128]),
             },
@@ -124,7 +124,7 @@ class Test_User_Defined_Search_Space():
                                      ensemble_size=None,
                                      target='target',
                                      reward_metric='accuracy',
-                                     search_space=my_dl_ssearch_space,
+                                     search_space=my_dl_search_space,
                                      max_trials=3,
                                      random_state=2022)
 

@@ -384,15 +384,16 @@ class BaseDeepEstimator(object):
                 X_val, y_val = validation_data[0], validation_data[1]
                 X = tb.concat_df([X, X_val], axis=0)
                 y = tb.concat_df([y, y_val], axis=0)
-        validation_length = int(len(X) * validation_split)
-        if validation_length <= 0:
-            raise RuntimeError(f'The train set must not be less than {int(1/validation_split)}.')
 
         if self.window < self.forecast_length:
             logger.warning('window must not be smaller than forecast_length, reset forecast_length=1.')
             self.forecast_length = 1
 
         X_train, y_train = self._dataloader(self.task, X, y, self.window, self.horizon, self.forecast_length)
+
+        validation_length = int(len(y_train) * validation_split)
+        if validation_length <= 0:
+            raise RuntimeError(f'The train set must not be less than {int(1 / validation_split)}.')
 
         if self.task in consts.TASK_LIST_FORECAST:
             if isinstance(X_train, list):
@@ -401,12 +402,15 @@ class BaseDeepEstimator(object):
                 X_valid = X_train[-validation_length:]
             y_valid = y_train[-validation_length:]
         else:
-            X_train, X_valid, y_train, y_valid = tb.random_train_test_split(X_train, y_train, test_size=validation_length)
+            X_train, X_valid, y_train, y_valid = \
+                tb.random_train_test_split(X_train, y_train, test_size=validation_length)
 
         if batch_size is None:
             data_num = int(len(y_train))
-            if data_num <= 100:
+            if data_num <= 128:
                 batch_size = max(int(2 ** (0 + int(math.log(data_num, 4)))), 2)
+            elif data_num <= 500:
+                batch_size = max(int(2 ** (1 + int(math.log(data_num, 4)))), 8)
             elif data_num <= 1000:
                 batch_size = max(int(2 ** (2 + int(math.log(data_num, 5)))), 16)
             elif data_num <= 60000:
@@ -683,13 +687,12 @@ class BaseDeepEstimator(object):
             column_names = self.meta.cont_column_names + self.meta.cat_column_names
             data = tb.concat_df([y, X], axis=1).drop([self.timestamp], axis=1)
             data = tb.df_to_array(data[column_names]).astype(consts.DATATYPE_TENSOR_FLOAT)
-            target_start = window - horizon + 1
-            inputs = data[:-target_start]
-            targets = data[target_start:]
-            sequences = from_array_to_timeseries(data=inputs,
-                                                 targets=targets,
-                                                 forecast_length=forecast_length,
-                                                 sequence_length=window)
+            target_start = window + horizon - 1
+            inputs = data[:-1].copy()
+            targets = data[target_start:].copy()
+            targets_app = np.zeros(inputs.size - targets.size, dtype=consts.DATATYPE_TENSOR_FLOAT)
+            targets = np.append(targets, targets_app).reshape(inputs.shape)
+            sequences = from_array_to_timeseries(inputs, targets, window, forecast_length)
             try:
                 X_data, y_data = [], []
                 for _, batch in enumerate(sequences):

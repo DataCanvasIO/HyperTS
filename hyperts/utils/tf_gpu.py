@@ -2,6 +2,8 @@
 
 import tensorflow as tf
 
+from hypernets.utils import logging
+logger = logging.get_logger(__name__)
 
 def set_memory_growth():
     gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -11,7 +13,7 @@ def set_memory_growth():
             for gpu in gpus:
                 tf.config.experimental.set_memory_growth(gpu, True)
             logical_gpus = tf.config.experimental.list_logical_devices('GPU')
-            print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+            logger.info(f'{len(gpus)}, "Physical GPUs,", {len(logical_gpus)}, "Logical GPUs"')
         except RuntimeError as e:
             # Memory growth must be set before GPUs have been initialized
             print(e)
@@ -26,7 +28,7 @@ def set_memory_limit(limit):
                     gpu,
                     [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=limit)])
             logical_gpus = tf.config.experimental.list_logical_devices('GPU')
-            print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+            logger.info(f'{len(gpus)}, "Physical GPUs,", {len(logical_gpus)}, "Logical GPUs"')
         except RuntimeError as e:
             # Memory growth must be set before GPUs have been initialized
             print(e)

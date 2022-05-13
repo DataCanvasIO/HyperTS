@@ -312,7 +312,7 @@ def make_experiment(train_data,
     if mode != consts.Mode_STATS:
         try:
             from tensorflow import __version__
-            logger.info('tensorflow==' + str(__version__))
+            logger.info(f'The tensorflow version is {str(__version__)}.')
         except ImportError:
             raise RuntimeError('Please install `tensorflow` package first. command: pip install tensorflow.')
 
@@ -442,11 +442,11 @@ def make_experiment(train_data,
             max_win_size = int((X_train_length + dl_forecast_horizon - 1) / 2)
         elif isinstance(eval_size, int):
             if X_train_length > eval_size - dl_forecast_horizon + 1:
-                max_win_size = int((X_train_length - eval_size + dl_forecast_horizon - 1) / 2)
+                max_win_size = int((X_train_length - eval_size - dl_forecast_horizon + 1) / 2)
             else:
-                raise ValueError(f'eval_size has to be less than {X_train_length+dl_forecast_horizon-1}.')
+                raise ValueError(f'eval_size has to be less than {X_train_length - dl_forecast_horizon + 1}.')
         else:
-            max_win_size = int((X_train_length * (1 - eval_size) + dl_forecast_horizon - 1) / 2)
+            max_win_size = int((X_train_length * (1 - eval_size) - dl_forecast_horizon + 1) / 2)
 
         if max_win_size < 1:
             logger.warning('The trian data is too short to start dl mode, '
@@ -459,7 +459,7 @@ def make_experiment(train_data,
                 if max_win_size <= 10:
                     dl_forecast_window = list(filter(lambda x: x <= max_win_size, [2, 4, 6, 8, 10]))
                 else:
-                    candidate_windows = [12, 24, 30]*3 + [48, 60]*2 + [8, 72, 96, 168]*1
+                    candidate_windows = [3, 8, 12, 24, 30]*1 + [48, 60]*1 + [72, 96, 168]*1
                     dl_forecast_window = list(filter(lambda x: x <= max_win_size, candidate_windows))
                 periods = [tb.fft_infer_period(y_train[col]) for col in target]
                 period = int(np.argmax(np.bincount(periods)))
@@ -467,6 +467,7 @@ def make_experiment(train_data,
                     dl_forecast_window.append(period)
             elif isinstance(dl_forecast_window, int):
                 assert dl_forecast_window < max_win_size, f'The slide window can not be greater than {max_win_size}'
+                dl_forecast_window = [dl_forecast_window]
             elif isinstance(dl_forecast_window, list):
                 assert max(
                     dl_forecast_window) < max_win_size, f'The slide window can not be greater than {max_win_size}'
@@ -528,6 +529,7 @@ def make_experiment(train_data,
     # 13. Get search space
     if (searcher is None or isinstance(searcher, str)) and search_space is None:
         search_space = default_search_space(task=task, metrics=reward_metric, covariates=actual_covariates)
+        search_space.update_init_params(freq=freq)
     else:
         search_space.update_init_params(
             task=task,
@@ -535,8 +537,8 @@ def make_experiment(train_data,
             metrics=to_metric_str(reward_metric),
             covariables=actual_covariates,
             window=dl_forecast_window,
-            horizon=dl_forecast_horizon
-        )
+            horizon=dl_forecast_horizon,
+            freq=freq)
 
     # 14. Get searcher
     searcher = to_search_object(searcher, search_space)
