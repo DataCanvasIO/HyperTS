@@ -207,6 +207,7 @@ class SearchSpaceMixin:
         self.task = None
         self.timestamp = None
         self.covariables = None
+        self.freq = None
         self.metrics = None
         self.window = None
         self.horizon = None
@@ -218,6 +219,8 @@ class SearchSpaceMixin:
             self.timestamp = kwargs.get('timestamp')
         if self.covariables is None and kwargs.get('covariables') is not None:
             self.covariables = kwargs.get('covariables')
+        if self.freq is None and kwargs.get('freq') is not None:
+            self.freq = kwargs.get('freq')
         if self.metrics is None and kwargs.get('metrics') is not None:
             self.metrics = kwargs.get('metrics')
         if self.window is None and kwargs.get('window') is not None:
@@ -246,11 +249,11 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
     var_init_kwargs: dict or None, optional, default None. If not None, you can customize
         the hyper-parameters by which var is searched.
 
-    Return
+    Returns
     ----------
     search space.
 
-    Note
+    Notes
     ----------
     1. For the hyper-parameters of deepar_init_kwargs, hybirdrnn_init_kwargs and lstnet_init_kwargs,
         you can refer to `hyperts.framework.estimators.ProphetForecastEstimator,
@@ -283,11 +286,16 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
     @property
     def default_prophet_init_kwargs(self):
         return {
+            'freq': self.freq,
+
             'seasonality_mode': Choice(['additive', 'multiplicative']),
             'changepoint_prior_scale': Choice([0.001, 0.01, 0.1, 0.5]),
             'seasonality_prior_scale': Choice([0.01, 0.1, 1.0, 10.0]),
             'holidays_prior_scale': Choice([0.01, 0.1, 1.0, 10.0]),
             'changepoint_range': Choice([0.8, 0.85, 0.9, 0.95]),
+
+            # 'y_scale': Choice(['none-scale', 'min_max', 'max_abs', 'z_scale']),
+            'outlier': Choice(['none-outlier']*8+['fill']*1+['clip']*1),
         }
 
     @property
@@ -299,6 +307,8 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
     @property
     def default_arima_init_kwargs(self):
         return {
+            'freq': self.freq,
+
             'p': Choice([1, 2, 3, 4, 5]),
             'd': Choice([0, 1]),
             'q': Choice([0, 1, 2]),
@@ -306,7 +316,9 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'seasonal_order': Choice([(1, 0, 0), (1, 0, 1), (1, 1, 1),
                                       (0, 1, 1), (1, 1, 0), (0, 1, 0)]),
             # 'period_offset': Choice([0, 0, 0, 0, 0, 0, 1, -1, 2, -2]),
-            'y_scale': Choice(['min_max']*8 + ['max_abs']*1 + ['z_scale']*1)
+
+            'y_scale': Choice(['none-scale', 'min_max', 'max_abs', 'z_scale']),
+            'outlier': Choice(['none-outlier']*8+['fill']*1+['clip']*1),
         }
 
     @property
@@ -321,8 +333,8 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             # 'ic': Choice(['aic', 'fpe', 'hqic', 'bic']),
             'maxlags': Choice([None, 2, 6, 12, 24, 48]),
             'trend': Choice(['c', 'ct', 'ctt', 'nc', 'n']),
-            'y_log': Choice(['log-none']*9 + ['logx']*1),
-            'y_scale': Choice(['min_max']*8 + ['max_abs']*1 + ['z_scale']*1)
+            'y_log': Choice(['none-log']*9+['logx']*1),
+            'y_scale': Choice(['min_max']*8+['max_abs']*1+['z_scale']*1)
         }
 
     @property
@@ -370,11 +382,11 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin)
     knn_init_kwargs: dict or None, optional, default None. If not None, you can customize
         the hyper-parameters by which knn is searched.
 
-    Return
+    Returns
     ----------
     search space.
 
-    Note
+    Notes
     ----------
     1. For the hyper-parameters of tsf_init_kwargs, knn_init_kwargs,
         you can refer to `hyperts.framework.estimators.TSFClassificationEstimator, and
@@ -470,11 +482,11 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
     lstnet_init_kwargs: dict or None, optional, default None. If not None, you can customize
         the hyper-parameters by which lstnet is searched.
 
-    Return
+    Returns
     ----------
     search space.
 
-    Note
+    Notes
     ----------
     1. For the hyper-parameters of deepar_init_kwargs, hybirdrnn_init_kwargs and lstnet_init_kwargs,
         you can refer to `hyperts.framework.estimators.DeepARForecastEstimator,
@@ -520,6 +532,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'summary': True,
 
             'optimizer': 'adam',
+            'loss': 'log_gaussian_loss',
             'rnn_type': Choice(['gru', 'lstm']),
             'rnn_units': Choice([64]*2+[128]*3+[256]*2),
             'rnn_layers': Choice([2, 3]),
@@ -527,8 +540,9 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'forecast_length': Choice([1]*8+[3, 6]),
             'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
-            'y_log': Choice(['log-none']*9+['logx']*1),
-            'y_scale': Choice(['min_max']*8+['z_scale']*1)
+            'y_log': Choice(['none-log']*9+['logx']*1),
+            'y_scale': Choice(['min_max']*8+['z_scale']*1),
+            'outlier': Choice(['none-outlier']*8+['fill']*1+['clip']*1),
         }
 
     @property
@@ -558,8 +572,9 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'forecast_length': Choice([1]*8+[3, 6]),
             'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
-            'y_log': Choice(['log-none']*9+['logx']*1),
-            'y_scale': Choice(['min_max']*8+['max_abs']*1+['z_scale']*1)
+            'y_log': Choice(['none-log']*9+['logx']*1),
+            'y_scale': Choice(['min_max']*8+['max_abs']*1+['z_scale']*1),
+            'outlier': Choice(['none-outlier']*8+['fill']*1+['clip']*1),
         }
 
     @property
@@ -596,8 +611,9 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'forecast_length': Choice([1]*8+[3, 6]),
             'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
-            'y_log': Choice(['log-none']*9+['logx']*1),
-            'y_scale': Choice(['min_max']*8+['max_abs']*1+['z_scale']*1)
+            'y_log': Choice(['none-log']*9+['logx']*1),
+            'y_scale': Choice(['min_max']*8+['max_abs']*1+['z_scale']*1),
+            'outlier': Choice(['none-outlier']*8+['fill']*1+['clip']*1),
         }
 
     @property
@@ -651,11 +667,11 @@ class DLClassificationSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
     lstnet_init_kwargs: dict or None, optional, default None. If not None, you can customize
         the hyper-parameters by which lstnet is searched.
 
-    Return
+    Returns
     ----------
     search space.
 
-    Note
+    Notes
     ----------
     1. For the hyper-parameters of deepar_init_kwargs, hybirdrnn_init_kwargs and lstnet_init_kwargs,
         you can refer to `hyperts.framework.estimators.HybirdRNNGeneralEstimator, and

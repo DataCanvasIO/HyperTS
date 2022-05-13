@@ -11,7 +11,8 @@ from hyperts.utils.transformers import (LogXplus1Transformer,
                                         IdentityTransformer,
                                         StandardTransformer,
                                         MinMaxTransformer,
-                                        MaxAbsTransformer)
+                                        MaxAbsTransformer,
+                                        OutliersTransformer)
 
 
 class EstimatorWrapper:
@@ -50,6 +51,7 @@ class WrapperMixin:
             self.timestamp = kwargs.get('timestamp')
         else:
             self.timestamp = consts.TIMESTAMP
+        self.freq = kwargs.pop('freq', None)
 
         self.fit_kwargs = fit_kwargs if fit_kwargs is not None else {}
         self.init_kwargs = kwargs if kwargs is not None else {}
@@ -66,11 +68,16 @@ class WrapperMixin:
             self.is_log = kwargs.pop('y_log', None)
         else:
             self.is_log = None
+        if kwargs.get('outlier') is not None:
+            self.is_outlier = kwargs.pop('outlier', None)
+        else:
+            self.is_outlier = None
 
         # fitted
         self.transformers = None
         self.sc = None
         self.lg = None
+        self.ol = None
 
     @property
     def logx(self):
@@ -87,6 +94,13 @@ class WrapperMixin:
         }
 
     @property
+    def outlier(self):
+        return {
+            'fill': OutliersTransformer('fill', freq=self.freq),
+            'clip': OutliersTransformer('clip'),
+        }
+
+    @property
     def classes_(self):
         return None
 
@@ -96,10 +110,14 @@ class WrapperMixin:
             self.lg = self.logx.get(self.is_log, None)
         if self.is_scale is not None:
             self.sc = self.scaler.get(self.is_scale, None)
+        if self.is_outlier is not None:
+            self.ol = self.outlier.get(self.is_outlier, None)
 
         pipelines = []
         if self.is_log is not None:
             pipelines.append((f'{self.is_log}', self.lg))
+        if self.is_outlier is not None:
+            pipelines.append((f'{self.is_outlier}', self.ol))
         if self.is_scale is not None:
             pipelines.append((f'{self.is_scale}', self.sc))
         pipelines.append(('identity', IdentityTransformer()))
@@ -147,9 +165,9 @@ class WrapperMixin:
 
     def update_init_kwargs(self, **kwargs):
         if kwargs.get('y_scale') is not None:
-            if kwargs.get('y_scale') is 'min_max':
+            if kwargs.get('y_scale') == 'min_max':
                 kwargs['out_activation'] = 'sigmoid'
-            elif kwargs.get('y_scale') is 'max_abs':
+            elif kwargs.get('y_scale') == 'max_abs':
                 kwargs['out_activation'] = 'tanh'
             else:
                 kwargs['out_activation'] = 'linear'

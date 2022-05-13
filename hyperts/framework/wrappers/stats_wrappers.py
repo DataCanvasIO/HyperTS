@@ -3,8 +3,12 @@ import numpy as np
 try:
     try:
         from prophet import Prophet
+        from prophet.forecaster import logger
+        logger.setLevel('ERROR')
     except:
         from fbprophet import Prophet
+        from fbprophet.forecaster import logger
+        logger.setLevel('ERROR')
     is_prophet_installed = True
 except:
     is_prophet_installed = False
@@ -40,6 +44,7 @@ class ProphetWrapper(EstimatorWrapper, WrapperMixin):
         df_train = X[[self.timestamp]]
         if self.timestamp != 'ds':
             df_train.rename(columns={self.timestamp: 'ds'}, inplace=True)
+        y = self.fit_transform(y)
         df_train['y'] = y
         with suppress_stdout_stderr():
             self.model.fit(df_train)
@@ -50,6 +55,7 @@ class ProphetWrapper(EstimatorWrapper, WrapperMixin):
             df_test.rename(columns={self.timestamp: 'ds'}, inplace=True)
         df_preds = self.model.predict(df_test)
         preds = df_preds['yhat'].values.reshape((-1, 1))
+        preds = self.inverse_transform(preds)
         preds = np.clip(preds, a_min=1e-6, a_max=abs(preds)) if self.is_scale is not None else preds
         return preds
 
@@ -79,14 +85,10 @@ class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
         q = self.init_kwargs.pop('q', 1)
         trend = self.init_kwargs.pop('trend', 'c')
         seasonal_order = self.init_kwargs.pop('seasonal_order', (1, 1, 1))
-        # period_offset = self.init_kwargs.pop('period_offset', 0)
-        # if period != 2 and period+period_offset > 1:
-        #     period = min(period+period_offset, 30)
-        # else:
-        #     period = 3
+        period_offset = self.init_kwargs.pop('period_offset', 0)
         period = kwargs.get('period', period)
-        if period > 2 and period <= 12:
-            seasonal_order = seasonal_order + (period,)
+        if period > 2 and period+period_offset <= 14:
+            seasonal_order = seasonal_order + (period+period_offset,)
         else:
             seasonal_order = (0, 0, 0, 0)
 

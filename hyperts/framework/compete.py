@@ -145,8 +145,8 @@ class TSFDataPreprocessStep(ExperimentStep):
         X = tb.drop_duplicated_ts_rows(X, ts_name=self.timestamp_col[0])
         X = tb.smooth_missed_ts_rows(X, freq=self.freq, ts_name=self.timestamp_col[0])
 
-        if target_cols is not None and len(target_cols) > 0:
-            X[target_cols] = tb.nan_to_outliers(X[target_cols])
+        # if target_cols is not None and len(target_cols) > 0:
+        #     X[target_cols] = tb.nan_to_outliers(X[target_cols])
         if impute_col_names is not None and len(impute_col_names) > 0:
             X[impute_col_names] = tb.multi_period_loop_imputer(X[impute_col_names], freq=self.freq)
         if covar_object_names is not None and len(covar_object_names) > 0:
@@ -356,7 +356,7 @@ class TSEnsembleStep(EnsembleStep):
         if self.mode is not consts.Mode_STATS:
             kwargs.update({'epochs': kwargs.pop('final_train_epochs', consts.FINAL_TRAINING_EPOCHS),
                            'reducelr_patience': 40,
-                           'earlystop_patience': 512})
+                           'earlystop_patience': 120})
 
         logger.info('Retrain the best trial model with all data ...')
         weights = [1]*len(trials) if weights is None else weights
@@ -388,7 +388,7 @@ class TSFinalTrainStep(FinalTrainStep):
             if self.mode is not consts.Mode_STATS:
                 kwargs.update({'epochs': kwargs.pop('final_train_epochs', consts.FINAL_TRAINING_EPOCHS),
                                'reducelr_patience': 40,
-                               'earlystop_patience': 512})
+                               'earlystop_patience': 120})
 
             logger.info('Retrain the best trial model with all data ...')
             estimator = hyper_model.final_train(trial.space_sample, X_all, y_all, **kwargs)
@@ -546,7 +546,7 @@ class TSPipeline:
 
         return scores
 
-    def make_future_dataframe(self, start_date=None, periods=None, covariate_df=None):
+    def make_future_dataframe(self, periods=None, start_date=None, covariate_df=None):
         """Simulate the trend using the extrapolated generative model.
 
         Notes
@@ -556,8 +556,8 @@ class TSPipeline:
 
         Parameters
         ----------
-        start_date: 'str' or datetime-like, forecast the future start date.
         periods: 'int', number of periods to forecast forward.
+        start_date: 'str' or datetime-like, forecast the future start date.
 
         Returns
         -------
@@ -768,8 +768,8 @@ class TSPipeline:
 
         # 1. transform
         tb = get_tool_box(forecast_start)
+        forecast_start = self.sk_pipeline.named_steps.data_preprocessing.transform(forecast_start)
         X, y = self.split_X_y(forecast_start, smooth=True, impute=True)
-        X = self.sk_pipeline.named_steps.data_preprocessing.transform(X)
 
         # 2. perprocessing
         if hasattr(self.sk_pipeline.named_steps.estimator, 'ensemble_size'):
