@@ -58,12 +58,12 @@ def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categ
 
     # backbone
     if ar_order > window:
-        ar_order = 1
-        logger.warning('ar_order cannot be larger than window, so it is reset to 1.')
+        ar_order = max(int(window // 3), 1)
+        logger.warning(f'ar_order cannot be larger than window, so it is reset to {ar_order}.')
 
     if kernel_size > window:
-        kernel_size = 1
-        logger.warning('kernel_size cannot be larger than window, so it is reset to 1.')
+        kernel_size = max(int(window // 3), 1)
+        logger.warning(f'kernel_size cannot be larger than window, so it is reset to {kernel_size}.')
 
     pt = int((window - kernel_size + 1) / skip_period) if skip_period > 0 else 0
 

@@ -432,6 +432,7 @@ class BaseDeepEstimator(object):
 
         if steps_per_epoch < 16 and epochs == consts.FINAL_TRAINING_EPOCHS:
             epochs = epochs * 2
+            self.learning_rate = self.learning_rate / 2
 
         logger.info(f'Fit epochs is {epochs}, batch_size is {batch_size}.')
 
