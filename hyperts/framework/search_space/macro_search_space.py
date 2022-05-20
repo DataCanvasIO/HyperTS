@@ -295,7 +295,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'changepoint_range': Choice([0.8, 0.85, 0.9, 0.95]),
 
             # 'y_scale': Choice(['none-scale', 'min_max', 'max_abs', 'z_scale']),
-            'outlier': Choice(['none-outlier']*8+['fill']*1+['clip']*1),
+            'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
         }
 
     @property
@@ -318,7 +318,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             # 'period_offset': Choice([0, 0, 0, 0, 0, 0, 1, -1, 2, -2]),
 
             'y_scale': Choice(['none-scale', 'min_max', 'max_abs', 'z_scale']),
-            'outlier': Choice(['none-outlier']*8+['fill']*1+['clip']*1),
+            'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
         }
 
     @property
@@ -333,8 +333,8 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             # 'ic': Choice(['aic', 'fpe', 'hqic', 'bic']),
             'maxlags': Choice([None, 2, 6, 12, 24, 48]),
             'trend': Choice(['c', 'ct', 'ctt', 'nc', 'n']),
-            'y_log': Choice(['none-log']*9+['logx']*1),
-            'y_scale': Choice(['min_max']*8+['max_abs']*1+['z_scale']*1)
+            'y_log': Choice(['none-log']*4+['logx']*1),
+            'y_scale': Choice(['min_max']*5+['z_scale']*2+['max_abs']*1)
         }
 
     @property
@@ -540,9 +540,9 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'forecast_length': Choice([1]*8+[3, 6]),
             'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
-            'y_log': Choice(['none-log']*9+['logx']*1),
-            'y_scale': Choice(['min_max']*8+['z_scale']*1),
-            'outlier': Choice(['none-outlier']*8+['fill']*1+['clip']*1),
+            'y_log': Choice(['none-log']*4+['logx']*1),
+            'y_scale': Choice(['min_max']*4+['z_scale']*1),
+            'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
         }
 
     @property
@@ -572,9 +572,9 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'forecast_length': Choice([1]*8+[3, 6]),
             'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
-            'y_log': Choice(['none-log']*9+['logx']*1),
-            'y_scale': Choice(['min_max']*8+['max_abs']*1+['z_scale']*1),
-            'outlier': Choice(['none-outlier']*8+['fill']*1+['clip']*1),
+            'y_log': Choice(['none-log']*4+['logx']*1),
+            'y_scale': Choice(['min_max']*5+['z_scale']*2+['max_abs']*1),
+            'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
         }
 
     @property
@@ -611,9 +611,9 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'forecast_length': Choice([1]*8+[3, 6]),
             'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
-            'y_log': Choice(['none-log']*9+['logx']*1),
-            'y_scale': Choice(['min_max']*8+['max_abs']*1+['z_scale']*1),
-            'outlier': Choice(['none-outlier']*8+['fill']*1+['clip']*1),
+            'y_log': Choice(['none-log']*4+['logx']*1),
+            'y_scale': Choice(['min_max']*5+['z_scale']*2+['max_abs']*1),
+            'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
         }
 
     @property

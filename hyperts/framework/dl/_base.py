@@ -430,8 +430,18 @@ class BaseDeepEstimator(object):
             if validation_steps <= 1:
                 validation_steps = 1
 
-        if steps_per_epoch < 16 and epochs == consts.FINAL_TRAINING_EPOCHS:
-            epochs = epochs * 2
+        if epochs == consts.FINAL_TRAINING_EPOCHS:
+            if steps_per_epoch <= 16:
+                epochs = int(epochs * 2)
+                self.reducelr_patience = 40
+                self.earlystop_patience = 120
+            elif steps_per_epoch <= 64:
+                self.reducelr_patience = 15
+                self.earlystop_patience = 30
+            else:
+                epochs = int(epochs / 1.5)
+                self.reducelr_patience = 5
+                self.earlystop_patience = 10
             self.learning_rate = self.learning_rate / 2
 
         logger.info(f'Fit epochs is {epochs}, batch_size is {batch_size}.')

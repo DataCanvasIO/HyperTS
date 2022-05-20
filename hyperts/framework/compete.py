@@ -155,6 +155,7 @@ class TSFDataPreprocessStep(ExperimentStep):
         if isinstance(self.train_data_periods, int) and self.train_data_periods < len(X):
             X = tb.select_1d_reverse(X, self.train_data_periods)
             X = tb.reset_index(X)
+            logger.info(f'Cut off training data, and the retention period length is {self.train_data_periods}.')
 
         return X
 
@@ -354,9 +355,7 @@ class TSEnsembleStep(EnsembleStep):
             X_all, y_all = X_train, y_train
 
         if self.mode is not consts.Mode_STATS:
-            kwargs.update({'epochs': kwargs.pop('final_train_epochs', consts.FINAL_TRAINING_EPOCHS),
-                           'reducelr_patience': 40,
-                           'earlystop_patience': 120})
+            kwargs.update({'epochs': kwargs.pop('final_train_epochs', consts.FINAL_TRAINING_EPOCHS)})
 
         logger.info('Retrain the best trial model with all data ...')
         weights = [1]*len(trials) if weights is None else weights
@@ -386,9 +385,7 @@ class TSFinalTrainStep(FinalTrainStep):
                 X_all, y_all = X_train, y_train
 
             if self.mode is not consts.Mode_STATS:
-                kwargs.update({'epochs': kwargs.pop('final_train_epochs', consts.FINAL_TRAINING_EPOCHS),
-                               'reducelr_patience': 40,
-                               'earlystop_patience': 120})
+                kwargs.update({'epochs': kwargs.pop('final_train_epochs', consts.FINAL_TRAINING_EPOCHS)})
 
             logger.info('Retrain the best trial model with all data ...')
             estimator = hyper_model.final_train(trial.space_sample, X_all, y_all, **kwargs)

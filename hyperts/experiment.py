@@ -459,7 +459,7 @@ def make_experiment(train_data,
                 if max_win_size <= 10:
                     dl_forecast_window = list(filter(lambda x: x <= max_win_size, [2, 4, 6, 8, 10]))
                 else:
-                    candidate_windows = [3, 8, 12, 24, 30]*1 + [48, 60]*1 + [72, 96, 168]*1
+                    candidate_windows = [3, 8, 12, 24, 30]*1 + [48, 60]*1 + [72, 96, 168, 183]*1
                     dl_forecast_window = list(filter(lambda x: x <= max_win_size, candidate_windows))
                 periods = [tb.fft_infer_period(y_train[col]) for col in target]
                 period = int(np.argmax(np.bincount(periods)))
