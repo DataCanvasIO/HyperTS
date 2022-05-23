@@ -134,7 +134,7 @@ def pacf_features(x, period: int = 1):
 
     References
     ----------
-    T.S. Talagala, et al., Meta-learning how to forecast time series, 2018.
+    1. T.S. Talagala, et al., Meta-learning how to forecast time series, 2018.
     2. https://github.com/robjhyndman/tsfeatures (R code)
     """
     if not isinstance(x, np.ndarray):
@@ -199,7 +199,7 @@ def crossing_points(x, period: int = 1):
 
     References
     ----------
-    T.S. Talagala, et al., Meta-learning how to forecast time series, 2018.
+    1. T.S. Talagala, et al., Meta-learning how to forecast time series, 2018.
     2. https://github.com/robjhyndman/tsfeatures (R code)
     """
     if not isinstance(x, np.ndarray):
@@ -225,7 +225,7 @@ def stability(x, period: int = 10):
 
     References
     ----------
-    T.S. Talagala, et al., Meta-learning how to forecast time series, 2018.
+    1. T.S. Talagala, et al., Meta-learning how to forecast time series, 2018.
     2. https://github.com/robjhyndman/tsfeatures (R code)
     """
     if not isinstance(x, np.ndarray):
@@ -253,7 +253,7 @@ def lumpiness(x, period: int = 10):
 
     References
     ----------
-    T.S. Talagala, et al., Meta-learning how to forecast time series, 2018.
+    1. T.S. Talagala, et al., Meta-learning how to forecast time series, 2018.
     2. https://github.com/robjhyndman/tsfeatures (R code)
     """
 
@@ -282,7 +282,7 @@ def entropy(x, period: int = 1):
 
     References
     ----------
-    T.S. Talagala, et al., Meta-learning how to forecast time series, 2018.
+    1. T.S. Talagala, et al., Meta-learning how to forecast time series, 2018.
     2. https://github.com/robjhyndman/tsfeatures (R code)
     """
     if not isinstance(x, np.ndarray):
@@ -308,7 +308,7 @@ def hurst(x, period: int = 30):
 
     References
     ----------
-    T.S. Talagala, et al., Meta-learning how to forecast time series, 2018.
+    1. T.S. Talagala, et al., Meta-learning how to forecast time series, 2018.
     2. https://github.com/robjhyndman/tsfeatures (R code)
     """
     if not isinstance(x, np.ndarray):
@@ -339,7 +339,7 @@ def stl_features(x, period: int = 1):
 
     References
     ----------
-    T.S. Talagala, et al., Meta-learning how to forecast time series, 2018.
+    1. T.S. Talagala, et al., Meta-learning how to forecast time series, 2018.
     2. https://github.com/robjhyndman/tsfeatures (R code)
     3. https://github.com/Nixtla/tsfeatures/blob/master/tsfeatures (Python code)
     """
@@ -418,7 +418,7 @@ def holt_parameters(x, period: int = 1):
 
     References
     ----------
-    T.S. Talagala, et al., Meta-learning how to forecast time series, 2018.
+    1. T.S. Talagala, et al., Meta-learning how to forecast time series, 2018.
     2. https://github.com/robjhyndman/tsfeatures (R code)
     """
     if not isinstance(x, np.ndarray):
@@ -450,7 +450,7 @@ def hw_parameters(x: np.ndarray, period: int = 1):
 
     References
     ----------
-    T.S. Talagala, et al., Meta-learning how to forecast time series, 2018.
+    1. T.S. Talagala, et al., Meta-learning how to forecast time series, 2018.
     2. https://github.com/robjhyndman/tsfeatures (R code)
     """
     if not isinstance(x, np.ndarray):
