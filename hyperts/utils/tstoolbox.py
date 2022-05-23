@@ -679,8 +679,9 @@ def _infer_ts_freq(df: pd.DataFrame, ts_name: str = consts.TIMESTAMP):
     ----------
     ts_name: 'str', time column name.
     """
-    dateindex = pd.DatetimeIndex(pd.to_datetime(df[ts_name]))
+    df[ts_name] = pd.to_datetime(df[ts_name])
     df = df.sort_values([ts_name])
+    dateindex = pd.DatetimeIndex(df[ts_name])
     freq = pd.infer_freq(dateindex)
     if freq is not None:
         return freq
