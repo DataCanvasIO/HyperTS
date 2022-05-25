@@ -22,7 +22,7 @@ def make_experiment(train_data,
                     mode='stats',
                     max_trials=3,
                     eval_size=0.2,
-                    cv=True,
+                    cv=False,
                     num_folds=3,
                     ensemble_size=10,
                     target=None,
@@ -73,7 +73,7 @@ def make_experiment(train_data,
     max_trials : int, maximum number of tests (model search), optional, (default=3).
     eval_size : float or int, When the eval_data is None, customize the ratio to split the eval_data from
         the train_data. int indicates the prediction length of the forecast task. (default=0.2 or 10).
-    cv : bool, default True.
+    cv : bool, default False.
         If True, use cross-validation instead of evaluation set reward to guide the search process.
     num_folds : int, default 3.
         Number of cross-validated folds, only valid when cv is true.
