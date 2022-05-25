@@ -1,5 +1,8 @@
+# -*- coding:utf-8 -*-
+
 import numpy as np
 import pandas as pd
+from scipy import stats
 from scipy.signal import periodogram
 from statsmodels.api import add_constant, OLS
 from statsmodels.tsa.seasonal import STL
@@ -8,6 +11,21 @@ from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
 from sklearn.decomposition import PCA
 
+
+def scale(x):
+    """
+    Z-Score.
+
+    Parameters
+    ----------
+    x: np.array or pd.DataFrame, the time series.
+    """
+    if not isinstance(x, np.ndarray):
+        x = np.array(x)
+
+    scaled = (x - np.nanmean(x)) / np.nanstd(x, ddof=1)
+
+    return scaled
 
 def fft_infer_period(x):
     """Fourier inference period.
@@ -66,6 +84,51 @@ def freq_to_numerical(x, timestamp, freq_mapping_dict=None):
     nfreq = freq_mapping_dict.get(freq[0], np.nan)
 
     return {'nfreq': nfreq}
+
+
+def statistics(x, period: int = 1):
+    """
+    Calculates statistics features, including length, count,
+    mean, var, min, max, median, range, hmean, iqr.
+
+    Parameters
+    ----------
+    x: np.array or pd.DataFrame, the time series.
+    period: int, the seasonal of the time series.
+    """
+    if not isinstance(x, np.ndarray):
+        x = np.array(x)
+
+    x_len = x.shape[0]
+    x_col = x.shape[1]
+    x_mean = np.nanmean(x, axis=0)
+    x_var = np.nanvar(x, ddof=1, axis=0)
+    x_min = np.nanmin(x, axis=0)
+    x_max = np.nanmax(x, axis=0)
+    x_median = np.nanmedian(x, axis=0)
+    x_range = np.ptp(x, axis=0)
+    x_iqr = stats.iqr(x, axis=0)
+
+    stat_features =  {
+        'length_series': x_len,
+        'count_series': x_col,
+        'mean.mean_series': np.nanmean(x_mean),
+        'std.mean_series': np.nanstd(x_mean, ddof=1),
+        'mean.var_series': np.nanmean(x_var),
+        'std.var_series': np.nanstd(x_var, ddof=1),
+        'mean.min_series': np.nanmean(x_min),
+        'std.min_series': np.nanstd(x_min, ddof=1),
+        'mean.max_series': np.nanmean(x_max),
+        'std.max_series': np.nanstd(x_max, ddof=1),
+        'mean.median_series': np.nanmean(x_median),
+        'std.median_series': np.nanstd(x_median, ddof=1),
+        'mean.range_series': np.nanmean(x_range),
+        'std.range_series': np.nanstd(x_range, ddof=1),
+        'mean.iqr_series': np.nanmean(x_iqr),
+        'std.iqr_series': np.nanstd(x_iqr, ddof=1)
+    }
+
+    return stat_features
 
 
 def acf_features(x, period: int = 1):
@@ -235,7 +298,7 @@ def stability(x, period: int = 10):
 
     try:
         meanx = [np.nanmean(x_w) for x_w in np.array_split(x, len(x) // width + 1)]
-        stability = np.nanvar(meanx)
+        stability = np.nanvar(meanx, ddof=1)
     except:
         stability = np.nan
 
@@ -263,7 +326,7 @@ def lumpiness(x, period: int = 10):
     width = period if period > 1 else 10
 
     try:
-        varx = [np.nanvar(x_w) for x_w in np.array_split(x, len(x) // width + 1)]
+        varx = [np.nanvar(x_w, ddof=1) for x_w in np.array_split(x, len(x) // width + 1)]
         lumpiness = np.nanmean(varx)
     except:
         lumpiness = np.nan
@@ -318,7 +381,7 @@ def hurst(x, period: int = 30):
 
     try:
         lags = range(2, min(period, x_len - 1))
-        tau = [np.std(x[lag:] - x[:-lag]) for lag in lags]
+        tau = [np.nanstd(x[lag:] - x[:-lag]) for lag in lags]
         poly = np.polyfit(np.log(lags), np.log(tau), 1)
         hurst = poly[0] if not np.isnan(poly[0]) else np.nan
     except:
@@ -355,12 +418,12 @@ def stl_features(x, period: int = 1):
         seasonal_ = stl.seasonal
         remainder_ = stl.resid
 
-        re_var = np.nanvar(remainder_)
-        re_mean = np.nanmean(remainder_)
+        re_var = np.nanvar(remainder_, ddof=1)
+        re_mean = np.nanmean(remainder_, ddof=1)
 
-        trend_strength = 1 - re_var / np.nanvar(trend_ + remainder_)
+        trend_strength = 1 - re_var / np.nanvar(trend_ + remainder_, ddof=1)
 
-        seasonal_strength = 1 - re_var / np.nanvar(seasonal_ + remainder_)
+        seasonal_strength = 1 - re_var / np.nanvar(seasonal_ + remainder_, ddof=1)
 
         d = (remainder_ - re_mean) ** 2
         varloo = (re_var * (x_len - 1) - d) / (x_len - 2)
@@ -384,7 +447,6 @@ def stl_features(x, period: int = 1):
         e_acf1 = acfremainder['y_acf1']
     except:
         return {
-            'length_series': x_len,
             'trend_strength': np.nan,
             'seasonal_strength': np.nan,
             'spikiness': np.nan,
@@ -395,7 +457,6 @@ def stl_features(x, period: int = 1):
             'e_acf1': np.nan
         }
     return {
-        'length_series': x_len,
         'trend_strength': trend_strength,
         'seasonal_strength': seasonal_strength,
         'spikiness': spikiness,
@@ -432,11 +493,11 @@ def holt_parameters(x, period: int = 1):
     except:
         return {'alpha': np.nan,
                 'beta': np.nan
-                }
+            }
 
     return {'alpha': alpha,
             'beta': beta
-            }
+        }
 
 
 def hw_parameters(x: np.ndarray, period: int = 1):
@@ -458,11 +519,10 @@ def hw_parameters(x: np.ndarray, period: int = 1):
 
     try:
         hw = ExponentialSmoothing(
-            x,
-            seasonal='add',
+            endog=x,
             seasonal_periods=period,
-            trend='add',
-            use_boxcox=True).fit()
+            seasonal='add',
+            trend='add').fit()
 
         hw_alpha = hw.params['smoothing_level']
         hw_beta = hw.params['smoothing_trend']
@@ -471,12 +531,12 @@ def hw_parameters(x: np.ndarray, period: int = 1):
         return {'hw_alpha': np.nan,
                 'hw_beta': np.nan,
                 'hw_gamma': np.nan
-                }
+            }
 
     return {'hw_alpha': hw_alpha,
             'hw_beta': hw_beta,
             'hw_gamma': hw_gamma
-            }
+        }
 
 
 ts_metafeatures_list = {
@@ -494,11 +554,12 @@ ts_metafeatures_list = {
 
 
 def metafeatures_from_timeseries(
-    x,
-    timestamp,
-    period=None,
-    freq_mapping_dict=None,
-    features='all'):
+        x,
+        timestamp,
+        period=None,
+        scale_ts=True,
+        freq_mapping_dict=None,
+        features_list=None):
     """
     Extracting the meta-features of time series.
 
@@ -507,12 +568,18 @@ def metafeatures_from_timeseries(
     x: pd.DataFrame, the time series.
     timestamp: str, timestamp name of x.
     period: int or None, the seasonal of the time series, default None.
-    features, str or List[str], default 'all'.
+    scale_ts: bool, whether scale original time series.
+    freq_mapping_dict, dict, default {'H': 24, 'D': 7, 'W': 54, 'M': 12,
+        'Q': 4, 'Y': 1, 'A': 1}.
+    features_list, List[str], default ['simple', 'all'].
     """
     metafeatures_dict = {}
 
     if not isinstance(x, pd.DataFrame):
         raise ValueError('x should be a DataFrame')
+
+    if features_list is None:
+        features_list = ['simple', 'all']
 
     nfreq = freq_to_numerical(x, timestamp, freq_mapping_dict)
     metafeatures_dict.update(nfreq)
@@ -527,19 +594,28 @@ def metafeatures_from_timeseries(
 
     x = np.array(x)
 
+    if scale_ts:
+        x = scale(x)
+
+    if 'simple' in features_list:
+        features_list.remove('simple')
+        stat_mfs = statistics(x)
+        metafeatures_dict.update(stat_mfs)
+
+    if 'all' in features_list:
+        metafeatures_list = ts_metafeatures_list.keys()
+    else:
+        metafeatures_list = features_list
+
     if len(x.shape) == 2 and x.shape[1] != 1:
         x = PCA(n_components=1).fit_transform(x)
     if len(x.shape) != 1:
         x = x.reshape(-1, )
 
-    if features == 'all':
-        metafeatures_list = ts_metafeatures_list.keys()
-    else:
-        metafeatures_list = features
-
     for mf in metafeatures_list:
-        feature = ts_metafeatures_list[mf](x, period)
-        metafeatures_dict.update(feature)
+        if ts_metafeatures_list.get(mf) is not None:
+            feature = ts_metafeatures_list[mf](x, period)
+            metafeatures_dict.update(feature)
 
     metafeatures = pd.DataFrame(metafeatures_dict, index=[0])
     metafeatures.fillna(0, inplace=True)

@@ -1,7 +1,7 @@
 import pandas as pd
 
 from hyperts.datasets import load_random_univariate_forecast_dataset
-from hyperts.framework.meta_learning.tsfeatures import metafeatures_from_timeseries
+from hyperts.framework.meta_learning import metafeatures_from_timeseries, normalization
 
 
 class Test_TSMetaFeature():
@@ -11,4 +11,7 @@ class Test_TSMetaFeature():
         df.drop(columns=['id'], inplace=True)
         metafeatures = metafeatures_from_timeseries(df, timestamp='ds')
 
+        normalized_mf = normalization(metafeatures)
+
         assert isinstance(metafeatures, pd.DataFrame)
+        assert isinstance(normalized_mf, pd.DataFrame)
