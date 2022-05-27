@@ -480,9 +480,13 @@ class HyperTS(HyperModel):
     def export_trial_configuration(self, trial):
         return '`export_trial_configuration` does not implemented'
 
-    def search(self, X, y, X_eval, y_eval, cv=False, num_folds=3, max_trials=3, dataset_id=None, trial_store=None, **fit_kwargs):
+    def search(self, X, y, X_eval, y_eval, cv=False, num_folds=3, max_trials=3,
+               dataset_id=None, trial_store=None, **fit_kwargs):
         if dataset_id is None:
             dataset_id = self.generate_dataset_id(X, y)
+
+        if trial_store is None:
+            pass
 
         if self.searcher.use_meta_learner:
             self.searcher.set_meta_learner(MetaLearner(self.history, dataset_id, trial_store))

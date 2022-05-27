@@ -56,34 +56,39 @@ def fft_infer_period(x):
 
 
 def freq_to_numerical(x, timestamp, freq_mapping_dict=None):
-    """Fourier inference period.
+    """Calculates frequency.
 
     Parameters
     ----------
     x: pd.DataFrame, the timestamp.
+    timestamp: str, timestamp name of x.
+    freq_mapping_dict, dict, default {'H': 24, 'D': 7, 'W': 54, 'M': 12,
+        'Q': 4, 'Y': 1, 'A': 1, 'S': 60, 'T': 60}.
     """
     x[timestamp] = pd.to_datetime(x[timestamp])
     x = x.sort_values([timestamp])
     dateindex = pd.DatetimeIndex(x[timestamp])
-    freq = pd.infer_freq(dateindex)
-    if freq is None:
+    sfreq = pd.infer_freq(dateindex)
+    if sfreq is None:
         for i in range(len(x)):
-            freq = pd.infer_freq(dateindex[i:i + 3])
-            if freq != None:
+            sfreq = pd.infer_freq(dateindex[i:i + 3])
+            if sfreq != None:
                 break
 
     if freq_mapping_dict is None:
-        freq_mapping_dict = {
+        freq_mapping_dict =  {
             'H': 24,
             'D': 7,
             'W': 54,
             'M': 12,
             'Q': 4,
             'Y': 1,
-            'A': 1}
-    nfreq = freq_mapping_dict.get(freq[0], np.nan)
+            'A': 1,
+            'T': 60,
+            'S': 60}
+    nfreq = freq_mapping_dict.get(sfreq[0], np.nan)
 
-    return {'nfreq': nfreq}
+    return {'nfreq': nfreq}, sfreq
 
 
 def statistics(x, period: int = 1):
@@ -419,7 +424,7 @@ def stl_features(x, period: int = 1):
         remainder_ = stl.resid
 
         re_var = np.nanvar(remainder_, ddof=1)
-        re_mean = np.nanmean(remainder_, ddof=1)
+        re_mean = np.nanmean(remainder_)
 
         trend_strength = 1 - re_var / np.nanvar(trend_ + remainder_, ddof=1)
 
@@ -570,7 +575,7 @@ def metafeatures_from_timeseries(
     period: int or None, the seasonal of the time series, default None.
     scale_ts: bool, whether scale original time series.
     freq_mapping_dict, dict, default {'H': 24, 'D': 7, 'W': 54, 'M': 12,
-        'Q': 4, 'Y': 1, 'A': 1}.
+        'Q': 4, 'Y': 1, 'A': 1, 'S': 60, 'T': 60}.
     features_list, List[str], default ['simple', 'all'].
     """
     metafeatures_dict = {}
@@ -581,7 +586,7 @@ def metafeatures_from_timeseries(
     if features_list is None:
         features_list = ['simple', 'all']
 
-    nfreq = freq_to_numerical(x, timestamp, freq_mapping_dict)
+    nfreq, sfreq = freq_to_numerical(x, timestamp, freq_mapping_dict)
     metafeatures_dict.update(nfreq)
 
     x = x.drop(columns=[timestamp])
@@ -591,6 +596,14 @@ def metafeatures_from_timeseries(
         periods = [fft_infer_period(x[col])['period'] for col in val_cols]
         period = int(np.argmax(np.bincount(periods)))
     metafeatures_dict['period'] = period
+
+    if period > 365:
+        if isinstance(nfreq['nfreq'], int):
+            period = nfreq['nfreq']
+        elif isinstance(sfreq[0], int):
+            period = sfreq[0]
+        else:
+            period = 365
 
     x = np.array(x)
 
