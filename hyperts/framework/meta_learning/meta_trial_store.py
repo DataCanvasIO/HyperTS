@@ -29,7 +29,7 @@ class TrialInstance:
 
     def __repr__(self):
         return f"signature: {self.signature}\n" \
-               f"vectors: {self.vectors}, reward: {self.reward}"
+               f"vectors: {self.vectors}, reward: {self.reward}."
 
 
 class TrialStore:
