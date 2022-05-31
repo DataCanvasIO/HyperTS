@@ -9,7 +9,7 @@ class Test_TSMetaFeature():
     def test_forecast_metafeatures(self):
         df = load_random_univariate_forecast_dataset()
         df.drop(columns=['id'], inplace=True)
-        metafeatures = metafeatures_from_timeseries(df, timestamp='ds')
+        metafeatures = metafeatures_from_timeseries(df, timestamp='ds', scale_ts=True)
 
         normalized_mf = normalization(metafeatures)
 
