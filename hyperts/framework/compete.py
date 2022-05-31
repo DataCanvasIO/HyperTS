@@ -932,7 +932,6 @@ class TSCompeteExperiment(SteppedExperiment):
                                        cv=cv,
                                        num_folds=num_folds))
 
-        # task not in consts.TASK_LIST_FORECAST and
         if ensemble_size is not None and ensemble_size > 1:
             # ensemble step
             tb = get_tool_box(X_train, y_train)

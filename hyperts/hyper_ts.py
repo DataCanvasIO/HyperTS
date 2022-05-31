@@ -431,6 +431,7 @@ class HyperTS(HyperModel):
                  searcher,
                  task=None,
                  mode='stats',
+                 timestamp=None,
                  dispatcher=None,
                  callbacks=None,
                  reward_metric='accuracy',
@@ -439,6 +440,7 @@ class HyperTS(HyperModel):
                  clear_cache=False):
 
         self.mode = mode
+        self.timestamp = timestamp
         self.data_cleaner_params = data_cleaner_params
 
         HyperModel.__init__(self,
@@ -494,7 +496,7 @@ class HyperTS(HyperModel):
         self._before_search()
 
         # dispatcher = self.dispatcher if self.dispatcher else get_dispatcher(self)
-        dispatcher = InProcessDispatcher('/models')   # TODO：
+        dispatcher = InProcessDispatcher('/models')
 
         for callback in self.callbacks:
             callback.on_search_start(self, X, y, X_eval, y_eval,

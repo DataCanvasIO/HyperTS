@@ -567,8 +567,8 @@ def make_experiment(train_data,
     # 18. Define hyper_model
     if hyper_model_options is None:
         hyper_model_options = {}
-    hyper_model = hyper_ts_cls(searcher, mode=mode, reward_metric=reward_metric, task=task,
-            callbacks=search_callbacks, discriminator=discriminator, **hyper_model_options)
+    hyper_model = hyper_ts_cls(searcher, mode=mode, timestamp=timestamp, reward_metric=reward_metric,
+          task=task, callbacks=search_callbacks, discriminator=discriminator, **hyper_model_options)
 
     # 19. Build Experiment
     experiment = TSCompeteExperiment(hyper_model, X_train=X_train, y_train=y_train, X_eval=X_eval, y_eval=y_eval,
