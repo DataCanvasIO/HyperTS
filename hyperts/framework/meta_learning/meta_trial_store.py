@@ -18,6 +18,7 @@ class TrialInstance:
 
     Parameters
     ----------
+    signature: str, trial instance signature.
     vectors: list, configuration vectors of space_sample.
     reward: float, reward of space_sample.
     """
@@ -37,7 +38,10 @@ class TrialStore:
 
     Parameters
     ----------
+    task: str, task name, for example, 'univariate-forecast', 'multivariate-forecast' and so on.
+    is_scale: bool, whether to scale metafeatures, default True.
     dataset_id: str, dataset id based on shape and dtype (X, y).
+    trials_limit: int, number of collection trials, default 30.
     """
     def __init__(self, task, dataset_id, is_scale=True, trials_limit=30, **kwargs):
         self.task = task
