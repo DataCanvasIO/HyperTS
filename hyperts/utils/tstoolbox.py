@@ -283,10 +283,11 @@ class TSToolBox(ToolBox):
         if df[ts_name].dtypes == object:
             df[ts_name] = pd.to_datetime(df[ts_name])
         df = df.sort_values(by=ts_name)
-        if  freq is not None and freq is not consts.DISCRETE_FORECAST:
+        if freq is not None and freq is not consts.DISCRETE_FORECAST:
             start, end = df[ts_name].iloc[0], df[ts_name].iloc[-1]
             full_ts = pd.DataFrame(pd.date_range(start=start, end=end, freq=freq), columns=[ts_name])
-            df = full_ts.join(df.set_index(ts_name), on=ts_name)
+            if full_ts[ts_name].iloc[-1] == df[ts_name].iloc[-1]:
+                df = full_ts.join(df.set_index(ts_name), on=ts_name)
 
         return df
 
