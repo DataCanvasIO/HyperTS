@@ -21,15 +21,17 @@ class TrialInstance:
     signature: str, trial instance signature.
     vectors: list, configuration vectors of space_sample.
     reward: float, reward of space_sample.
+    elapsed: float, trial elapsed.
     """
-    def __init__(self, signature, vectors, reward):
+    def __init__(self, signature, vectors, reward, elapsed):
         self.signature = signature
         self.vectors = vectors
         self.reward = reward
+        self.elapsed = elapsed
 
     def __repr__(self):
         return f"signature: {self.signature}\n" \
-               f"vectors: {self.vectors}, reward: {self.reward}."
+               f"vectors: {self.vectors}, reward: {self.reward}, elapsed: {self.elapsed}."
 
 
 class TrialStore:
@@ -104,12 +106,24 @@ class TrialStore:
                         signature = str(subcfgs.iloc[i]['signature'])
                         vectors = list(map(int, subcfgs.iloc[i]['vectors'][1:-1].split(',')))
                         reward = float(subcfgs.iloc[i]['reward'])
-                        trial = TrialInstance(signature, vectors, reward)
+                        elapsed = float(subcfgs.iloc[i]['elapsed'])
+                        trial = TrialInstance(signature, vectors, reward, elapsed)
                         self.trials.append(trial)
 
         logger.info(f'{len(self.trials)} similar trials were collected.')
 
         return self
+
+    def get(self, dataset_id, space_sample):
+        """
+        Extract meta trial from trial store.
+        """
+        assert self.dataset_id == dataset_id
+        for trial in self.trials:
+            if trial.signature == space_sample.signature and trial.vectors == space_sample.vectors:
+                return trial
+        return None
+
 
     def get_all(self, dataset_id, space_signature):
         """
