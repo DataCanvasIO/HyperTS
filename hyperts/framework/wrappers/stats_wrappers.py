@@ -76,7 +76,7 @@ class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
         date_series_top2 = X[self.timestamp][:2].tolist()
         self._freq = (date_series_top2[1] - date_series_top2[0]).total_seconds()
         self._end_date = X[self.timestamp].tail(1).to_list()[0].to_pydatetime()
-        freq, period = self._seasonality(X, y)
+        period = self._seasonality(X, y)
 
         y = self.fit_transform(y)
 
@@ -93,12 +93,13 @@ class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
             seasonal_order = (0, 0, 0, 0)
 
         try:
-            model = SARIMAX(endog=y, order=(p, d, q), seasonal_order=seasonal_order,
-                            trend=trend, freq=freq, dates=X[self.timestamp])
+            model = SARIMAX(endog=y,
+                            order=(p, d, q),
+                            seasonal_order=seasonal_order,
+                            trend=trend)
             self.model = model.fit(disp=False, **self.init_kwargs)
         except:
-            model = ARIMA(endog=y, order=(p, d, q),
-                          trend=trend, freq=freq, dates=X[self.timestamp])
+            model = ARIMA(endog=y, order=(p, d, q), trend=trend)
             self.model = model.fit(**self.init_kwargs)
 
     def predict(self, X, **kwargs):
@@ -120,9 +121,8 @@ class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
 
     def _seasonality(self, X, y):
         tb = get_tool_box(X, y)
-        freq = tb.infer_ts_freq(X, ts_name=self.timestamp)
         period = tb.fft_infer_period(y)
-        return freq, period
+        return period
 
 
 class VARWrapper(EstimatorWrapper, WrapperMixin):

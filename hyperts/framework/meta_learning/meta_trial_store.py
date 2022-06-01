@@ -5,7 +5,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from hyperts.utils import consts, get_tool_box
 
-from hyperts.framework.meta_learning import normalization
+from hyperts.framework.meta_learning import normalization, metric_mapping_dict
 from hyperts.framework.meta_learning.tsfeatures import metafeatures_from_timeseries
 
 from hypernets.utils import logging
@@ -39,13 +39,16 @@ class TrialStore:
     Parameters
     ----------
     task: str, task name, for example, 'univariate-forecast', 'multivariate-forecast' and so on.
-    is_scale: bool, whether to scale metafeatures, default True.
     dataset_id: str, dataset id based on shape and dtype (X, y).
+    reward_metric: 'str' or callable, default 'accuracy' for binary/multiclass task, 'rmse' for
+        forecast/regression task.
+    is_scale: bool, whether to scale metafeatures, default True.
     trials_limit: int, number of collection trials, default 30.
     """
-    def __init__(self, task, dataset_id, is_scale=True, trials_limit=30, **kwargs):
+    def __init__(self, task, dataset_id, reward_metric, is_scale=True, trials_limit=30, **kwargs):
         self.task = task
         self.dataset_id = dataset_id
+        self.reward_metric = reward_metric
         self.is_scale = is_scale
         self.trials_limit = trials_limit
         self.timestamp = kwargs.get('timestamp')
@@ -91,15 +94,17 @@ class TrialStore:
         similarity_sorted = similarity.sort_values(metafeature.index, ascending=False)
         similarity_sorted = similarity_sorted.loc[:, metafeature.index]
 
-        configurations = self.get_configurations()
+        configurations = self.get_configurations(self.reward_metric)
 
         for cidx, sim_idx in enumerate(similarity_sorted.index.to_list()):
             if len(self.trials) < self.trials_limit:
                 subcfgs = configurations[configurations['dataset_id'] == sim_idx]
                 if subcfgs.shape[0] >= 1:
                     for i in range(subcfgs.shape[0]):
-                        cfg = subcfgs.iloc[i]
-                        trial = TrialInstance(cfg['signature'], cfg['vectors'], cfg['reward'])
+                        signature = str(subcfgs.iloc[i]['signature'])
+                        vectors = list(map(int, subcfgs.iloc[i]['vectors'][1:-1].split(',')))
+                        reward = float(subcfgs.iloc[i]['reward'])
+                        trial = TrialInstance(signature, vectors, reward)
                         self.trials.append(trial)
 
         logger.info(f'{len(self.trials)} similar trials were collected.')
@@ -132,7 +137,7 @@ class TrialStore:
         else:
             raise RuntimeError(f'No support task: {self.task}.')
 
-        metafeatures = pd.read_csv(meta_path_file)
+        metafeatures = pd.read_csv(meta_path_file, index_col=0)
 
         if features is not None:
             metafeatures = metafeatures.loc[:, features]
@@ -141,7 +146,7 @@ class TrialStore:
 
         return metafeatures
 
-    def get_configurations(self):
+    def get_configurations(self, reward_metric):
         """
         Extract the trial configurations of history.
         """
@@ -154,7 +159,20 @@ class TrialStore:
         else:
             raise RuntimeError(f'No support task: {self.task}.')
 
-        configurations = pd.read_csv(meta_path_file)
+        configurations = pd.read_csv(meta_path_file, index_col=0)
+
+        if isinstance(reward_metric, str):
+            reward_metric = metric_mapping_dict.get(reward_metric)
+        elif callable(reward_metric):
+            reward_metric = metric_mapping_dict.get(reward_metric.__name__)
+        else:
+            raise ValueError('The reward_metric definition might be wrong.')
+
+        if reward_metric is not None:
+            configurations = configurations[configurations.reward_metric == reward_metric]
+
+        if configurations.empty:
+            raise ValueError(f'Failed to extract the configuration matching {reward_metric}.')
 
         logger.info('Extract trial configurations finished.')
 
