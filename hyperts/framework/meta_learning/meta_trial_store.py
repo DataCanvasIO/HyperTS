@@ -22,12 +22,14 @@ class TrialInstance:
     vectors: list, configuration vectors of space_sample.
     reward: float, reward of space_sample.
     elapsed: float, trial elapsed.
+    run: bool, whether the current data has been run (fit), default False.
     """
-    def __init__(self, signature, vectors, reward, elapsed):
+    def __init__(self, signature, vectors, reward, elapsed, run=False):
         self.signature = signature
         self.vectors = vectors
         self.reward = reward
         self.elapsed = elapsed
+        self.run = run
 
     def __repr__(self):
         return f"signature: {self.signature}\n" \
@@ -120,10 +122,34 @@ class TrialStore:
         """
         assert self.dataset_id == dataset_id
         for trial in self.trials:
-            if trial.signature == space_sample.signature and trial.vectors == space_sample.vectors:
+            if trial.run and trial.signature == space_sample.signature and \
+                    trial.vectors == space_sample.vectors:
                 return trial
         return None
 
+    def put(self, dataset_id, new_trial):
+        """
+        Put trial into trials.
+        """
+        assert self.dataset_id == dataset_id
+
+        signature = new_trial.space_sample.signature
+        vectors = new_trial.vectors
+        reward = new_trial.reward
+        elapsed = new_trial.elapsed
+
+        i = 0
+        for t in self.trials:
+            if i < self.trials_limit and t.signature == signature and t.vectors == vectors:
+                self.trials[i].reward = reward
+                self.trials[i].elapsed = elapsed
+                self.trials[i].run = True
+                break
+            i += 1
+
+        if i == self.trials_limit:
+            trial = TrialInstance(signature, vectors, reward, elapsed)
+            self.trials.append(trial)
 
     def get_all(self, dataset_id, space_signature):
         """
