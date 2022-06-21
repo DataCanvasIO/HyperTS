@@ -5,6 +5,7 @@ from hyperts.utils.transformers import (LogXplus1Transformer,
                                         StandardTransformer,
                                         MinMaxTransformer,
                                         MaxAbsTransformer,
+                                        OutliersTransformer,
                                         CategoricalTransformer)
 
 
@@ -54,6 +55,9 @@ class Test_Transformers():
     def test_maxabs(self):
         sc = MaxAbsTransformer()
         assert self.scale_tester(sc)
+
+    def test_outliers(self):
+        sc = OutliersTransformer()
 
     def test_ctegorical(self):
         x = np.array(["a", "b", "a", "b", "b"])
