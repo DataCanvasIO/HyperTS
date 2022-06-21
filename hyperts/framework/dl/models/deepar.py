@@ -44,6 +44,7 @@ def DeepARModel(task, window, rnn_type, continuous_columns, categorical_columns,
     denses = layers.build_denses(continuous_columns, continuous_inputs)
     embeddings = layers.build_embeddings(categorical_columns, categorical_inputs)
     if embeddings is not None:
+        denses = layers.LayerNormalization(name='layer_norm')(denses)
         x = layers.Concatenate(axis=-1, name='concat_embeddings_dense_inputs')([denses, embeddings])
     else:
         x = denses
