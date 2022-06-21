@@ -185,6 +185,130 @@ class Highway(layers.Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
+class Time2Vec(layers.Layer):
+    """The vector representation for time series.
+
+    Parameters
+    ----------
+    kernel_size: int, dimension of vector embedding.
+    periodic_activation: str, optional {'sin', 'cos'}, default 'sin'.
+    input: (none, timesteps, nb_variables)
+    output: (none, timesteps, kernel_size+nb_variables)
+    """
+    def __init__(self, kernel_size=32, periodic_activation='sin', **kwargs):
+        super(Time2Vec, self).__init__(**kwargs)
+        self.k = kernel_size
+        self.actvition = periodic_activation
+
+    def build(self, input_shape):
+        # trend
+        self.trend_weights = self.add_weight(name='trend_weights',
+                                 shape=(1, input_shape[-1]),
+                                 initializer='glorot_uniform',
+                                 trainable=True)
+        self.trend_bias = self.add_weight(name='trend_bias',
+                                 shape=(1, input_shape[-1]),
+                                 initializer='zeros',
+                                 trainable=True)
+        # periodic
+        self.periodic_weights = self.add_weight(name='periodic_weights',
+                                 shape=(input_shape[-1], self.k),
+                                 initializer='glorot_uniform',
+                                 trainable=True)
+        self.periodic_bias = self.add_weight(name='periodic_bias',
+                                 shape=(1, self.k),
+                                 initializer='zeros',
+                                 trainable=True)
+
+        super(Time2Vec, self).build(input_shape)
+
+    def call(self, inputs, **kwargs):
+        trend =  inputs * self.trend_weights + self.trend_bias
+        if self.actvition.startswith('sin'):
+            periodic = K.sin(K.dot(inputs, self.periodic_weights) + self.periodic_bias)
+        elif self.actvition.startswith('cos'):
+            periodic = K.cos(K.dot(inputs, self.periodic_weights) + self.periodic_bias)
+        else:
+            periodic1 = K.sin(K.dot(inputs, self.periodic_weights) + self.periodic_bias)
+            periodic2 = K.cos(K.dot(inputs, self.periodic_weights) + self.periodic_bias)
+            periodic = periodic1 + periodic2
+
+        return K.concatenate([trend, periodic], -1)
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], input_shape[1] * (self.k + 1))
+
+    def get_config(self):
+        config = {'kernel_size': self.k}
+        base_config = super(Time2Vec, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+
+class RevInstanceNormalization(layers.Layer):
+    """Reversible Instance Normalization for Accurate Time-Series Forecasting
+       against Distribution Shift, ICLR2022.
+
+    Parameters
+    ----------
+    eps: float, a value added for numerical stability, default 1e-5.
+    affine: bool, if True(default), RevIN has learnable affine parameters.
+    """
+    def __init__(self, eps=1e-5, affine=True, **kwargs):
+        super(RevInstanceNormalization, self).__init__(**kwargs)
+        self.eps = eps
+        self.affine = affine
+
+    def build(self, input_shape):
+        self.affine_weight = self.add_weight(name='affine_weight',
+                                 shape=(1, input_shape[-1]),
+                                 initializer='ones',
+                                 trainable=True)
+
+        self.affine_bias = self.add_weight(name='affine_bias',
+                                 shape=(1, input_shape[-1]),
+                                 initializer='zeros',
+                                 trainable=True)
+        super(RevInstanceNormalization, self).build(input_shape)
+
+    def call(self, inputs, **kwargs):
+        mode = kwargs.get('mode', None)
+        if mode == 'norm':
+            self._get_statistics(inputs)
+            x = self._normalize(inputs)
+        elif mode == 'denorm':
+            x = self._denormalize(inputs)
+        else:
+            raise NotImplementedError('Only modes norm and denorm are supported.')
+        return x
+
+    def _get_statistics(self, x):
+        dim2reduce = tuple(range(1, len(x.shape) - 1))
+        self.mean = K.mean(x, axis=dim2reduce, keepdims=True)
+        self.stdev = K.sqrt(K.var(x, axis=dim2reduce, keepdims=True) + self.eps)
+
+    def _normalize(self, x):
+        x = x - self.mean
+        x = x / self.stdev
+        if self.affine:
+            x = x * self.affine_weight
+            x = x + self.affine_bias
+        return x
+
+    def _denormalize(self, x):
+        if self.affine:
+            x = x - self.affine_bias
+            x = x / (self.affine_weight + self.eps*self.eps)
+        x = x * self.stdev
+        x = x + self.mean
+        return x
+
+    def get_config(self):
+        config = {'eps': self.eps,
+                  'affine': self.affine}
+        base_config = super(RevInstanceNormalization, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+
 def build_input_head(window, continuous_columns, categorical_columns):
     """Build the input head. An input variable may have two parts: continuous variables
        and categorical variables.
@@ -213,7 +337,7 @@ def build_input_head(window, continuous_columns, categorical_columns):
     return continuous_inputs, categorical_inputs
 
 
-def build_denses(continuous_columns, continuous_inputs, use_batchnormalization=False):
+def build_denses(continuous_columns, continuous_inputs, use_layernormalization=False):
     """Concatenate continuous inputs.
 
     Parameters
@@ -222,7 +346,7 @@ def build_denses(continuous_columns, continuous_inputs, use_batchnormalization=F
         Contains some information(name, column_names, input_dim, dtype,
         input_name) about continuous variables.
     continuous_inputs: list, tf.keras.layers.Input objects.
-    use_batchnormalization: bool, default False.
+    use_layernormalization: bool, default False.
     """
 
     if len(continuous_inputs) > 1:
@@ -231,8 +355,8 @@ def build_denses(continuous_columns, continuous_inputs, use_batchnormalization=F
     else:
         dense_layer = list(continuous_inputs.values())[0]
 
-    if use_batchnormalization:
-        dense_layer = layers.BatchNormalization(name='continuous_inputs_bn')(dense_layer)
+    if use_layernormalization:
+        dense_layer = layers.LayerNormalization(name='continuous_inputs_ln')(dense_layer)
 
     return dense_layer
 
@@ -320,4 +444,6 @@ layers_custom_objects = {
     'FeedForwardAttention': FeedForwardAttention,
     'AutoRegressive': AutoRegressive,
     'Highway': Highway,
+    'Time2Vec': Time2Vec,
+    'RevInstanceNormalization': RevInstanceNormalization
 }
