@@ -53,7 +53,7 @@ For more installation tips, see [installation](https://hyperts.readthedocs.io/en
 
 ## Examples
 
-Users can quickly create and ```run()``` an experiment with ```make_experiment()```, where ```train_data```, and ```task``` are required input parameters. In the following forecast example, we define the experiment as a multivariate-forecast ```task```, and use the statistical model (stat ```mode```) . Besides, the mandatory arguments ```timestamp``` and ```covariables``` (if have) should also be defined in the experiment.
+Users can quickly create and ```run()``` an experiment with ```make_experiment()```, where ```train_data```, and ```task``` are required input parameters. In the following forecast example, we define the experiment as a multivariate-forecast ```task```, and use the statistical model (stat ```mode```) . Besides, the mandatory arguments ```timestamp``` and ```covariates``` (if have) should also be defined in the experiment.
 
 ```python
 from hyperts import make_experiment
@@ -96,6 +96,8 @@ HyperTS supports the following features:
 **Covariates Support:** Deep learning models support covariates as input featues for time series forecasting. 
 
 **Probabilistic Intervals Support:** Time series forecsting visualization can show confidence intervals.
+
+**Diversified Preprocessing:** Outlier clipping, missing value imputing, sequence smoothing, normalization, etc. 
 
 **Abundant Metrics:** A variety of performance metrics to evaluate results and guide models optimization, including MSE, SMAPE, Accuracy, F1-Score,etc. 
 

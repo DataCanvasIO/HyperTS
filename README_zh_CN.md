@@ -51,7 +51,7 @@ conda install -c conda-forge hyperts
 
 ## 示例
 
-您可以使用```make_experiment()```快速创建并运行一个实验，其中```train_data```和```task```作为必需的输入参数。在以下预测示例中，我们告诉实验这是一个多变量预测任务，开启```stats```模式(统计)，因为数据包含时间戳和协变量列，因此```timestamp```和```covariables```参数也必须传给实验。
+您可以使用```make_experiment()```快速创建并运行一个实验，其中```train_data```和```task```作为必需的输入参数。在以下预测示例中，我们告诉实验这是一个多变量预测任务，开启```stats```模式(统计)，因为数据包含时间戳和协变量列，因此```timestamp```和```covariates```参数也必须传给实验。
 
 ```python
 from hyperts import make_experiment
@@ -96,6 +96,8 @@ HyperTS支持以下特性:
 **协变量支持:** 深度学习模型支持协变量作为时间序列预测的输入特征。
 
 **概率置信区间:** 时间序列预测可视化可以显示置信区间。
+
+**多样化的预处理过程:** 异常值裁剪, 缺失时间补齐，缺失值填充，序列平滑，归一化等。
 
 **丰富的指标:** 从MSE、SMAPE、Accuracy到F1-Score，多种性能指标来评估结果，指导模型优化。
 
