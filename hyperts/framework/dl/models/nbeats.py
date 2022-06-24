@@ -59,7 +59,10 @@ def NBeatsModel(task, continuous_columns, categorical_columns, window=10, nb_ste
 
     def seasonality_model(thetas, backcast_length, forecast_length, is_forecast):
         p = thetas.get_shape().as_list()[-1]
-        p1, p2 = (p // 2, p // 2) if p % 2 == 0 else (p // 2, p // 2 + 1)
+        if p % 2 == 0:
+            p1, p2 = p // 2, p // 2
+        else:
+            p1, p2 = p // 2, p // 2 + 1
         t = linear_space(backcast_length, forecast_length, is_forecast=is_forecast)
         s1 = K.stack([K.cos(2 * np.pi * i * t) for i in range(p1)])
         s2 = K.stack([K.sin(2 * np.pi * i * t) for i in range(p2)])
