@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from hyperts.utils import get_tool_box
+from hyperts.framework.meta_learning import tsfeatures
 
 def from_3d_array_to_nested_df(data: np.ndarray,
                                columns: str = None,
@@ -98,3 +99,31 @@ def temporal_train_test_split(*arrays,
                                         test_size=test_size,
                                         test_horizon=test_horizon,
                                         train_size=train_size)
+
+
+def metafeatures_from_timeseries(
+        x : pd.DataFrame,
+        timestamp : str,
+        period=None,
+        scale_ts=True,
+        freq_mapping_dict=None,
+        features_list=None):
+    """
+    Extracting the meta-features of time series.
+
+    Parameters
+    ----------
+    x: pd.DataFrame, the time series.
+    timestamp: str, timestamp name of x.
+    period: int or None, the seasonal of the time series, default None.
+    scale_ts: bool, whether scale original time series.
+    freq_mapping_dict, dict, default {'H': 24, 'D': 7, 'W': 54, 'M': 12,
+        'Q': 4, 'Y': 1, 'A': 1, 'S': 60, 'T': 60}.
+    features_list, List[str], default ['simple', 'all'].
+    """
+    return tsfeatures.metafeatures_from_timeseries(x,
+                                                   timestamp,
+                                                   period=period,
+                                                   scale_ts=scale_ts,
+                                                   freq_mapping_dict=freq_mapping_dict,
+                                                   features_list=features_list)
