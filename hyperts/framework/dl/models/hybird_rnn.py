@@ -34,7 +34,7 @@ def HybirdRNNModel(task, window, rnn_type, continuous_columns, categorical_colum
     nb_outputs : Int, default 1.
     nb_steps   : Int, The step length of forecast, default 1.
     out_activation : Str - Forecast the task output activation function,
-                 optional {'linear', 'sigmoid'}, default = 'linear'.
+                 optional {'linear', 'sigmoid', 'tanh'}, default = 'linear'.
     """
     K.clear_session()
     continuous_inputs, categorical_inputs = layers.build_input_head(window, continuous_columns, categorical_columns)
@@ -74,7 +74,7 @@ class HybirdRNN(BaseDeepEstimator):
                  default = 1.
     drop_rate  : Float between 0 and 1 - The rate of Dropout for neural nets,
                  default = 0.
-    out_activation : Str - Forecast the task output activation function, optional {'linear', 'sigmoid'},
+    out_activation : Str - Forecast the task output activation function, optional {'linear', 'sigmoid', 'tanh'},
                  default = 'linear'.
     timestamp  : Str or None - Timestamp name, the forecast task must be given,
                  default None.
