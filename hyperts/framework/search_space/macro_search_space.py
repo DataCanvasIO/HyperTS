@@ -14,7 +14,8 @@ from hyperts.framework.estimators import (ProphetForecastEstimator,
                                           KNNClassificationEstimator,
                                           DeepARForecastEstimator,
                                           HybirdRNNGeneralEstimator,
-                                          LSTNetGeneralEstimator)
+                                          LSTNetGeneralEstimator,
+                                          NBeatsForecastEstimator)
 
 from hypernets.tabular import column_selector as tcs
 from hypernets.core.ops import HyperInput, ModuleChoice, Optional
@@ -296,6 +297,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
 
             # 'y_scale': Choice(['none-scale', 'min_max', 'max_abs', 'z_scale']),
             'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
+            'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
         }
 
     @property
@@ -319,6 +321,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
 
             'y_scale': Choice(['none-scale', 'min_max', 'max_abs', 'z_scale']),
             'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
+            'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
         }
 
     @property
@@ -334,7 +337,8 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'maxlags': Choice([None, 2, 6, 12, 24, 48]),
             'trend': Choice(['c', 'ct', 'ctt', 'nc', 'n']),
             'y_log': Choice(['none-log']*4+['logx']*1),
-            'y_scale': Choice(['min_max']*5+['z_scale']*2+['max_abs']*1)
+            'y_scale': Choice(['min_max']*5+['z_scale']*2+['max_abs']*1),
+            'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
         }
 
     @property
@@ -499,9 +503,11 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
                  enable_deepar=True,
                  enable_hybirdrnn=True,
                  enable_lstnet=True,
+                 enable_nbeats=True,
                  deepar_init_kwargs=None,
                  hybirdrnn_init_kwargs=None,
                  lstnet_init_kwargs=None,
+                 nbeats_init_kwargs=None,
                  **kwargs):
         if enable_deepar and deepar_init_kwargs is not None:
             kwargs['deepar_init_kwargs'] = deepar_init_kwargs
@@ -509,6 +515,8 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             kwargs['hybirdrnn_init_kwargs'] = hybirdrnn_init_kwargs
         if enable_lstnet and lstnet_init_kwargs is not None:
             kwargs['lstnet_init_kwargs'] = lstnet_init_kwargs
+        if enable_nbeats and nbeats_init_kwargs is not None:
+            kwargs['nbeats_init_kwargs'] = nbeats_init_kwargs
         super(DLForecastSearchSpace, self).__init__(task, **kwargs)
 
         self.task = task
@@ -519,6 +527,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
         self.enable_deepar = enable_deepar
         self.enable_hybirdrnn = enable_hybirdrnn
         self.enable_lstnet = enable_lstnet
+        self.enable_nbeats = enable_nbeats
 
     @property
     def default_deepar_init_kwargs(self):
@@ -543,6 +552,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'y_log': Choice(['none-log']*4+['logx']*1),
             'y_scale': Choice(['min_max']*4+['z_scale']*1),
             'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
+            'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
         }
 
     @property
@@ -575,6 +585,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'y_log': Choice(['none-log']*4+['logx']*1),
             'y_scale': Choice(['min_max']*5+['z_scale']*2+['max_abs']*1),
             'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
+            'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
         }
 
     @property
@@ -614,10 +625,42 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'y_log': Choice(['none-log']*4+['logx']*1),
             'y_scale': Choice(['min_max']*5+['z_scale']*2+['max_abs']*1),
             'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
+            'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
         }
 
     @property
     def default_lstnet_fit_kwargs(self):
+        return {
+            'epochs': consts.TRAINING_EPOCHS,
+            'batch_size': None,
+            'verbose': 1,
+        }
+
+    @property
+    def default_nbeats_init_kwargs(self):
+        return {
+            'timestamp': self.timestamp,
+            'task': self.task,
+            'metrics': self.metrics,
+            'horizon': self.horizon,
+            'reducelr_patience': 5,
+            'earlystop_patience': 15,
+            'summary': True,
+
+            'optimizer': 'adam',
+            'nb_blocks_per_stack': Choice([1, 2, 3]),
+            'hidden_layer_units': Choice([64, 128, 256]),
+            'forecast_length': Choice([1]*8+[3, 6]),
+            'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
+
+            'y_log': Choice(['none-log']*4+['logx']*1),
+            'y_scale': Choice(['min_max']*4+['z_scale']*1),
+            'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
+            'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
+        }
+
+    @property
+    def default_nbeats_fit_kwargs(self):
         return {
             'epochs': consts.TRAINING_EPOCHS,
             'batch_size': None,
@@ -642,6 +685,11 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
                 LSTNetGeneralEstimator, self.default_lstnet_init_kwargs, self.default_lstnet_fit_kwargs)
             multivar_containers['lstnet'] = (
                 LSTNetGeneralEstimator, self.default_lstnet_init_kwargs, self.default_lstnet_fit_kwargs)
+        if self.enable_nbeats:
+            univar_containers['nbeats'] = (
+                NBeatsForecastEstimator, self.default_nbeats_init_kwargs, self.default_nbeats_fit_kwargs)
+            multivar_containers['nbeats'] = (
+                NBeatsForecastEstimator, self.default_nbeats_init_kwargs, self.default_nbeats_fit_kwargs)
 
         if self.task == consts.Task_UNIVARIATE_FORECAST:
             return univar_containers

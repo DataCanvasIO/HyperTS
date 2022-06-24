@@ -53,6 +53,11 @@ class WrapperMixin:
             self.timestamp = consts.TIMESTAMP
         self.freq = kwargs.pop('freq', None)
 
+        if kwargs.get('drop_sample_rate') is not None:
+            self.drop_sample_rate = kwargs.pop('drop_sample_rate')
+        else:
+            self.drop_sample_rate = 0.
+
         self.fit_kwargs = fit_kwargs if fit_kwargs is not None else {}
         self.init_kwargs = kwargs if kwargs is not None else {}
 
@@ -162,6 +167,20 @@ class WrapperMixin:
         except:
             inverse_X = self.transformers._inverse_transform(X)
         return inverse_X
+
+    def drop_hist_sample(self, X, y=None, **kwargs):
+        tb = get_tool_box(X)
+        data_len = tb.get_shape(X)[0]
+        if kwargs.get('window') is not None:
+            if kwargs['window'] + kwargs['forecast_length'] + 1 > \
+               int(data_len*(1 - self.drop_sample_rate)) // 2:
+                return X, y
+        X = tb.select_1d_reverse(X, int(data_len*(1 - self.drop_sample_rate)))
+        X = tb.reset_index(X)
+        if y is not None:
+            y = tb.select_1d_reverse(y, int(data_len*(1 - self.drop_sample_rate)))
+            y = tb.reset_index(y)
+        return X, y
 
     def update_init_kwargs(self, **kwargs):
         if kwargs.get('y_scale') is not None:

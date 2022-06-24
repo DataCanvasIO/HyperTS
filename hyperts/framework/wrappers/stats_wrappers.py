@@ -41,6 +41,8 @@ class ProphetWrapper(EstimatorWrapper, WrapperMixin):
 
     def fit(self, X, y=None, **kwargs):
         # adapt for prophet
+        if self.drop_sample_rate:
+            X, y = self.drop_hist_sample(X, y)
         df_train = X[[self.timestamp]]
         if self.timestamp != 'ds':
             df_train.rename(columns={self.timestamp: 'ds'}, inplace=True)
@@ -73,6 +75,8 @@ class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
 
     def fit(self, X, y=None, **kwargs):
         # adapt for prophet
+        if self.drop_sample_rate:
+            X, y = self.drop_hist_sample(X, y)
         date_series_top2 = X[self.timestamp][:2].tolist()
         self._freq = (date_series_top2[1] - date_series_top2[0]).total_seconds()
         self._end_date = X[self.timestamp].tail(1).to_list()[0].to_pydatetime()
@@ -138,6 +142,8 @@ class VARWrapper(EstimatorWrapper, WrapperMixin):
 
     def fit(self, X, y=None, **kwargs):
         # adapt for prophet
+        if self.drop_sample_rate:
+            X, y = self.drop_hist_sample(X, y)
         date_series_top2 = X[self.timestamp][:2].tolist()
         self._freq = (date_series_top2[1] - date_series_top2[0]).total_seconds()
         self._end_date = X[self.timestamp].tail(1).to_list()[0].to_pydatetime()
