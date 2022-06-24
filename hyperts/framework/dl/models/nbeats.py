@@ -12,9 +12,14 @@ from hypernets.utils import logging
 logger = logging.get_logger(__name__)
 
 
+def linear_space(backcast_length, forecast_length, is_forecast=True):
+    horizon = forecast_length if is_forecast else backcast_length
+    return K.arange(0, horizon) / horizon
+
 def NBeatsModel(task, continuous_columns, categorical_columns, window=10, nb_steps=1,
                 stack_types=('trend', 'seasonality'), thetas_dim=(4, 8), nb_blocks_per_stack=3,
-                share_weights_in_stack=False, hidden_layer_units=256, nb_harmonics=None, **kwargs):
+                share_weights_in_stack=False, hidden_layer_units=256, nb_outputs=1,
+                nb_harmonics=None, out_activation='linear', **kwargs):
     """N-BEATS: Neural basis expansion analysis for interpretable time series forecasting.
 
     Parameters
@@ -30,13 +35,16 @@ def NBeatsModel(task, continuous_columns, categorical_columns, window=10, nb_ste
     window     : Positive Int - Length of the time series sequences for a sample,
                  i.e., backcast_length, default 10.
     nb_steps   : Positive Int -  The step length of forecast, i.e., forecast_length, default 1.
-    stack_types : Tuple(Str) - Stack types, optional {'trend', 'seasonality', generic}.
+    stack_types : Tuple(Str) - Stack types, optional {'trend', 'seasonality', 'generic'}.
     thetas_dim  : Tuple(Int) - The number of units that make up each dense layer in each
                   block of every stack.
     nb_blocks_per_stack : Int - The number of block per stack.
     share_weights_in_stack : Bool - Whether to share weights in stack.
     hidden_layer_units : Int - The units of hidden layer.
-    nb_harmonics : None.
+    nb_outputs : Int, default 1.
+    nb_harmonics : Int or None, default None.
+    out_activation : Str - Forecast the task output activation function,
+                 optional {'linear', 'sigmoid'}, default = 'linear'.
 
     References
     ----------
@@ -48,10 +56,6 @@ def NBeatsModel(task, continuous_columns, categorical_columns, window=10, nb_ste
         raise ValueError(f'Unsupported task type {task}.')
 
     weights = {}
-
-    def linear_space(backcast_length, forecast_length, is_forecast=True):
-        horizon = forecast_length if is_forecast else backcast_length
-        return K.arange(0, horizon) / horizon
 
     def seasonality_model(thetas, backcast_length, forecast_length, is_forecast):
         p = thetas.get_shape().as_list()[-1]
@@ -119,8 +123,8 @@ def NBeatsModel(task, continuous_columns, categorical_columns, window=10, nb_ste
             forecast = layers.Lambda(seasonality_model, arguments={'is_forecast': True,
                        'backcast_length': window, 'forecast_length': nb_steps}, name=n('seasonality_forecast'))
         for i in range(input_dim):
-            if e is not None:
-                fc0 = layers.Concatenate()([x[i]] + [e[j] for j in range(exo_dim)])
+            if not bool(e) and exo_dim > 0:
+                fc0 = layers.Concatenate(name=n(f'concat_x{i}_e'))([x[i]] + [e[j] for j in range(exo_dim)])
             else:
                 fc0 = x[i]
             fc1_ = fc1(fc0)
@@ -142,10 +146,22 @@ def NBeatsModel(task, continuous_columns, categorical_columns, window=10, nb_ste
     e = layers.build_embeddings(categorical_columns, categorical_inputs)
 
     input_dim = x.shape.as_list()[-1]
+
+    if input_dim > nb_outputs:
+        s = [nb_outputs, input_dim - nb_outputs]
+        x, c = tf.split(x, num_or_size_splits=s, axis=-1, name='split_target_exo_inputs')
+        input_dim = x.shape.as_list()[-1]
+    else:
+        c = None
+
     if e is not None:
+        if c is not None:
+            e = layers.Concatenate(axis=-1, name='concat_continuous_and_categorical_exo_inputs')([c, e])
         exo_dim = e.shape.as_list()[-1]
         for i in range(exo_dim):
             e_[i] = layers.Lambda(lambda k: k[..., i], name=f'lambda_decompose_exo_dim_{i}')(e)
+    else:
+        exo_dim = 0
 
     for i in range(input_dim):
         x_[i] = layers.Lambda(lambda k: k[..., i], name=f'lambda_decompose_input_dim_{i}')(x)
@@ -165,10 +181,13 @@ def NBeatsModel(task, continuous_columns, categorical_columns, window=10, nb_ste
     for i in range(input_dim):
         y_[i] = layers.Reshape((nb_steps, 1), name=f'y_reshape_input_dim_{i}')(y_[i])
 
-    if input_dim > 1:
-        outputs = layers.Concatenate(name='concat_y')([y_[i] for i in range(input_dim)])
+    if nb_outputs > 1:
+        outputs = layers.Concatenate(name='concat_y')([y_[i] for i in range(nb_outputs)])
     else:
         outputs = y_[0]
+
+    if task in consts.TASK_LIST_FORECAST:
+        outputs = layers.Activation(out_activation, name=f'output_activation_{out_activation}')(outputs)
 
     all_inputs = list(continuous_inputs.values()) + list(categorical_inputs.values())
     model = tf.keras.models.Model(inputs=all_inputs, outputs=[outputs], name=f'N-BEATS')
@@ -193,6 +212,8 @@ class NBeats(BaseDeepEstimator):
                   default = False.
     hidden_layer_units : Int - The units of hidden layer.
                   default = 256.
+    out_activation : Str - Forecast the task output activation function, optional {'linear', 'sigmoid', 'tanh'},
+                 default = 'linear'.
     timestamp  : Str or None - Timestamp name, the forecast task must be given,
                  default None.
     window     : Positive Int - Length of the time series sequences for a sample,
@@ -233,6 +254,7 @@ class NBeats(BaseDeepEstimator):
                  nb_blocks_per_stack=3,
                  share_weights_in_stack=False,
                  hidden_layer_units=256,
+                 out_activation='linear',
                  timestamp=None,
                  window=3,
                  horizon=1,
@@ -256,6 +278,7 @@ class NBeats(BaseDeepEstimator):
         self.nb_blocks_per_stack = nb_blocks_per_stack
         self.share_weights_in_stack = share_weights_in_stack
         self.hidden_layer_units = hidden_layer_units
+        self.out_activation = out_activation
         self.metrics = metrics
         self.optimizer = optimizer
         self.learning_rate = learning_rate
@@ -287,6 +310,7 @@ class NBeats(BaseDeepEstimator):
             'nb_outputs': self.meta.classes_,
             'nb_steps': self.forecast_length,
             'hidden_layer_units': self.hidden_layer_units,
+            'out_activation': self.out_activation,
         }
         model_params = {**model_params, **self.model_kwargs, **kwargs}
         return NBeatsModel(**model_params)
