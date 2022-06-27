@@ -89,7 +89,7 @@ HyperTS supports the following features:
 
 **Multi-task Support:** Time series forecasting, classification, and regression.
 
-**Multi-mode Support:** A large collection of TS models, including statistical models (Prophet,ARIMA,VAR,etc.) , deep learning models(DeepAR,GRU,LSTNet,etc), and neural architecture search (to be developed).
+**Multi-mode Support:** A large collection of TS models, including statistical models (Prophet, ARIMA, VAR, etc.), deep learning models(DeepAR, GRU, LSTNet, NBeats, etc.), and neural architecture search (to be developed).
 
 **Multi-variate Support:** From univariate to multivariate time series.
 
