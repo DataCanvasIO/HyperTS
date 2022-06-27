@@ -642,12 +642,12 @@ class TSToolBox(ToolBox):
             elif 'true' in y_true:
                 pos_label = 'true'
             else:
-                pos_label = y_true[0]
+                pos_label = _infer_pos_label(y_true)
         elif task in consts.TASK_LIST_CLASSIFICATION and pos_label is not None:
             if pos_label in y_true:
                 pos_label = pos_label
             else:
-                pos_label = y_true[0]
+                pos_label = _infer_pos_label(y_true)
         else:
             pos_label = None
 
@@ -714,6 +714,15 @@ def _impute(values, offsets):
     else:
         missing_rate = 0.
     return values, missing_rate
+
+def _infer_pos_label(y):
+    """ Infer pos label based on a few samples.
+
+    """
+    y = y.tolist()
+    y_count_dict = {k: y.count(k) for k in set(y)}
+    pos_label = sorted(y_count_dict.items(), key=lambda x: x[1])[0][0]
+    return pos_label
 
 def _expand_list(freq, pre_list):
     try:
