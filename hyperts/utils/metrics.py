@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from sklearn.metrics import *
 from hypernets.tabular import metrics
 from hyperts.utils import consts as const
@@ -197,6 +198,18 @@ def _task_to_average(task):
         average = None
     return average
 
+def _infer_pos_label(y):
+    if isinstance(y, np.ndarray):
+        y = y.tolist()
+    elif isinstance(y, pd.Series):
+        y = y.to_list()
+    elif isinstance(y, pd.DataFrame):
+        y = y.values.squeeze().tolist()
+    else:
+        raise RuntimeError('Unknown data type.')
+    y_count_dict = {k: y.count(k) for k in set(y)}
+    pos_label = sorted(y_count_dict.items(), key=lambda x: x[1])[0][0]
+    return pos_label
 
 def calc_score(y_true, y_preds, y_proba=None, metrics=('accuracy',), task=const.TASK_BINARY,
                pos_label=None, classes=None, average=None):
@@ -217,14 +230,14 @@ def calc_score(y_true, y_preds, y_proba=None, metrics=('accuracy',), task=const.
         elif 'true' in y_true:
             recall_options['pos_label'] = 'true'
         else:
-            recall_options['pos_label'] = y_true[0]
+            recall_options['pos_label'] = _infer_pos_label(y_true)
         logger.info(f"pos_label is not specified and defaults to {recall_options['pos_label']}.")
     elif task in [const.TASK_BINARY, const.TASK_MULTICLASS] and pos_label is not None:
         if pos_label in y_true:
             recall_options['pos_label'] = pos_label
         else:
-            recall_options['pos_label'] = y_true[0]
-            logger.warning(f"pos_label is incorrect and defaults to {y_true[0]}.")
+            recall_options['pos_label'] = _infer_pos_label(y_true)
+            logger.warning(f"pos_label is incorrect and defaults to {recall_options['pos_label']}.")
     else:
         recall_options['pos_label'] = None
 
