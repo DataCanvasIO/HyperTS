@@ -44,6 +44,16 @@ You can also install HyperTS from ``conda`` via the ``conda-forge`` channel:
 conda install -c conda-forge hyperts
 ```
 
+If you would like the most up-to-date version, you can instead install direclty from ``github``:
+
+```bash
+git clone https://github.com/DataCanvasIO/HyperTS.git
+cd HyperTS
+conda install -c conda-forge prophet==1.0.1 #optional
+pip install -e . 
+pip install tensorflow #optional
+````
+
 Note:
 
 - Prophet is required by HyperTS, install it from ``conda`` before installing HyperTS using ``pip``.

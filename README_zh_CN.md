@@ -32,6 +32,16 @@ pip install hyperts
 conda install -c conda-forge hyperts
 ```
 
+如果您想体验最新的功能， 您可以通过如下方式从``github``安装:
+
+```bash
+git clone https://github.com/DataCanvasIO/HyperTS.git
+cd HyperTS
+conda install -c conda-forge prophet==1.0.1  #optional
+pip install -e . 
+pip install tensorflow #optional
+````
+
 提示:
 
 - Prophet是被HyperTS需要的, 当您使用``pip``安装HyperTS前建议先使用``conda``安装Prophet。
