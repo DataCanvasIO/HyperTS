@@ -40,7 +40,7 @@ jobs:
         conda install scikit-learn==0.24.2
         conda install -y -c conda-forge sktime==0.8.1
         conda install -y -c conda-forge prophet==1.0.1
-        conda install -y -c conda-forge python-geohash
+        conda install -y -c conda-forge python-geohash==0.8.5
         pip install -q featuretools==0.27.1
         pip install -q git+https://github.com/DataCanvasIO/Hypernets
         pip install -q -r requirements.txt
@@ -49,8 +49,6 @@ jobs:
         pip install -q pyparsing==2.4.7
         pip install -q protobuf==3.20.1
         pip install -q pytest-cov==2.4.0  python-coveralls  codacy-coverage
-        pip uninstall -q -y pystan prophet
-        pip install -q pystan==2.19.1.1 prophet==1.0.1 --no-cache-dir
     - name: Conda list
       shell: bash -l {0}
       run: conda list
