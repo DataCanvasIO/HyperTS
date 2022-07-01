@@ -20,7 +20,7 @@ def make_experiment(train_data,
                     eval_data=None,
                     test_data=None,
                     mode='stats',
-                    max_trials=3,
+                    max_trials=50,
                     eval_size=0.2,
                     cv=False,
                     num_folds=3,
@@ -70,7 +70,7 @@ def make_experiment(train_data,
         Feature data for evaluation, should be None or have the same python type with 'train_data'.
     test_data : str, Pandas or Dask or Cudf DataFrame, optional.
         Feature data for testing without target column, should be None or have the same python type with 'train_data'.
-    max_trials : int, maximum number of tests (model search), optional, (default=3).
+    max_trials : int, maximum number of tests (model search), optional, (default=50).
     eval_size : float or int, When the eval_data is None, customize the ratio to split the eval_data from
         the train_data. int indicates the prediction length of the forecast task. (default=0.2 or 10).
     cv : bool, default False.
