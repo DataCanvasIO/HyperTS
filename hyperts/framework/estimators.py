@@ -18,7 +18,7 @@ else:
 
 if is_tensorflow_installed:
     from hyperts.framework.wrappers.dl_wrappers import DeepARWrapper, HybirdRNNWrapper, \
-                                LSTNetWrapper, NBeatsWrapper
+                                LSTNetWrapper, NBeatsWrapper, InceptionTimeWrapper
 
 
 logger = logging.get_logger(__name__)
@@ -1031,3 +1031,150 @@ class NBeatsForecastEstimator(HyperEstimator):
         else:
             raise ValueError('NBeats model supports only forecast task.')
         return nbeats
+
+
+class InceptionTimeClassificationEstimator(HyperEstimator):
+    """Time Series Classification Estimator based on Hypernets.
+    Estimator:  Inception Time (InceptionTime).
+    Suitable for: Univariate/Multivariate Classification Task.
+
+    Parameters
+    ----------
+    timestamp  : Str - Timestamp name, not optional.
+    task       : Str - Only 'classification' is supported,
+                 default = 'univariate-binaryclass'.
+    blocks     : Int - The depth of the net architecture.
+                 default = 3.
+    cnn_filters: Int - The number of cnn filters.
+                 default = 32.
+    bottleneck_size: Int - The number of bottleneck (a cnn layer).
+                 default = 32.
+    kernel_size_list: Tuple - The kernel size of cnn for a inceptionblock.
+                 default = (1, 3, 5, 8, 12).
+    shortcut   : Bool - Whether to use shortcut opration.
+                 default = True.
+    short_filters: Int - The number of filters of shortcut conv1d layer.
+                 default = 64.
+    metrics    : Str - List of metrics to be evaluated by the model during training and testing,
+                 default = 'auto'.
+    monitor    : Str - Quality indicators monitored during neural network training.
+                 default = 'val_loss'.
+    optimizer  : Str or keras Instance - for example, 'adam', 'sgd', and so on.
+                 default = 'auto'.
+    learning_rate : Positive Float - The optimizer's learning rate,
+                 default = 0.001.
+    loss       : Str - Only 'log_gaussian_loss' is supported for DeepAR, which has been defined.
+                 default = 'log_gaussian_loss'.
+    reducelr_patience : Positive Int - The number of epochs with no improvement after which learning rate
+                 will be reduced, default = 5.
+    earlystop_patience : Positive Int - The number of epochs with no improvement after which training
+                 will be stopped, default = 5.
+    summary    : Bool - Whether to output network structure information,
+                 default = True.
+    batch_size : Int or None - Number of samples per gradient update.
+                 default = 32.
+    epochs     : Int - Number of epochs to train the model,
+                 default = 1.
+    verbose    : 0, 1, or 2. Verbosity mode.
+                 0 = silent, 1 = progress bar, 2 = one line per epoch.
+                 Note that the progress bar is not particularly useful when logged to a file, so verbose=2
+                 is recommended when not running interactively (eg, in a production environment).
+                 default = 1.
+    callbacks  : List of `keras.callbacks.Callback` instances.
+                 List of callbacks to apply during training.
+                 See `tf.keras.callbacks`. Note `tf.keras.callbacks.ProgbarLogger`
+                 and `tf.keras.callbacks.History` callbacks are created automatically
+                 and need not be passed into `model.fit`.
+                 `tf.keras.callbacks.ProgbarLogger` is created or not based on
+                 `verbose` argument to `model.fit`.
+                 default = None.
+    validation_split : Float between 0 and 1.
+                 Fraction of the training data to be used as validation data.
+                 The model will set apart this fraction of the training data, will not train on it, and will
+                 evaluate the loss and any model metrics on this data at the end of each epoch,
+                 default = 0.
+    shuffle    : Boolean (whether to shuffle the training data
+                 before each epoch) or str (for 'batch').
+    max_queue_size : Int - Used for generator or `keras.utils.Sequence`
+                 input only. Maximum size for the generator queue,
+                 default = 10.
+    workers    : Int - Used for generator or `keras.utils.Sequence` input
+                 only. Maximum number of processes to spin up when using process-based
+                 threading. If 0, will execute the generator on the main thread,
+                 default = 1.
+    use_multiprocessing : Bool. Used for generator or
+                 `keras.utils.Sequence` input only. If `True`, use process-based
+                 threading. Note that because this implementation relies on
+                 multiprocessing, you should not pass non-picklable arguments to
+                 the generator as they can't be passed easily to children processes.
+                 default = False.
+    """
+
+    def __init__(self, fit_kwargs=None, timestamp=None, task='univariate-binaryclass',
+                 blocks=3, cnn_filters=32, kernel_size_list=(1, 3, 5, 8, 12),
+                 bottleneck_size=32, shortcut=True, short_filters=64, metrics='auto',
+                 monitor='val_loss', optimizer='auto', learning_rate=0.001, loss='auto',
+                 reducelr_patience=5, earlystop_patience=10, summary=True,
+                 batch_size=None, epochs=1, verbose=1, callbacks=None,
+                 validation_split=0., shuffle=True, max_queue_size=10,
+                 workers=1, use_multiprocessing=False,
+                 space=None, name=None, **kwargs):
+        kwargs['timestamp'] = timestamp
+        if task is not None:
+            kwargs['task'] = task
+        if blocks is not None and blocks != 3:
+            kwargs['blocks'] = blocks
+        if cnn_filters is not None and cnn_filters != 32:
+            kwargs['cnn_filters'] = cnn_filters
+        if kernel_size_list is not None and kernel_size_list != (1, 3, 5, 8, 12):
+            kwargs['kernel_size_list'] = kernel_size_list
+        if bottleneck_size is not None and bottleneck_size != 32:
+            kwargs['bottleneck_size'] = bottleneck_size
+        if shortcut is not None and shortcut != True:
+            kwargs['shortcut'] = shortcut
+        if short_filters is not None and short_filters != 64:
+            kwargs['short_filters'] = short_filters
+        if metrics is not None and metrics != 'auto':
+            kwargs['metrics'] = metrics
+        if monitor is not None and monitor != 'val_loss':
+            kwargs['monitor'] = monitor
+        if optimizer is not None and optimizer != 'auto':
+            kwargs['optimizer'] = optimizer
+        if learning_rate is not None and learning_rate != 0.001:
+            kwargs['learning_rate'] = learning_rate
+        if loss is not None and loss != 'auto':
+            kwargs['loss'] = loss
+        if reducelr_patience is not None and reducelr_patience != 5:
+            kwargs['reducelr_patience'] = reducelr_patience
+        if earlystop_patience is not None and earlystop_patience != 10:
+            kwargs['earlystop_patience'] = earlystop_patience
+        if summary is not None and summary != True:
+            kwargs['summary'] = summary
+
+        if batch_size is not None:
+            kwargs['batch_size'] = batch_size
+        if epochs is not None and epochs != 1:
+            kwargs['epochs'] = epochs
+        if verbose is not None and verbose != 1:
+            kwargs['verbose'] = verbose
+        if callbacks is not None:
+            kwargs['callbacks'] = callbacks
+        if validation_split is not None and validation_split != 0.:
+            kwargs['validation_split'] = validation_split
+        if shuffle is not None and shuffle != True:
+            kwargs['shuffle'] = shuffle
+        if max_queue_size is not None and max_queue_size != 10:
+            kwargs['max_queue_size'] = max_queue_size
+        if workers is not None and workers != 1:
+            kwargs['workers'] = workers
+        if use_multiprocessing is not None and use_multiprocessing != False:
+            kwargs['use_multiprocessing'] = use_multiprocessing
+
+        HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
+
+    def _build_estimator(self, task, fit_kwargs, kwargs):
+        if task in consts.TASK_LIST_CLASSIFICATION:
+            inceptiontime = InceptionTimeWrapper(fit_kwargs, **kwargs)
+        else:
+            raise ValueError('InceptionTime model supports only classification task.')
+        return inceptiontime

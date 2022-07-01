@@ -63,3 +63,29 @@ class Test_DL_Layers():
 
         assert output1.shape == (4, 3, 2)
         assert output2.shape == (4, 3, 2)
+
+    def test_identify_layers(self):
+        data = tf.reshape(tf.range(0, 24), shape=(4, 3, 2)) / 24
+
+        output = layers.Identity()(data)
+
+        assert output.shape == (4, 3, 2)
+
+    def test_shortcut_layers(self):
+        data = tf.reshape(tf.range(0, 24), shape=(4, 3, 2)) / 24
+
+        output = layers.Shortcut(filters=8)(data)
+
+        assert output.shape == (4, 3, 8)
+
+    def test_inceptionblock(self):
+        data = tf.random.normal(shape=(4, 8, 2))
+
+        kernel_size_list = (1, 2, 3, 5, 12)
+        kernel_size_list = list(filter(lambda x: x < 8, kernel_size_list))
+
+        output = layers.InceptionBlock(filters=8,
+                                       kernel_size_list=kernel_size_list,
+                                       bottleneck_size=8)(data)
+
+        assert output.shape == (4, 8, 40)

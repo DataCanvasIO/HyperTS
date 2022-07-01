@@ -309,6 +309,113 @@ class RevInstanceNormalization(layers.Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
+class Identity(layers.Layer):
+    """Identity Layer.
+
+    """
+    def __init__(self):
+        super(Identity, self).__init__()
+
+    def call(self, inputs, **kwargs):
+        return inputs
+
+
+class Shortcut(layers.Layer):
+    """ Shortcut Layer.
+
+    Parampers
+    ----------
+    filters: the dimensionality of the output space for Conv1D.
+    """
+    def __init__(self, filters, activation='relu', **kwargs):
+        super(Shortcut, self).__init__(**kwargs)
+        self.filters = filters
+        self.activation = activation
+        self.conv = layers.Conv1D(filters, kernel_size=1, padding='same', use_bias=False)
+        self.bn = layers.BatchNormalization()
+
+    def call(self, inputs, **kwargs):
+        x = self.conv(inputs)
+        x = self.bn(x)
+        return x
+
+    def get_config(self):
+        config = {'filters': self.filters}
+        base_config = super(Shortcut, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+
+class InceptionBlock(layers.Layer):
+    """InceptionBlock for time series.
+
+    Parampers
+    ----------
+    filters: the dimensionality of the output space for Conv1D.
+    kernel_size_list: list or tuple, a list of kernel size for Conv1D.
+    strides: int or tuple, default 1.
+    use_bottleneck: bool, whether to use bottleneck, default True.
+    bottleneck_size: int, if use bottleneck, bottleneck_size is 32(default).
+    activation: str, activation function, default 'relu'.
+    """
+    def __init__(self,
+                 filters=32,
+                 kernel_size_list=(1, 3, 5, 8, 12),
+                 strides=1,
+                 use_bottleneck=True,
+                 bottleneck_size=32,
+                 activation='linear',
+                 **kwargs):
+        super(InceptionBlock, self).__init__(**kwargs)
+        self.filters = filters
+        self.kernel_size_list = kernel_size_list
+        self.strides = strides
+        self.use_bottleneck = use_bottleneck
+        self.bottleneck_size = bottleneck_size
+        self.activation = activation
+
+        if use_bottleneck:
+            self.head = layers.Conv1D(bottleneck_size, 1, padding='same', activation=activation, use_bias=False)
+        else:
+            self.head = Identity()
+
+        self.conv_list = []
+        for kernel_size in kernel_size_list:
+            self.conv_list.append(layers.Conv1D(filters=filters,
+                                         kernel_size=kernel_size,
+                                         padding='same',
+                                         activation=activation,
+                                         use_bias=False))
+
+        self.max_pool = layers.MaxPool1D(pool_size=3, strides=1, padding='same')
+        self.pool_conv = layers.Conv1D(filters, kernel_size=1, padding='same', activation=activation, use_bias=False)
+
+        self.concat = layers.Concatenate(axis=2)
+        self.bn = layers.BatchNormalization()
+        self.relu = layers.Activation(activation='relu')
+
+    def call(self, inputs, **kwargs):
+        x = self.head(inputs)
+        convs = [conv(x) for conv in self.conv_list]
+        pool = self.max_pool(x)
+        pool_conv = self.pool_conv(pool)
+        convs.append(pool_conv)
+        x = self.concat(convs)
+        x = self.bn(x)
+        x = self.relu(x)
+
+        return x
+
+    def get_config(self):
+        config = {'filters': self.filters,
+                  'kernel_size_list': self.kernel_size_list,
+                  'strides': self.strides,
+                  'use_bottleneck': self.use_bottleneck,
+                  'bottleneck_size': self.bottleneck_size,
+                  'activation': self.activation}
+        base_config = super(InceptionBlock, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+
 def build_input_head(window, continuous_columns, categorical_columns):
     """Build the input head. An input variable may have two parts: continuous variables
        and categorical variables.
@@ -445,5 +552,8 @@ layers_custom_objects = {
     'AutoRegressive': AutoRegressive,
     'Highway': Highway,
     'Time2Vec': Time2Vec,
-    'RevInstanceNormalization': RevInstanceNormalization
+    'RevInstanceNormalization': RevInstanceNormalization,
+    'Identity': Identity,
+    'Shortcut': Shortcut,
+    'InceptionBlock': InceptionBlock,
 }

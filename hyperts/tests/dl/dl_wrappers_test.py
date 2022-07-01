@@ -6,7 +6,8 @@ from hyperts.datasets import *
 from hyperts.utils.metrics import rmse, mape, accuracy_score
 from hyperts.utils import consts
 from hyperts.utils import get_tool_box
-from hyperts.framework.wrappers.dl_wrappers import DeepARWrapper, HybirdRNNWrapper, LSTNetWrapper, NBeatsWrapper
+from hyperts.framework.wrappers.dl_wrappers import DeepARWrapper, HybirdRNNWrapper, \
+                                LSTNetWrapper, NBeatsWrapper, InceptionTimeWrapper
 
 
 class Test_DL_Wrappers():
@@ -549,3 +550,67 @@ class Test_DL_Wrappers():
 
         assert score_rmse >= 0
         assert score_mape >= 0
+
+
+    def test_univariate_classification_inception(self):
+        X, y = load_arrow_head(return_X_y=True)
+        tb = get_tool_box(X)
+        X_train, X_test, y_train, y_test = tb.random_train_test_split(X, y, test_size=0.2)
+        task = consts.Task_UNIVARIATE_MULTICALSS
+
+        fit_kwargs = {
+            'epochs': 10,
+            'batch_size': 16,
+        }
+
+        init_kwargs = {
+            'task': task,
+
+            'blocks': 3,
+            'learning_rate': 0.001,
+            'reducelr_patience': 15,
+            'earlystop_patience': 20,
+
+            'x_scale': np.random.choice(['z_score', 'scale-none'], size=1)[0]
+        }
+        model = InceptionTimeWrapper(fit_kwargs, **init_kwargs)
+        model.fit(X_train, y_train)
+
+        y_pred = model.predict(X_test)
+        acc = accuracy_score(y_test, y_pred)
+
+        print('accuracy:', acc)
+
+        assert acc >= 0
+
+
+    def test_multivariate_classification_inception(self):
+        X, y = load_basic_motions(return_X_y=True)
+        tb = get_tool_box(X)
+        X_train, X_test, y_train, y_test = tb.random_train_test_split(X, y, test_size=0.2)
+        task = consts.Task_MULTIVARIATE_MULTICALSS
+
+        fit_kwargs = {
+            'epochs': 10,
+            'batch_size': 16,
+        }
+
+        init_kwargs = {
+            'task': task,
+
+            'blocks': 3,
+            'learning_rate': 0.001,
+            'reducelr_patience': 15,
+            'earlystop_patience': 20,
+
+            'x_scale': np.random.choice(['z_score', 'scale-none'], size=1)[0]
+        }
+        model = InceptionTimeWrapper(fit_kwargs, **init_kwargs)
+        model.fit(X_train, y_train)
+
+        y_pred = model.predict(X_test)
+        acc = accuracy_score(y_test, y_pred)
+
+        print('accuracy:', acc)
+
+        assert acc >= 0
