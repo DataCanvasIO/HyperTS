@@ -1,3 +1,5 @@
+![Forecast_Figure](docs/static/images/hyperts_logo.png)
+
 # Welcome to HyperTS
 
 [English](README.md)
@@ -136,7 +138,7 @@ metafeatures = metafeatures_from_timeseries(x=data, timestamp='ds', scale_ts=Tru
 ```
 </details>
 
-- 更多示例及使用技巧，请移步: [中文示例.](https://github.com/DataCanvasIO/HyperTS/tree/main/examples/zh_CN)
+**更多示例及使用技巧，请移步:** [中文示例.](https://github.com/DataCanvasIO/HyperTS/tree/main/examples/zh_CN)
 
 
 
