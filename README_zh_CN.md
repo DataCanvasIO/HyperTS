@@ -1,7 +1,5 @@
 ![Forecast_Figure](docs/static/images/hyperts_logo.png)
 
-# Welcome to HyperTS
-
 [English](README.md)
 
 [![Python Versions](https://img.shields.io/pypi/pyversions/hyperts.svg)](https://pypi.org/project/hyperts)
