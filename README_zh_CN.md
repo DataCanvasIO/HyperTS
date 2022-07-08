@@ -20,6 +20,11 @@ HyperTS是一个Python工具包，提供了一个端到端的时间序列分析�
 
 ## 安装
 
+提示:
+
+- Prophet是被HyperTS需要的, 当您使用``pip``安装HyperTS前建议先使用``conda``安装Prophet。
+- Tensorflow对于HyperTS是可选依赖, 如果您使用到深度学习及神经架构搜索模式, 请安装tf。
+
 HyperTS在Pypi上可用，可以使用pip安装:
 
 ```bash
@@ -37,15 +42,10 @@ conda install -c conda-forge hyperts
 ```bash
 git clone https://github.com/DataCanvasIO/HyperTS.git
 cd HyperTS
-conda install -c conda-forge prophet==1.0.1  #optional
+conda install -c conda-forge prophet==1.0.1  
 pip install -e . 
 pip install tensorflow #optional
 ````
-
-提示:
-
-- Prophet是被HyperTS需要的, 当您使用``pip``安装HyperTS前建议先使用``conda``安装Prophet。
-- Tensorflow对于HyperTS是可选依赖, 如果您使用到深度学习及神经架构搜索模式, 请安装tf。
 
 更多安装细节及注意事项，请看 [安装指南](https://hyperts.readthedocs.io/zh_CN/latest/contents/0200_installation.html).
 
@@ -60,6 +60,8 @@ pip install tensorflow #optional
 |[自定义化](https://hyperts.readthedocs.io/zh_CN/latest/contents/0600_user_defined.html)|如何定制化自己的HyperTS?|
 
 ## 示例
+
+时间序列预测
 
 您可以使用```make_experiment()```快速创建并运行一个实验，其中```train_data```和```task```作为必需的输入参数。在以下预测示例中，我们告诉实验这是一个多变量预测任务，开启```stats```模式(统计)，因为数据包含时间戳和协变量列，因此```timestamp```和```covariates```参数也必须传给实验。
 
@@ -88,6 +90,51 @@ model.plot(forecast=y_pred, actual=test_data)
 ```
 
 ![Forecast_Figure](docs/static/images/Actual_vs_Forecast.jpg)
+
+<details>
+  <summary>时间序列分类 (点击拓展)</summary>
+
+```python
+from hyperts import make_experiment
+from hyperts.datasets import load_basic_motions
+
+from sklearn.metrics import f1_score
+from sklearn.model_selection import train_test_split
+
+data = load_basic_motions()
+train_data, test_data = train_test_split(data, test_size=0.2)
+
+model = make_experiment(train_data.copy(),
+                        task='classification',
+                        mode='dl',
+                        dl_gpu_usage_strategy=1,
+                        reward_metric='accuracy',
+                        max_trials=30,
+                        early_stopping_rounds=10).run()
+
+X_test, y_test = model.split_X_y(test_data.copy())
+
+y_pred = model.predict(X_test)
+y_proba = model.predict_proba(X_test)
+
+scores = model.evaluate(y_test, y_pred, y_proba=y_proba, metrics=['accuracy', 'auc', f1_score])
+
+print(scores)
+  ```
+</details>
+
+<details>
+  <summary>时间序列元特征 (点击拓展)</summary>
+
+```python
+from hyperts.toolbox import metafeatures_from_timeseries
+from hyperts.datasets import load_random_univariate_forecast_dataset
+
+data = load_random_univariate_forecast_dataset()
+
+metafeatures = metafeatures_from_timeseries(x=data, timestamp='ds', scale_ts=True)
+```
+</details>
 
 - 更多示例及使用技巧，请移步: [中文示例.](https://github.com/DataCanvasIO/HyperTS/tree/main/examples/zh_CN)
 
@@ -118,7 +165,8 @@ HyperTS支持以下特性:
 **交叉验证:** 多种时序交叉验证策略保证模型的泛化性。
 
 ## 贡献
-如果您想为HyperTS做一些贡献, 请参考 [CONTRIBUTING](CONTRIBUTING.md).
+- 如果您想为HyperTS做一些贡献, 请参考 [贡献](CONTRIBUTING.md).
+- 如果您有任何关于HyperTS的建议或问题，也可以参与 [讨论社区](https://github.com/DataCanvasIO/HyperTS/discussions).
 
 ## 相关项目
 * [Hypernets](https://github.com/DataCanvasIO/Hypernets): 一个通用的自动机器学习框架。

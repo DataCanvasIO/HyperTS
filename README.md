@@ -20,17 +20,12 @@ Multi-mode drive, light-heavy combination is the highlighted features of HyperTS
 
 As an easy-to-use and lower-thoreshold API, users can get a model after simply running the experiment, and then execute ```.predict()```, ```.predict_proba()```, ```.evalute()```, ```.plot()``` for various time series analysis.
 
-
-## Tutorial
-
-|[English Docs](https://hyperts.readthedocs.io/en/latest/) / [Chinese Docs](https://hyperts.readthedocs.io/zh_CN/latest)| Discription |
-| --------------------------------- | --------------------------------- |
-[Expected Data Format](https://hyperts.readthedocs.io/en/latest/contents/0300_dataformat.html)|What data formats do HyperTS expect?|
-|[Quick Start](https://hyperts.readthedocs.io/en/latest/contents/0400_quick_start.html)| How to get started quickly with HyperTS?|
-|[Advanced Ladder](https://hyperts.readthedocs.io/en/latest/contents/0500_advanced_config.html)|How to realize the potential of HyperTS?|
-|[Custom Functions](https://hyperts.readthedocs.io/en/latest/contents/0600_custom_functions.html)|How to customize the functions of HyperTS?|
-
 ## Installation
+
+Note:
+
+- Prophet is required by HyperTS, install it from ``conda`` before installing HyperTS using ``pip``.
+- Tensorflow is an optional dependency for HyperTS, install it if using DL and NAS mode.
 
 HyperTS is available on Pypi and can be installed with ``pip``:
 
@@ -49,19 +44,25 @@ If you would like the most up-to-date version, you can instead install direclty 
 ```bash
 git clone https://github.com/DataCanvasIO/HyperTS.git
 cd HyperTS
-conda install -c conda-forge prophet==1.0.1 #optional
+conda install -c conda-forge prophet==1.0.1 
 pip install -e . 
 pip install tensorflow #optional
 ````
 
-Note:
-
-- Prophet is required by HyperTS, install it from ``conda`` before installing HyperTS using ``pip``.
-- Tensorflow is an optional dependency for HyperTS, install it if using DL and NAS mode.
-
 For more installation tips, see [installation](https://hyperts.readthedocs.io/en/latest/contents/0200_installation.html).
 
+## Tutorial
+
+|[English Docs](https://hyperts.readthedocs.io/en/latest/) / [Chinese Docs](https://hyperts.readthedocs.io/zh_CN/latest)| Discription |
+| --------------------------------- | --------------------------------- |
+[Expected Data Format](https://hyperts.readthedocs.io/en/latest/contents/0300_dataformat.html)|What data formats do HyperTS expect?|
+|[Quick Start](https://hyperts.readthedocs.io/en/latest/contents/0400_quick_start.html)| How to get started quickly with HyperTS?|
+|[Advanced Ladder](https://hyperts.readthedocs.io/en/latest/contents/0500_advanced_config.html)|How to realize the potential of HyperTS?|
+|[Custom Functions](https://hyperts.readthedocs.io/en/latest/contents/0600_custom_functions.html)|How to customize the functions of HyperTS?|
+
 ## Examples
+
+Time Series Forecasting
 
 Users can quickly create and ```run()``` an experiment with ```make_experiment()```, where ```train_data```, and ```task``` are required input parameters. In the following forecast example, we define the experiment as a multivariate-forecast ```task```, and use the statistical model (stat ```mode```) . Besides, the mandatory arguments ```timestamp``` and ```covariates``` (if have) should also be defined in the experiment.
 
@@ -91,6 +92,51 @@ model.plot(forecast=y_pred, actual=test_data)
 
 ![Forecast_Figure](docs/static/images/Actual_vs_Forecast.jpg)
 
+<details>
+  <summary>Time Series Classification (click to expand)</summary>
+
+```python
+from hyperts import make_experiment
+from hyperts.datasets import load_basic_motions
+
+from sklearn.metrics import f1_score
+from sklearn.model_selection import train_test_split
+
+data = load_basic_motions()
+train_data, test_data = train_test_split(data, test_size=0.2)
+
+model = make_experiment(train_data.copy(),
+                        task='classification',
+                        mode='dl',
+                        dl_gpu_usage_strategy=1,
+                        reward_metric='accuracy',
+                        max_trials=30,
+                        early_stopping_rounds=10).run()
+
+X_test, y_test = model.split_X_y(test_data.copy())
+
+y_pred = model.predict(X_test)
+y_proba = model.predict_proba(X_test)
+
+scores = model.evaluate(y_test, y_pred, y_proba=y_proba, metrics=['accuracy', 'auc', f1_score])
+
+print(scores)
+  ```
+</details>
+
+<details>
+  <summary>Time Series MetaFeatures (click to expand)</summary>
+
+```python
+from hyperts.toolbox import metafeatures_from_timeseries
+from hyperts.datasets import load_random_univariate_forecast_dataset
+
+data = load_random_univariate_forecast_dataset()
+
+metafeatures = metafeatures_from_timeseries(x=data, timestamp='ds', scale_ts=True)
+```
+</details>
+
 - More detailed guides: [EXAMPLES.](https://github.com/DataCanvasIO/HyperTS/tree/main/examples)
 
 ## Key Features
@@ -118,7 +164,8 @@ HyperTS supports the following features:
 **Cross Validation:** Multiple time series cross-validation strategies ensure generalization ability.
 
 ## Communication
-If you wish to contribute to this project, please refer to [CONTRIBUTING](CONTRIBUTING.md).
+- If you wish to contribute to this project, please refer to [CONTRIBUTING](CONTRIBUTING.md).
+- If you have any question or idea, you can alse participate with our [Discussions Community](https://github.com/DataCanvasIO/HyperTS/discussions).
 
 ## HyperTS Related Projects
 * [Hypernets](https://github.com/DataCanvasIO/Hypernets): A general automated machine learning (AutoML) framework.
