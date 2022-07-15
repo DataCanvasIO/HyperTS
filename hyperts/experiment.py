@@ -46,8 +46,8 @@ def make_experiment(train_data,
                     optimize_direction=None,
                     discriminator=None,
                     hyper_model_options=None,
-                    dl_gpu_usage_strategy=0,
-                    dl_memory_limit=2048,
+                    tf_gpu_usage_strategy=0,
+                    tf_memory_limit=2048,
                     final_retrain_on_wholedata=True,
                     verbose=1,
                     log_level=None,
@@ -150,10 +150,10 @@ def make_experiment(train_data,
         Discriminator is used to determine whether to continue training
     hyper_model_options: dict, optional.
         Options to initlize HyperModel except *reward_metric*, *task*, *callbacks*, *discriminator*.
-    dl_gpu_usage_strategy : int, optional {0, 1, 2}.
+    tf_gpu_usage_strategy : int, optional {0, 1, 2}.
         Deep neural net models(tensorflow) gpu usage strategy.
         0:cpu | 1:gpu-memory growth | 2: gpu-memory limit.
-    dl_memory_limit : int, GPU memory limit, default 2048.
+    tf_memory_limit : int, GPU memory limit, default 2048.
     final_retrain_on_wholedata : bool, after the search, whether to retrain the optimal model on the whole data set.
         default True.
     random_state : int or None, default None.
@@ -232,25 +232,28 @@ def make_experiment(train_data,
             search_space = DLForecastSearchSpace(task=task, timestamp=timestamp, metrics=metrics,
                            covariables=covariates, window=dl_forecast_window, horizon=dl_forecast_horizon)
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_CLASSIFICATION:
-            from hyperts.framework.search_space import DLClassificationSearchSpace
+            from hyperts.framework.search_space import DLClassRegressSearchSpace
 
-            search_space = DLClassificationSearchSpace(task=task, timestamp=timestamp, metrics=metrics)
+            search_space = DLClassRegressSearchSpace(task=task, timestamp=timestamp, metrics=metrics)
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_REGRESSION:
-            raise NotImplementedError(
-                'DLRegressionSearchSpace is not implemented yet.'
-            )
+            from hyperts.framework.search_space import DLClassRegressSearchSpace
+
+            search_space = DLClassRegressSearchSpace(task=task, timestamp=timestamp, metrics=metrics)
         elif mode == consts.Mode_NAS and task in consts.TASK_LIST_FORECAST:
-            raise NotImplementedError(
-                'NASForecastSearchSpace is not implemented yet.'
-            )
+            from hyperts.framework.search_space import TSNASGenrealSearchSpace
+
+            search_space = TSNASGenrealSearchSpace(task=task, timestamp=timestamp, metrics=metrics,
+                           covariables=covariates, window=dl_forecast_window, horizon=dl_forecast_horizon)
         elif mode == consts.Mode_NAS and task in consts.TASK_LIST_CLASSIFICATION:
-            raise NotImplementedError(
-                'NASClassificationSearchSpace is not implemented yet.'
-            )
+            from hyperts.framework.search_space import TSNASGenrealSearchSpace
+
+            search_space = TSNASGenrealSearchSpace(task=task, timestamp=timestamp, metrics=metrics,
+                           covariables=covariates, window=dl_forecast_window, horizon=dl_forecast_horizon)
         elif mode == consts.Mode_NAS and task in consts.TASK_LIST_REGRESSION:
-            raise NotImplementedError(
-                'NASRegressionSearchSpace is not implemented yet.'
-            )
+            from hyperts.framework.search_space import TSNASGenrealSearchSpace
+
+            search_space = TSNASGenrealSearchSpace(task=task, timestamp=timestamp, metrics=metrics,
+                           covariables=covariates, window=dl_forecast_window, horizon=dl_forecast_horizon)
         else:
             raise ValueError('The default search space was not found!')
 
@@ -337,17 +340,17 @@ def make_experiment(train_data,
     if freq is consts.DISCRETE_FORECAST and mode is consts.Mode_STATS:
         raise RuntimeError('Note: `stats` mode does not support discrete data forecast.')
 
-    # 4. Set GPU Usage Strategy for DL Mode
-    if mode == consts.Mode_DL:
-        if dl_gpu_usage_strategy == 0:
+    # 4. Set GPU Usage Strategy for DL or NAS Mode
+    if mode in [consts.Mode_DL, consts.Mode_NAS]:
+        if tf_gpu_usage_strategy == 0:
             import os
             os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-        elif dl_gpu_usage_strategy == 1:
+        elif tf_gpu_usage_strategy == 1:
             from hyperts.utils import tf_gpu
             tf_gpu.set_memory_growth()
-        elif dl_gpu_usage_strategy == 2:
+        elif tf_gpu_usage_strategy == 2:
             from hyperts.utils import tf_gpu
-            tf_gpu.set_memory_limit(limit=dl_memory_limit)
+            tf_gpu.set_memory_limit(limit=tf_memory_limit)
         else:
             raise ValueError(f'The GPU strategy is not supported. '
                              f'Default [0:cpu | 1:gpu-memory growth | 2: gpu-memory limit].')

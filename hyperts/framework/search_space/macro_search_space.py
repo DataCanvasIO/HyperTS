@@ -7,6 +7,8 @@ import numpy as np
 from hyperts.config import Config as cfg
 from hyperts.utils import consts
 from hyperts.utils.transformers import TimeSeriesHyperTransformer
+
+from hyperts.framework.search_space import SearchSpaceMixin, WithinColumnSelector
 from hyperts.framework.estimators import (ProphetForecastEstimator,
                                           ARIMAForecastEstimator,
                                           VARForecastEstimator,
@@ -35,21 +37,6 @@ logger = logging.get_logger(__name__)
 
 
 ##################################### Define Data Proprecessing Pipeline #####################################
-class WithinColumnSelector:
-
-    def __init__(self, selector, selected_cols):
-        self.selector = selector
-        self.selected_cols = selected_cols
-
-    def __call__(self, df):
-        intersection = set(df.columns.tolist()).intersection(self.selected_cols)
-        if len(intersection) > 0:
-            selected_df = df[intersection]
-            return self.selector(selected_df)
-        else:
-            return []
-
-
 def categorical_transform_pipeline(covariables=None, impute_strategy=None, seq_no=0):
     if impute_strategy is None:
         impute_strategy = Choice(['constant', 'most_frequent'])
@@ -203,38 +190,11 @@ class BaseSearchSpaceGenerator:
         return f'{type(self).__name__}({repr_})'
 
 
-class SearchSpaceMixin:
-
-    def __init__(self):
-        self.task = None
-        self.timestamp = None
-        self.covariables = None
-        self.freq = None
-        self.metrics = None
-        self.window = None
-        self.horizon = None
-
-    def update_init_params(self, **kwargs):
-        if self.task is None and kwargs.get('task') is not None:
-            self.task = kwargs.get('task')
-        if self.timestamp is None and kwargs.get('timestamp') is not None:
-            self.timestamp = kwargs.get('timestamp')
-        if self.covariables is None and kwargs.get('covariables') is not None:
-            self.covariables = kwargs.get('covariables')
-        if self.freq is None and kwargs.get('freq') is not None:
-            self.freq = kwargs.get('freq')
-        if self.metrics is None and kwargs.get('metrics') is not None:
-            self.metrics = kwargs.get('metrics')
-        if self.window is None and kwargs.get('window') is not None:
-            self.window = kwargs.get('window')
-        if self.horizon == 1 and kwargs.get('horizon') is not None:
-            self.horizon = kwargs.get('horizon')
-
-
 ##################################### Define Specific Search Space Generator #####################################
 
 class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
-    """
+    """Statistical Search Space for Time Series Forecasting.
+
     Parameters
     ----------
     task: str or None, optional, default None. If not None, it must be 'univariate-forecast' or
@@ -373,7 +333,8 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
 
 
 class StatsClassificationSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
-    """
+    """Statistical Search Space for Time Series Classification.
+
     Parameters
     ----------
     task: str or None, optional, default None. If not None, it must be 'univariate-binaryclass',
@@ -470,7 +431,8 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin)
 
 
 class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
-    """
+    """Deep Learning Search Space for Time Series Forecasting.
+
     Parameters
     ----------
     task: str or None, optional, default None. If not None, it must be 'univariate-forecast' or
@@ -701,8 +663,9 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
                              f' or {consts.Task_MULTIVARIATE_FORECAST}.')
 
 
-class DLClassificationSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
-    """
+class DLClassRegressSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
+    """Deep Learning Search Space for Time Series Classification and Regression.
+
     Parameters
     ----------
     task: str or None, optional, default None. If not None, it must be 'univariate-binaryclass',
@@ -743,7 +706,7 @@ class DLClassificationSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             kwargs['inceptiontime_init_kwargs'] = inceptiontime_init_kwargs
         if enable_inceptiontime and inceptiontime_init_kwargs is not None:
             kwargs['inceptiontime_init_kwargs'] = inceptiontime_init_kwargs
-        super(DLClassificationSearchSpace, self).__init__(task, **kwargs)
+        super(DLClassRegressSearchSpace, self).__init__(task, **kwargs)
 
         self.task = task
         self.timestamp = timestamp
@@ -852,25 +815,3 @@ class DLClassificationSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
         else:
             raise ValueError(f'Incorrect task name, default {consts.TASK_LIST_CLASSIFICATION}'
                              f', or {consts.TASK_LIST_REGRESSION}.')
-
-
-stats_forecast_search_space = StatsForecastSearchSpace
-
-stats_classification_search_space = StatsClassificationSearchSpace
-
-stats_regression_search_space = None
-
-dl_forecast_search_space = DLForecastSearchSpace
-
-dl_classification_search_space = DLClassificationSearchSpace
-
-dl_regression_search_space = None
-
-
-if __name__ == '__main__':
-    from hypernets.searchers.random_searcher import RandomSearcher
-
-    sfss = stats_forecast_search_space(task='univariate-forecast', timestamp='ts', covariables=['id', 'cos'])
-    searcher = RandomSearcher(sfss, optimize_direction='min')
-    sample = searcher.sample()
-    print(sample)

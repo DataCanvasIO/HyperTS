@@ -18,6 +18,9 @@ from hypernets.pipeline.base import ComposeTransformer
 from hypernets.dispatchers.in_process_dispatcher import InProcessDispatcher
 
 from hyperts.utils import consts, get_tool_box
+from hyperts.utils.transformers import IdentityTransformer
+from hyperts.framework.nas import LayerWeightsCache
+from hyperts.framework.wrappers.nas_wrappers import TSNASWrapper
 
 
 logger = logging.get_logger(__name__)
@@ -38,13 +41,14 @@ class HyperTSEstimator(Estimator):
         For details of parameters, refer to hypernets.tabular.data_cleaner.
     """
 
-    def __init__(self, task, mode, reward_metric, space_sample, data_cleaner_params=None):
+    def __init__(self, task, mode, reward_metric, space_sample, data_cleaner_params=None, weights_cache=None):
         super(HyperTSEstimator, self).__init__(space_sample=space_sample, task=task)
         self.data_pipeline = None
         self.mode = mode
         self.reward_metric = reward_metric
         self.data_cleaner_params = data_cleaner_params
-        self.model = None  # Time-Series model
+        self.weights_cache = weights_cache
+        self.model = None
         self.cv_models_ = None
         self.data_cleaner = None
         self.pipeline_signature = None
@@ -57,19 +61,26 @@ class HyperTSEstimator(Estimator):
         self._build_model(space_sample)
 
     def _build_model(self, space_sample):
-        space, _ = space_sample.compile_and_forward()
+        if self.mode != consts.Mode_NAS:
+            space, _ = space_sample.compile_and_forward()
 
-        outputs = space.get_outputs()
-        assert len(outputs) == 1, 'The space can only contains 1 output.'
-        if outputs[0].estimator is None:
-            outputs[0].build_estimator(self.task)
-        self.model = outputs[0].estimator
-        self.fit_kwargs = outputs[0].fit_kwargs
+            outputs = space.get_outputs()
+            assert len(outputs) == 1, 'The space can only contains 1 output.'
+            if outputs[0].estimator is None:
+                outputs[0].build_estimator(self.task)
+            self.model = outputs[0].estimator
+            self.fit_kwargs = outputs[0].fit_kwargs
 
-        pipeline_module = space.get_inputs(outputs[0])
-        assert len(pipeline_module) == 1, 'The `HyperEstimator` can only contains 1 input.'
-        if isinstance(pipeline_module[0], ComposeTransformer):
-            self.data_pipeline = self.build_pipeline(space, pipeline_module[0])
+            pipeline_module = space.get_inputs(outputs[0])
+            assert len(pipeline_module) == 1, 'The `HyperEstimator` can only contains 1 input.'
+            if isinstance(pipeline_module[0], ComposeTransformer):
+                self.data_pipeline = self.build_pipeline(space, pipeline_module[0])
+        else:
+            space_sample.weights_cache = self.weights_cache
+            init_kwargs = space_sample.__dict__.get('hyperparams').param_values
+            self.model = TSNASWrapper(dict(), **init_kwargs)
+            self.model.model.space_sample = copy.deepcopy(space_sample)
+            self.data_pipeline = IdentityTransformer()
 
     def build_pipeline(self, space, last_transformer):
         transformers = []
@@ -437,11 +448,12 @@ class HyperTS(HyperModel):
                  reward_metric='accuracy',
                  discriminator=None,
                  data_cleaner_params=None,
-                 clear_cache=False):
+                 use_layer_weight_cache=False):
 
         self.mode = mode
         self.timestamp = timestamp
         self.data_cleaner_params = data_cleaner_params
+        self.weights_cache = None if use_layer_weight_cache else LayerWeightsCache()
 
         HyperModel.__init__(self,
                             searcher,
@@ -456,7 +468,8 @@ class HyperTS(HyperModel):
                                      mode=self.mode,
                                      reward_metric=self.reward_metric,
                                      space_sample=space_sample,
-                                     data_cleaner_params=self.data_cleaner_params)
+                                     data_cleaner_params=self.data_cleaner_params,
+                                     weights_cache=self.weights_cache)
         return estimator
 
     def load_estimator(self, model_file):
