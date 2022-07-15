@@ -313,8 +313,8 @@ class Identity(layers.Layer):
     """Identity Layer.
 
     """
-    def __init__(self):
-        super(Identity, self).__init__()
+    def __init__(self, **kwargs):
+        super(Identity, self).__init__(**kwargs)
 
     def call(self, inputs, **kwargs):
         return inputs
@@ -413,6 +413,49 @@ class InceptionBlock(layers.Layer):
                   'bottleneck_size': self.bottleneck_size,
                   'activation': self.activation}
         base_config = super(InceptionBlock, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+
+class FactorizedReduce(layers.Layer):
+    """Factorized reduce for timestemp or variable.
+
+    Parampers
+    ----------
+    period: lookback step for original sequence.
+    filters: the dimensionality of the output space for Conv1D.
+    strides: int or tuple, default 1.
+    """
+    def __init__(self, period, filters, strides=1, **kwargs):
+        super(FactorizedReduce, self).__init__(**kwargs)
+        self.period = period
+        self.filters = filters
+        self.strides = strides
+        self.cropping1 = models.Sequential([
+            layers.Conv1D(filters, kernel_size=1, strides=strides, use_bias=False),
+            layers.Lambda(lambda k: k[:, -period:, :])
+        ])
+        self.cropping2 = models.Sequential([
+            layers.ZeroPadding1D(padding=(0, 1)),
+            layers.Cropping1D(cropping=(1, 0)),
+            layers.Conv1D(filters, kernel_size=1, strides=strides, use_bias=False),
+            layers.Lambda(lambda k: k[:, -period:, :])
+        ])
+        self.concat = layers.Concatenate(axis=-1)
+        self.bn = layers.BatchNormalization()
+
+    def call(self, inputs, **kwargs):
+        c1 = self.cropping1(inputs)
+        c2 = self.cropping2(inputs)
+        x = self.concat([c1, c2])
+        x = self.bn(x)
+
+        return x
+
+    def get_config(self):
+        config = {'period': self.period,
+                  'filters': self.filters,
+                  'strides': self.strides}
+        base_config = super(FactorizedReduce, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 
@@ -556,4 +599,5 @@ layers_custom_objects = {
     'Identity': Identity,
     'Shortcut': Shortcut,
     'InceptionBlock': InceptionBlock,
+    'FactorizedReduce': FactorizedReduce
 }
