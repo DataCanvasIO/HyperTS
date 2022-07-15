@@ -1,3 +1,6 @@
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
 from hyperts import make_experiment
 from hyperts.datasets import load_network_traffic, load_basic_motions
 from hyperts.toolbox import temporal_train_test_split, random_train_test_split
@@ -6,7 +9,7 @@ from hyperts.framework.search_space import Choice, Real, Int,\
                                            StatsForecastSearchSpace, \
                                            DLForecastSearchSpace, \
                                            StatsClassificationSearchSpace, \
-                                           DLClassificationSearchSpace
+                                           DLClassRegressSearchSpace
 
 
 class Test_User_Defined_Search_Space():
@@ -107,7 +110,7 @@ class Test_User_Defined_Search_Space():
         df = load_basic_motions()
         train_data, test_data = random_train_test_split(df, test_size=0.2, random_state=2022)
 
-        my_dl_search_space = DLClassificationSearchSpace(
+        my_dl_search_space = DLClassRegressSearchSpace(
             hybirdrnn_init_kwargs={
                 'rnn_units': Choice([32, 64, 128]),
             },
@@ -134,3 +137,33 @@ class Test_User_Defined_Search_Space():
 
         print(pipeline_params)
         print(best_trial_params)
+
+
+    def test_nas_search_space(self):
+        import tensorflow as tf
+        from hypernets.searchers.random_searcher import RandomSearcher
+        from hyperts.framework.dl import layers
+        from hyperts.framework.search_space import TSNASGenrealSearchSpace
+
+        sfss = TSNASGenrealSearchSpace()
+        sfss.update_init_params(
+            task='task',
+            timestamp='timestamp',
+            metrics='acc',
+            covariables=None,
+            window=[3, 6, 9],
+            horizon=1,
+            freq='H'
+        )
+
+        searcher = RandomSearcher(sfss, optimize_direction='min')
+        space_sample = searcher.sample()
+        inp1 = layers.Input(shape=(4, 3))
+        inp2 = layers.Input(shape=(4, 5))
+        concat = layers.Concatenate()([inp1, inp2])
+        space, outputs = space_sample.compile_and_forward(concat)
+        fit_params = space_sample.__dict__.get('hyperparams').param_values
+        print(fit_params)
+
+        model = tf.keras.models.Model(inputs=[inp1, inp2], outputs=outputs[0])
+        model.summary()
