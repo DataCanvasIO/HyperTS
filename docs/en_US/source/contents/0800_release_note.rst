@@ -80,3 +80,39 @@ Details of the HypertTS update are as follows:
 - Optimizes search space and architecture.
 
 - Fixes some bugs.
+
+
+Version 0.1.3
+******************
+
+Details of the HypertTS update are as follows:
+
+- Tuning search space hyperparameters;
+
+- Added report_best_trial_params;
+
+- Fixed ARIMA to be compatible with version 0.12.1 and above;
+
+- Fixed the pt issue of LSTNet;
+
+- Simplified custom search space, task, timestamp, covariables and metircs can not be passed;
+
+- Added OutliersTransformer, supported dynamic handling of outliers;
+
+- Adjusted final train processing - lr, batch_size, epcochs and so on;
+  
+- Added time series meta-feature extractor;
+
+- Added Time2Vec, RevIN, etc. layers;
+
+- Added N-Beats time series forecasting model;
+
+- Added InceptionTime time series classification model;
+
+- Supported dynamic downsampling for time series forecasting;
+
+- Refactored positive label inference method;
+
+- Added neural architecture search mode;
+
+- Fixed some known issues.

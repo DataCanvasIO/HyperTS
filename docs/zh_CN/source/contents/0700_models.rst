@@ -134,10 +134,18 @@ LSTNet全称为长短时序网络(Long-and Short-term Time-series network, LSTNe
 详情可参看: `Modeling Long- and Short-Term Temporal Patterns with Deep Neural Networks <https://arxiv.org/abs/1703.07015>`_
 
 .. tip::
-    适用范围: 单/多变量时序预测,回归。
+    适用范围: 单/多变量时序预测, 回归。
 
 --------
 
 神经架构搜索
 *************
-...
+自AlexNet在2012年的ImageNet竞赛中获得冠军, 深度学习在许多具有挑战性的任务及领域取得了突破性的进展。除了AlexNet网络外, 
+比如VGG,Inception, ResNet, Transformer, GPT等也先后被提出并得到工业界及学术界广泛的应用。然后, 这众多优秀网络的背后,
+凝聚的是无数人类专家的经验结晶。因此, 神经体系结构搜索(NAS)已经成为一种有希望的工具，以减轻人类在这种试错设计过程中的努力。
+
+HyperTS依托Hypernets提供的基础能力(``Hpyer Model`` + ``Search Strategy`` + ``Estimation Strategy``), 构建了基于时间
+序列的 ``Search Space``, 为时间序列任务赋予NAS强大的表达能力。
+
+.. tip::
+    适用范围: 单/多变量时序预测, 回归。

@@ -155,4 +155,11 @@ For more information, please refer to the paper `Modeling Long- and Short-Term T
 
 Neural Architecture Search
 *************
-...
+Since AlexNet won the 2012 ImageNet competition, deep learning has made breakthroughs in many challenging tasks and fields. In addition to AlexNet,
+e.g., VGG, Inception, ResNet, Transformer, GPT and so on have been proposed and widely used in industry and academia. And then, behind all these great networks,
+it is the crystallization of the experience of countless human experts. Consequently, neural architecture search (NAS) has emerged as a promising tool to alleviate human efforts in this trial-and-error design process.
+
+HyperTS relies on the basic capabilities provided by Hypernets (``Hpyer Model`` + ``Search Strategy`` + ``Estimation Strategy``), to build ``Search Space`` for time series tasks based on NAS powerful expression capabilities.
+
+.. tip::
+    NAS is applied to uni/multi-variate forecasting and regression.

@@ -93,10 +93,6 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
 
 假如现在我们想修改预测任务下的统计模式的搜索空间, 即 ``StatsForecastSearchSpace``, 您可以做如下操作:
 
-- 详细指定任务类型 ``task``, 否则无法判断是单变量预测还是多变量预测任务;
-- 指定 ``timestamp`` 列名;
-- 如果数据存在协变量, 请设置参数 ``covariables={xxx: xxx, ...}``;
-- **以上三步请严格遵守, 否则自定义失败!**
 - 如果想禁止某个算法, 不进行搜索, 可以设置参数为False, 例如 ``enable_arima=False``;
 - 如果想更改某个算法的搜索空间参数初始化,可以传递参数 ``xxx_init_kwargs={xxx:xxx, ...}``;
 - 如果希望自定义的参数是可搜索的, 您可以使用 ``hypernets.core.search_space`` 中的 ``Choice``, ``Int`` 及 ``Real``。其中, ``Choice`` 支持离散值, ``Int`` 支持整数连续值, ``Real`` 支持浮点数连续值。详情可参考 `Search Space <https://github.com/DataCanvasIO/Hypernets/blob/master/hypernets/core/search_space.py>`_。
@@ -108,11 +104,8 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
     from hypernets.core.search_space import Choice, Int, Real
     from hyperts.framework.search_space.macro_search_space import StatsForecastSearchSpace
 
-    custom_search_space = StatsForecastSearchSpace(task='univariate-forecast', 
-                                                timestamp='TimeStamp',
-                                                covariables=['HourSin', 'WeekCos', 'CBWD'],
-                                                enable_arima=False,
-                                                prophet_init_kwargs={
+    custom_search_space = StatsForecastSearchSpace(enable_arima=False,
+                                                   prophet_init_kwargs={
                                                     'seasonality_mode': 'multiplicative',
                                                     'daily_seasonality': Choice([True, False]),
                                                     'n_changepoints': Int(10, 50, step=10),
@@ -378,10 +371,7 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
     df = load_network_traffic(univariate=True)
     train_data, test_data = train_test_split(df, test_size=168, shuffle=False)
 
-    custom_search_space = DLForecastSearchSpacePlusTransformer(task='univariate-forecast', 
-                                                            timestamp='TimeStamp',
-                                                            covariables=['HourSin', 'WeekCos', 'CBWD'],
-                                                            metrics=['mape'])
+    custom_search_space = DLForecastSearchSpacePlusTransformer()
 
     experiment = make_experiment(train_data, 
                                 task='univariate-forecast',

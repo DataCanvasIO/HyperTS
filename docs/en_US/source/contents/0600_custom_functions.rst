@@ -91,9 +91,6 @@ HyperTS provides various algorithms with default search space for every mode. Mo
   
 By setting the argument ``search_space``, users could define their own search space. The instructions and an example are given below to modify the ``StatsForecastSearchSpace``. 
 
-- Mandatory! Describe the exact name of the task. For instance, ``task='univariate-forecast'``;
-- Mandatory! Assign the name of the ``timestamp`` column;
-- Mandatory! If have the covariables, describe them clearly. For instance, ``covariables={xxx: xxx, ...}``;
 - Set the argument as false to disable a certain algorithm. For instance, ``enable_arima=False``;
 - Change the initial parameters of a certain algorithm by function ``prophet_init_kwargs={xxx:xxx, ...}``;
 - Import the argument ``Choice``, ``Int`` ``Real`` from ``hypernets.core.search_space`` could define the parameters with specific options. For instance, ``Choice`` supports the boolean data type. ``Real`` supports the floating data type.
@@ -106,11 +103,8 @@ Code example:
     from hypernets.core.search_space import Choice, Int, Real
     from hyperts.framework.search_space.macro_search_space import StatsForecastSearchSpace
 
-    custom_search_space = StatsForecastSearchSpace(task='univariate-forecast', 
-                                                timestamp='TimeStamp',
-                                                covariables=['HourSin', 'WeekCos', 'CBWD'],
-                                                enable_arima=False,
-                                                prophet_init_kwargs={
+    custom_search_space = StatsForecastSearchSpace(enable_arima=False,
+                                                   prophet_init_kwargs={
                                                     'seasonality_mode': 'multiplicative',
                                                     'daily_seasonality': Choice([True, False]),
                                                     'n_changepoints': Int(10, 50, step=10),
@@ -374,10 +368,7 @@ Add the estimator to the search space, in which the hyperparameters also could b
     df = load_network_traffic(univariate=True)
     train_data, test_data = train_test_split(df, test_size=168, shuffle=False)
 
-    custom_search_space = DLForecastSearchSpacePlusTransformer(task='univariate-forecast', 
-                                                            timestamp='TimeStamp',
-                                                            covariables=['HourSin', 'WeekCos', 'CBWD'],
-                                                            metrics=['mape'])
+    custom_search_space = DLForecastSearchSpacePlusTransformer()
 
     experiment = make_experiment(train_data, 
                                 task='univariate-forecast',
