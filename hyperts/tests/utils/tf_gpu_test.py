@@ -1,6 +1,7 @@
 from hyperts.utils import tf_gpu
 from hyperts.tests import skip_if_not_tf
 
+
 @skip_if_not_tf
 class Test_TF_GPU():
 

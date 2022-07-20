@@ -1,5 +1,5 @@
 import numpy as np
-from hyperts.utils import consts, metrics, get_tool_box
+from hyperts.utils import consts, get_tool_box
 from hyperts.experiment import make_experiment
 from hyperts.datasets import load_arrow_head, load_fixed_univariate_forecast_dataset, load_network_traffic
 from hyperts.tests import skip_if_not_prophet
