@@ -83,7 +83,7 @@ jobs:
         pip install -q pytest-cov==2.4.0  python-coveralls  codacy-coverage
 
     - name: Install tensorflow dependencies
-      if:  ${{ matrix.tf_switch == 'prophet_Y' }}
+      if:  ${{ matrix.tf_switch == 'tf_Y' }}
       shell: bash -l {0}
       run: |
         pip install -q tensorflow==2.4.2
