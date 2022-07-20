@@ -4,9 +4,9 @@
 
 <h4 align="center">Statistics | Deep Learning | Neural Architecture Search</h4>
 
-[English](README.md)
-
 <div align="center">
+
+[English](README.md) • [安装指南](https://hyperts.readthedocs.io/zh_CN/latest/contents/0200_installation.html) • [中文文档](https://hyperts.readthedocs.io/zh_CN/latest/) • [中文示例](https://github.com/DataCanvasIO/HyperTS/tree/main/examples/zh_CN)
 
 [![Python Versions](https://img.shields.io/pypi/pyversions/hyperts.svg)](https://pypi.org/project/hyperts)
 [![pypi](https://img.shields.io/pypi/v/hyperts.svg)](https://pypi.python.org/pypi/hyperts)
