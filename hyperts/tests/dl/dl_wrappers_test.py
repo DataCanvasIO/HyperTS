@@ -406,7 +406,7 @@ class Test_DL_Wrappers():
         init_kwargs = {
             'task': task,
 
-            'rnn_type': 'simple_rnn',
+            'rnn_type': 'gru',
             'rnn_units': 10,
             'rnn_layers': 2,
             'learning_rate': 0.001,
@@ -414,7 +414,7 @@ class Test_DL_Wrappers():
             'x_scale': np.random.choice(['min_max', 'max_abs'], size=1)[0],
         }
 
-        model = HybirdRNNWrapper(fit_kwargs, **init_kwargs)
+        model = LSTNetWrapper(fit_kwargs, **init_kwargs)
         model.fit(X_train, y_train)
 
         y_pred = model.predict(X_test)

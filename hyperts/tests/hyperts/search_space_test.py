@@ -147,7 +147,7 @@ class Test_User_Defined_Search_Space():
         import tensorflow as tf
         from hypernets.searchers.random_searcher import RandomSearcher
         from hyperts.framework.dl import layers
-        from hyperts.framework.search_space import TSNASGenrealSearchSpace
+        from hyperts.framework.search_space.micro_search_space import TSNASGenrealSearchSpace
 
         sfss = TSNASGenrealSearchSpace()
         sfss.update_init_params(
