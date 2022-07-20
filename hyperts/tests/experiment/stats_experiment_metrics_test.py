@@ -2,8 +2,9 @@ import numpy as np
 from hyperts.utils import consts, metrics, get_tool_box
 from hyperts.experiment import make_experiment
 from hyperts.datasets import load_arrow_head, load_fixed_univariate_forecast_dataset, load_network_traffic
+from hyperts.tests import skip_if_not_prophet
 
-
+@skip_if_not_prophet
 class Test_Univariate_Forecast_Metrics():
     def test_univariate_forecast_metrics_mse(self):
         _test_univariate_forecast_metric(consts.Metric_MSE)
@@ -101,7 +102,7 @@ class Test_Multivariate_Forecast_Metrics():
     def test_multivariate_forecast_metrics_None(self):
         _test_multivariate_forecast(None)
 
-
+@skip_if_not_prophet
 def _test_univariate_forecast_metric(metric):
     def get_params_test_task():
         return "example_wp_log_peyton_manning.csv", {'timestamp': 'ds',

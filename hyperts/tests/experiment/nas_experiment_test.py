@@ -5,7 +5,10 @@ from hyperts.datasets import load_network_traffic, load_arrow_head, load_basic_m
 from hyperts.utils import consts, metrics
 from hyperts.utils._base import get_tool_box
 from hyperts.experiment import make_experiment
+from hyperts.tests import skip_if_not_tf
 
+
+@skip_if_not_tf
 class Test_Experiment():
 
     def test_univariate_forecast(self):

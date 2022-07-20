@@ -5,7 +5,10 @@ from hyperts.datasets import load_basic_motions
 from hyperts.utils import consts, metrics
 from hyperts.experiment import make_experiment
 from hyperts.toolbox import random_train_test_split
+from hyperts.tests import skip_if_not_tf
 
+
+@skip_if_not_tf
 class Test_Multivariate_Binaryclass_Experiment():
 
     def test_metrics_acc(self):
@@ -38,7 +41,7 @@ class Test_Multivariate_Binaryclass_Experiment():
     def test_metrics_sk_recall(self):
         multivariate_binaryclass(metrics.recall_score)
 
-
+@skip_if_not_tf
 class Test_Multivariate_Multiclass_Experiment():
 
     def test_metrics_acc(self):
@@ -71,7 +74,7 @@ class Test_Multivariate_Multiclass_Experiment():
     def test_metrics_sk_recall(self):
         multivariate_multiclass(metrics.recall_score)
 
-
+@skip_if_not_tf
 def multivariate_binaryclass(metric):
     df = load_basic_motions()
     df['target'] = df['target'].map(lambda x: x if x == 'standing' else 'notstanding')
@@ -102,7 +105,7 @@ def multivariate_binaryclass(metric):
     assert score >= 0
     print('multivariate_classification accuracy:  {} %'.format(score*100))
 
-
+@skip_if_not_tf
 def multivariate_multiclass(metric):
     df = load_basic_motions()
     train_df, test_df = random_train_test_split(df, test_size=0.2, random_state=9527)

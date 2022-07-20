@@ -1,18 +1,24 @@
 from hyperts import make_experiment
 from hyperts.datasets import load_network_traffic, load_basic_motions
 from hyperts.toolbox import temporal_train_test_split, random_train_test_split
+from hyperts.tests import skip_if_not_tf, skip_if_not_prophet
+
 
 class Test_HyperTS_Ensemble():
 
+    @skip_if_not_prophet
     def test_stats_univarite_forecast_nocv_ensemble(self):
         tsf_ensemble_test(univariate=True, mode='stats', cv=False, ensemble_size=3)
 
+    @skip_if_not_prophet
     def test_stats_univarite_forecast_cv_ensemble(self):
         tsf_ensemble_test(univariate=True, mode='stats', cv=True, ensemble_size=3)
 
+    @skip_if_not_tf
     def test_dl_univarite_forecast_nocv_ensemble(self):
         tsf_ensemble_test(univariate=True, mode='dl', cv=False, ensemble_size=3)
 
+    @skip_if_not_tf
     def test_dl_univarite_forecast_cv_ensemble(self):
         tsf_ensemble_test(univariate=True, mode='dl', cv=True, ensemble_size=3)
 
@@ -22,9 +28,11 @@ class Test_HyperTS_Ensemble():
     def test_stats_multivarite_forecast_cv_ensemble(self):
         tsf_ensemble_test(univariate=False, mode='stats', cv=True, ensemble_size=3)
 
+    @skip_if_not_tf
     def test_dl_multivarite_forecast_nocv_ensemble(self):
         tsf_ensemble_test(univariate=False, mode='dl', cv=False, ensemble_size=3)
 
+    @skip_if_not_tf
     def test_dl_multivarite_forecast_cv_ensemble(self):
         tsf_ensemble_test(univariate=False, mode='dl', cv=True, ensemble_size=3)
 
@@ -35,9 +43,11 @@ class Test_HyperTS_Ensemble():
     def test_stats_binary_classification_cv_ensemble(self):
         tsc_ensemble_test(binary=True, mode='stats', cv=True, ensemble_size=3)
 
+    @skip_if_not_tf
     def test_dl_binary_classification_nocv_ensemble(self):
         tsc_ensemble_test(binary=True, mode='dl', cv=False, ensemble_size=3)
 
+    @skip_if_not_tf
     def test_dl_binary_classification_cv_ensemble(self):
         tsc_ensemble_test(binary=True, mode='dl', cv=True, ensemble_size=3)
 
@@ -47,13 +57,16 @@ class Test_HyperTS_Ensemble():
     def test_stats_multi_classification_cv_ensemble(self):
         tsc_ensemble_test(binary=False, mode='stats', cv=True, ensemble_size=3)
 
+    @skip_if_not_tf
     def test_dl_multi_classification_nocv_ensemble(self):
         tsc_ensemble_test(binary=False, mode='dl', cv=False, ensemble_size=3)
 
+    @skip_if_not_tf
     def test_dl_multi_classification_cv_ensemble(self):
         tsc_ensemble_test(binary=False, mode='dl', cv=True, ensemble_size=3)
 
-
+@skip_if_not_tf
+@skip_if_not_prophet
 def tsf_ensemble_test(univariate=True, mode='dl', cv=False, ensemble_size=None):
     df = load_network_traffic(univariate=False)
     if univariate:
@@ -86,7 +99,8 @@ def tsf_ensemble_test(univariate=True, mode='dl', cv=False, ensemble_size=None):
 
     print(scores)
 
-
+@skip_if_not_tf
+@skip_if_not_prophet
 def tsc_ensemble_test(binary=False, mode='stats', cv=False, ensemble_size=None):
     df = load_basic_motions()
     if binary:

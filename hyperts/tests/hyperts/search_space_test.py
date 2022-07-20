@@ -10,10 +10,12 @@ from hyperts.framework.search_space import Choice, Real, Int,\
                                            DLForecastSearchSpace, \
                                            StatsClassificationSearchSpace, \
                                            DLClassRegressSearchSpace
+from hyperts.tests import skip_if_not_tf, skip_if_not_prophet
 
 
 class Test_User_Defined_Search_Space():
 
+    @skip_if_not_prophet
     def test_stats_forecast(self):
         df = load_network_traffic(univariate=False)
         df = df.drop(columns=['Var_1', 'Var_2', 'Var_4', 'Var_5', 'Var_6'])
@@ -45,6 +47,7 @@ class Test_User_Defined_Search_Space():
         print(pipeline_params)
         print(best_trial_params)
 
+    @skip_if_not_tf
     def test_dl_forecast(self):
         df = load_network_traffic(univariate=False)
         train_data, test_data = temporal_train_test_split(df, test_horizon=168)
@@ -106,6 +109,7 @@ class Test_User_Defined_Search_Space():
         print(pipeline_params)
         print(best_trial_params)
 
+    @skip_if_not_tf
     def test_dl_classification(self):
         df = load_basic_motions()
         train_data, test_data = random_train_test_split(df, test_size=0.2, random_state=2022)
@@ -138,7 +142,7 @@ class Test_User_Defined_Search_Space():
         print(pipeline_params)
         print(best_trial_params)
 
-
+    @skip_if_not_tf
     def test_nas_search_space(self):
         import tensorflow as tf
         from hypernets.searchers.random_searcher import RandomSearcher

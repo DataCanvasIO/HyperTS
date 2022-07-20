@@ -16,9 +16,12 @@ from hyperts.datasets import (load_random_univariate_forecast_dataset,
 from hyperts.hyper_ts import HyperTS
 from hyperts.utils.transformers import CovariateTransformer
 from hyperts.toolbox import random_train_test_split, temporal_train_test_split
+from hyperts.tests import skip_if_not_prophet
+
 
 class Test_Task():
 
+    @skip_if_not_prophet
     def test_univariate_forecast(self):
         X, y = load_random_univariate_forecast_dataset(return_X_y=True)
         X_train, X_test, y_train, y_test = temporal_train_test_split(X, y, test_horizon=16)

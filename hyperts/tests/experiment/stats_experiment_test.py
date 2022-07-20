@@ -1,9 +1,11 @@
 from hyperts.datasets import load_network_traffic, load_arrow_head, load_basic_motions
 from hyperts.utils import consts, metrics, get_tool_box
 from hyperts.experiment import make_experiment
+from hyperts.tests import skip_if_not_prophet
 
 class Test_Experiment():
 
+    @skip_if_not_prophet
     def test_univariate_forecast(self):
         df = load_network_traffic(univariate=True)
         tb = get_tool_box(df)

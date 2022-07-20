@@ -8,8 +8,9 @@ from hyperts.utils import consts
 from hyperts.utils import get_tool_box
 from hyperts.framework.wrappers.dl_wrappers import DeepARWrapper, HybirdRNNWrapper, \
                                 LSTNetWrapper, NBeatsWrapper, InceptionTimeWrapper
+from hyperts.tests import skip_if_not_tf
 
-
+@skip_if_not_tf
 class Test_DL_Wrappers():
 
     def test_univariate_forecast_deepar(self):

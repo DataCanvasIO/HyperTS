@@ -1,9 +1,12 @@
 from hyperts import make_experiment
 from hyperts.datasets import load_network_traffic
 from hyperts.toolbox import temporal_train_test_split
+from hyperts.tests import skip_if_not_tf, skip_if_not_prophet
+
 
 class Test_HyperTS_TimeStamp_Free():
 
+    @skip_if_not_prophet
     def test_stats_forecast_tsfree(self):
         df = load_network_traffic(univariate=False)
         df = df.drop(columns=['Var_1', 'Var_2', 'Var_4', 'Var_5', 'Var_6', 'TimeStamp'])
@@ -30,6 +33,7 @@ class Test_HyperTS_TimeStamp_Free():
 
         print(scores)
 
+    @skip_if_not_tf
     def test_dl_forecast_tsfree(self):
         df = load_network_traffic(univariate=False)
         df = df.drop(columns=['Var_1', 'Var_2', 'Var_4', 'Var_5', 'Var_6', 'TimeStamp'])

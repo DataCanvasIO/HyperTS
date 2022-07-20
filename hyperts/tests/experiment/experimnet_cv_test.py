@@ -1,9 +1,12 @@
 from hyperts import make_experiment
 from hyperts.datasets import load_network_traffic, load_basic_motions
 from hyperts.toolbox import temporal_train_test_split, random_train_test_split
+from hyperts.tests import skip_if_not_tf, skip_if_not_prophet
+
 
 class Test_HyperTS_Cross_Validation():
 
+    @skip_if_not_prophet
     def test_stats_forecast_cv(self):
         df = load_network_traffic(univariate=False)
         df = df.drop(columns=['Var_1', 'Var_2', 'Var_4', 'Var_5', 'Var_6'])
@@ -30,6 +33,7 @@ class Test_HyperTS_Cross_Validation():
 
         print(scores)
 
+    @skip_if_not_tf
     def test_dl_forecast_cv(self):
         df = load_network_traffic(univariate=False)
         df = df.drop(columns=['Var_1', 'Var_2', 'Var_4', 'Var_5', 'Var_6'])
@@ -57,7 +61,6 @@ class Test_HyperTS_Cross_Validation():
 
         print(scores)
 
-
     def test_stats_classification_cv(self):
         df = load_basic_motions()
         train_data, test_data = random_train_test_split(df, test_size=0.2, random_state=2022)
@@ -81,6 +84,7 @@ class Test_HyperTS_Cross_Validation():
 
         print(scores)
 
+    @skip_if_not_tf
     def test_dl_classification_cv(self):
         df = load_basic_motions()
         train_data, test_data = random_train_test_split(df, test_size=0.2, random_state=2022)

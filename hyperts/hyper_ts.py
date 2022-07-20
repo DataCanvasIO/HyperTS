@@ -19,9 +19,6 @@ from hypernets.dispatchers.in_process_dispatcher import InProcessDispatcher
 
 from hyperts.utils import consts, get_tool_box
 from hyperts.utils.transformers import IdentityTransformer
-from hyperts.framework.nas import LayerWeightsCache
-from hyperts.framework.wrappers.nas_wrappers import TSNASWrapper
-
 
 logger = logging.get_logger(__name__)
 
@@ -76,6 +73,7 @@ class HyperTSEstimator(Estimator):
             if isinstance(pipeline_module[0], ComposeTransformer):
                 self.data_pipeline = self.build_pipeline(space, pipeline_module[0])
         else:
+            from hyperts.framework.wrappers.nas_wrappers import TSNASWrapper
             space_sample.weights_cache = self.weights_cache
             init_kwargs = space_sample.__dict__.get('hyperparams').param_values
             self.model = TSNASWrapper(dict(), **init_kwargs)
@@ -453,7 +451,11 @@ class HyperTS(HyperModel):
         self.mode = mode
         self.timestamp = timestamp
         self.data_cleaner_params = data_cleaner_params
-        self.weights_cache = None if use_layer_weight_cache else LayerWeightsCache()
+        if mode == consts.Mode_NAS and use_layer_weight_cache:
+            from hyperts.framework.nas import LayerWeightsCache
+            self.weights_cache = LayerWeightsCache()
+        else:
+            self.weights_cache = None
 
         HyperModel.__init__(self,
                             searcher,

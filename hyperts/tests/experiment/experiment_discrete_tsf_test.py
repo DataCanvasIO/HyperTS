@@ -1,9 +1,12 @@
 from hyperts import make_experiment
 from hyperts.datasets import load_network_traffic
 from hyperts.toolbox import temporal_train_test_split
+from hyperts.tests import skip_if_not_tf, skip_if_not_prophet
+
 
 class Test_Discrete_Time_Series():
 
+    @skip_if_not_tf
     def test_univariate_discrete_forecast(self):
         df = load_network_traffic(univariate=False)
         df = df.drop(columns=['Var_1', 'Var_2', 'Var_4', 'Var_5', 'Var_6'])
@@ -29,6 +32,7 @@ class Test_Discrete_Time_Series():
 
         print(scores)
 
+    @skip_if_not_tf
     def test_multivariate_discrete_forecast(self):
         df = load_network_traffic()
         train_data, test_data = temporal_train_test_split(df, test_horizon=168)
@@ -53,7 +57,7 @@ class Test_Discrete_Time_Series():
 
         print(scores)
 
-
+    @skip_if_not_tf
     def test_univariate_cutoff_trainset_forecast(self):
         df = load_network_traffic(univariate=False)
         df = df.drop(columns=['Var_1', 'Var_2', 'Var_4', 'Var_5', 'Var_6'])
@@ -79,6 +83,7 @@ class Test_Discrete_Time_Series():
 
         print(scores)
 
+    @skip_if_not_prophet
     def test_multivariate_cutoff_trainset_forecast(self):
         df = load_network_traffic()
         train_data, test_data = temporal_train_test_split(df, test_horizon=168)

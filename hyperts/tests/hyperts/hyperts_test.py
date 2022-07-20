@@ -8,7 +8,9 @@ from hyperts.utils import consts, get_tool_box
 from hyperts.datasets import load_random_univariate_forecast_dataset
 from hyperts.framework.wrappers import SimpleTSEstimator
 from hyperts.framework.wrappers.stats_wrappers import ProphetWrapper
+from hyperts.tests import skip_if_not_prophet
 
+@skip_if_not_prophet
 class Test_HyperTS():
 
     @classmethod

@@ -4,7 +4,10 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 import numpy as np
 import tensorflow as tf
 from hyperts.framework.dl import layers
+from hyperts.tests import skip_if_not_tf
 
+
+@skip_if_not_tf
 class Test_DL_Layers():
 
     def test_multicolembedding_layers(self):
