@@ -240,17 +240,17 @@ def make_experiment(train_data,
 
             search_space = DLClassRegressSearchSpace(task=task, timestamp=timestamp, metrics=metrics)
         elif mode == consts.Mode_NAS and task in consts.TASK_LIST_FORECAST:
-            from hyperts.framework.search_space import TSNASGenrealSearchSpace
+            from hyperts.framework.search_space.micro_search_space import TSNASGenrealSearchSpace
 
             search_space = TSNASGenrealSearchSpace(task=task, timestamp=timestamp, metrics=metrics,
                            covariables=covariates, window=dl_forecast_window, horizon=dl_forecast_horizon)
         elif mode == consts.Mode_NAS and task in consts.TASK_LIST_CLASSIFICATION:
-            from hyperts.framework.search_space import TSNASGenrealSearchSpace
+            from hyperts.framework.search_space.micro_search_space import TSNASGenrealSearchSpace
 
             search_space = TSNASGenrealSearchSpace(task=task, timestamp=timestamp, metrics=metrics,
                            covariables=covariates, window=dl_forecast_window, horizon=dl_forecast_horizon)
         elif mode == consts.Mode_NAS and task in consts.TASK_LIST_REGRESSION:
-            from hyperts.framework.search_space import TSNASGenrealSearchSpace
+            from hyperts.framework.search_space.micro_search_space import TSNASGenrealSearchSpace
 
             search_space = TSNASGenrealSearchSpace(task=task, timestamp=timestamp, metrics=metrics,
                            covariables=covariates, window=dl_forecast_window, horizon=dl_forecast_horizon)

@@ -392,7 +392,16 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin)
         }
 
     @property
-    def default_knn_init_kwargs(self):
+    def default_knn_univar_init_kwargs(self):
+        return {
+            'n_neighbors': Choice([1, 3, 5, 7, 9, 15]),
+            'weights': Choice(['uniform', 'distance']),
+            'distance': Choice(['dtw', 'ddtw', 'lcss']),
+            'x_scale': Choice(['z_score', 'scale-none'])
+        }
+
+    @property
+    def default_knn_multivar_init_kwargs(self):
         return {
             'n_neighbors': Choice([1, 3, 5, 7, 9, 15]),
             'weights': Choice(['uniform', 'distance']),
@@ -416,9 +425,9 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin)
             TSFClassificationEstimator, self.default_tsf_init_kwargs, self.default_tsf_fit_kwargs)
         if self.enable_knn:
             univar_containers['knn'] = (
-            KNNClassificationEstimator, self.default_knn_init_kwargs, self.default_knn_fit_kwargs)
+            KNNClassificationEstimator, self.default_knn_univar_init_kwargs, self.default_knn_fit_kwargs)
             multivar_containers['knn'] = (
-            KNNClassificationEstimator, self.default_knn_init_kwargs, self.default_knn_fit_kwargs)
+            KNNClassificationEstimator, self.default_knn_multivar_init_kwargs, self.default_knn_fit_kwargs)
 
         if self.task in [consts.Task_UNIVARIATE_BINARYCLASS, consts.Task_UNIVARIATE_MULTICALSS]:
             return univar_containers
