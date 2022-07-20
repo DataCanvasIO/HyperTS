@@ -5,10 +5,6 @@ from hypernets.core.searcher import OptimizeDirection
 from hypernets.searchers.random_searcher import RandomSearcher
 from hyperts.framework.compete import TSCompeteExperiment
 
-from hyperts.framework.search_space.micro_search_space import (search_space_univariate_forecast_generator,
-                                                               search_space_multivariate_forecast_generator,
-                                                               search_space_multivariate_classification)
-
 from hyperts.datasets import (load_random_univariate_forecast_dataset,
                               load_random_multivariate_forecast_dataset,
                               load_arrow_head)
@@ -16,13 +12,16 @@ from hyperts.datasets import (load_random_univariate_forecast_dataset,
 from hyperts.hyper_ts import HyperTS
 from hyperts.utils.transformers import CovariateTransformer
 from hyperts.toolbox import random_train_test_split, temporal_train_test_split
-from hyperts.tests import skip_if_not_prophet
+from hyperts.tests import skip_if_not_tf, skip_if_not_prophet
 
 
+@skip_if_not_tf
 class Test_Task():
 
     @skip_if_not_prophet
     def test_univariate_forecast(self):
+        from hyperts.framework.search_space.micro_search_space import search_space_univariate_forecast_generator
+
         X, y = load_random_univariate_forecast_dataset(return_X_y=True)
         X_train, X_test, y_train, y_test = temporal_train_test_split(X, y, test_horizon=16)
 
@@ -42,6 +41,8 @@ class Test_Task():
         assert y_pred.shape[0] == X_test.shape[0]
 
     def test_multivariate_forecast(self):
+        from hyperts.framework.search_space.micro_search_space import search_space_multivariate_forecast_generator
+
         X, y = load_random_multivariate_forecast_dataset(return_X_y=True)
         X_train, X_test, y_train, y_test = temporal_train_test_split(X, y, test_horizon=16)
 
@@ -56,6 +57,8 @@ class Test_Task():
         assert y_pred.shape[0] == X_test.shape[0]
 
     def test_univariate_classification(self):
+        from hyperts.framework.search_space.micro_search_space import search_space_multivariate_classification
+
         X, y = load_arrow_head(return_X_y=True)
         X_train, X_test, y_train, y_test = random_train_test_split(X, y, test_size=0.2)
 
