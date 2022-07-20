@@ -1,14 +1,19 @@
 <h1 align="center">
-<img src="docs/static/images/logo.svg" width="400" align=center/>
+<img src="docs/static/images/logo.png" width="400" align=center/>
 </h1><br>
 
+<h4 align="center">Statistics | Deep Learning | Neural Architecture Search</h4>
+
 [简体中文](README_zh_CN.md)
+
+<div align="center">
 
 [![Python Versions](https://img.shields.io/pypi/pyversions/hyperts.svg)](https://pypi.org/project/hyperts)
 [![pypi](https://img.shields.io/pypi/v/hyperts.svg)](https://pypi.python.org/pypi/hyperts)
 [![conda](https://img.shields.io/conda/vn/conda-forge/HyperTS.svg)](https://anaconda.org/conda-forge/HyperTS)
 [![TensorFlow Versions](https://img.shields.io/badge/TensorFlow-2.0+-blue.svg)](https://pypi.org/project/hyperts)
 [![License](https://img.shields.io/github/license/DataCanvasIO/hyperts.svg)](https://github.com/DataCanvasIO/hyperts/blob/master/LICENSE)
+</div>
 
 :dizzy: Easy-to-use, powerful, unified full pipeline automated time series toolkit. Supports forecasting, classification and regression.
 
