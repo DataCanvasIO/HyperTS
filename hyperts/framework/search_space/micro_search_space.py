@@ -118,7 +118,7 @@ class TSNASGenrealSearchSpace(SearchSpaceMixin):
             out = ops.HyperLayer(layers.GlobalAveragePooling1D, name=f'{self.name}_out_gap')(out)
             nas = ops.HyperLayer(layers.Dropout, rate=0.1, name=f'{self.name}_out_drouout')(out)
 
-            if self.task in consts.Task_FORECAST:
+            if self.task in consts.TASK_LIST_FORECAST:
                 default_nas_init_kwargs = self.default_forecasting_init_kwargs
             else:
                 default_nas_init_kwargs = self.default_classification_regression_init_kwargs
