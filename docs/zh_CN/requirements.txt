@@ -3,3 +3,4 @@ sphinx_rtd_theme
 recommonmark
 sphinxcontrib-mermaid
 ipython
+hypernets
