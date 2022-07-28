@@ -751,14 +751,14 @@ class BaseDeepEstimator(object):
 
         dataset = tf.data.Dataset.from_tensor_slices((data, y))
 
+        if epochs is not None:
+            dataset = dataset.repeat(epochs+1)
+
         if shuffle:
             dataset = dataset.shuffle(y.shape[0])
 
         dataset = dataset.batch(batch_size, drop_remainder=drop_remainder and y.shape[0] >= batch_size)
         dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
-
-        if epochs is not None:
-            dataset = dataset.repeat(epochs+1)
 
         return dataset
 

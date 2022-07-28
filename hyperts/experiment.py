@@ -302,6 +302,10 @@ def make_experiment(train_data,
 
     if kwargs.get('covariables') is not None and covariates is None:
         covariates = kwargs.pop('covariables')
+    if kwargs.get('dl_gpu_usage_strategy') is not None and tf_gpu_usage_strategy == 0:
+        tf_gpu_usage_strategy = kwargs.pop('dl_gpu_usage_strategy')
+    if kwargs.get('dl_memory_limit') is not None and tf_memory_limit == 2048:
+        tf_memory_limit = kwargs.pop('dl_memory_limit')
 
     # 1. Set Log Level
     if log_level is None:
