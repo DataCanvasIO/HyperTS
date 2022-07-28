@@ -81,7 +81,7 @@ An experiment is firsty created by ``make_experiment`` with several user-defined
 
 .. tip::
 
-    For more advanced performance, you could modify other parameters. Please refer to the instructions of :doc:`Advanced Configurations </contents/0500_0500_advanced_config>`.
+    For more advanced performance, you could modify other parameters. Please refer to the instructions of :doc:`Advanced Configurations </contents/0500_advanced_config>`.
 
 
 

@@ -1,0 +1,284 @@
+API
+######
+
+.. toctree::
+
+   :maxdepth: 8
+
+   hyperts.datasets
+   hyperts.framework
+   hyperts.utils
+   hyperts.framework
+
+hyperts.experiment 
+====================
+
+.. automodule:: hyperts.experiment
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+hyperts.hyper\_ts 
+==================
+
+.. automodule:: hyperts.hyper_ts
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+hyperts.toolbox
+=================
+
+.. automodule:: hyperts.toolbox
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+hyperts.utils
+================
+
+utils.metrics
+----------------
+
+.. automodule:: hyperts.utils.metrics
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+utils.plot
+--------------
+
+.. automodule:: hyperts.utils.plot
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+utils.transformers
+---------------------
+
+.. automodule:: hyperts.utils.transformers
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+utils.tstoolbox
+--------------------
+
+.. automodule:: hyperts.utils.tstoolbox
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+hyperts.framework
+======================
+
+framework.compete
+-------------------
+
+.. automodule:: hyperts.framework.compete
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+framework.estimators
+---------------------
+
+.. automodule:: hyperts.framework.estimators
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+framework.wrappers
+--------------------
+
+wrappers.dl\_wrappers
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.wrappers.dl_wrappers
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+wrappers.nas\_wrappers
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.wrappers.nas_wrappers
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+wrappers.stats\_wrappers
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.wrappers.stats_wrappers
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+framework.search\_space
+--------------------
+
+search\_space.macro\_search\_space
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.search_space.macro_search_space
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+search\_space.micro\_search\_space
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.search_space.micro_search_space
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+framework.meta\_learning
+---------------------------
+
+meta\_learning.helper\_fn 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.meta_learning.helper_fn
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+meta\_learning.meta\_learner
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.meta_learning.meta_learner
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+meta\_learning.meta\_trial\_store
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.meta_learning.meta_trial_store
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+framework.meta\_learning.tsfeatures
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.meta_learning.tsfeatures
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+framework.dl
+--------------
+
+dl.base
+^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.dl._base
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+dl.models.deepar
+^^^^^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.dl.models.deepar
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+dl.models.hybird\_rnn
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.dl.models.hybird_rnn
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+dl.models.inceptiontime
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.dl.models.inceptiontime
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+dl.models.lstnet
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.dl.models.lstnet
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+dl.models.nbeats 
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.dl.models.nbeats
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+dl.layers
+^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.dl.layers._layers
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+dl.losses
+^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.dl.layers._losses
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+dl.metrics
+^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.dl.layers._metrics
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+dl.dl\_utils.metainfo
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.dl.dl_utils.metainfo
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+dl.dl\_utils.timeseries 
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.dl.dl_utils.timeseries
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+framework.nas
+--------------
+
+nas.base
+^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.nas._base
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+nas.layers
+^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.nas.layers._layers
+   :members:
+   :undoc-members:
+   :show-inheritance:

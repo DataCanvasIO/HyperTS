@@ -13,7 +13,7 @@
 import os
 import sys
 from datetime import datetime
-sys.path.insert(0, os.path.abspath('./.'))
+sys.path.insert(0, os.path.abspath('../../..'))
 
 # -- Project information -----------------------------------------------------
 
@@ -23,7 +23,7 @@ copyright = f'{now.year}, DataCanvas.com'
 author = 'DataCanvas.com'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1.3'
+release = '0.1.4'
 
 
 # -- General configuration ---------------------------------------------------
@@ -33,12 +33,14 @@ release = '0.1.3'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
     'sphinx.ext.napoleon',
-    'sphinx.ext.intersphinx',  # this order is important to make intersphinx work!
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.todo',
+    'sphinx.ext.coverage',
     'sphinx.ext.autosummary',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'sphinx_gallery.gen_gallery',
 ]
 
 autodoc_default_options = {
@@ -88,7 +90,6 @@ pygments_style = 'sphinx'
 # a list of builtin themes.
 #
 html_theme = "sphinx_rtd_theme"
-extensions = ['recommonmark']
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

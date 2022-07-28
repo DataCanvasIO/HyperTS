@@ -116,7 +116,7 @@ train_data, test_data = train_test_split(data, test_size=0.2)
 model = make_experiment(train_data.copy(),
                         task='classification',
                         mode='dl',
-                        dl_gpu_usage_strategy=1,
+                        tf_gpu_usage_strategy=1,
                         reward_metric='accuracy',
                         max_trials=30,
                         early_stopping_rounds=10).run()

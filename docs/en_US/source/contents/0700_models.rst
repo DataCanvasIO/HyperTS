@@ -6,7 +6,7 @@ HyperTS provides three different methods to perform time series analysis, which 
 ---------
 
 Statistical Methods
-********
+********************
 Different tasks require different statistical methods, which are introduced in sequence in this subsection.
 
 - Time series forecasting: Prophet | ARIMA | VAR
@@ -14,7 +14,7 @@ Different tasks require different statistical methods, which are introduced in s
 
 
 Prophet
-=======
+========
 Prophet is a procedure for forecasting time series data based on an additive model where non-linear trends are fit with yearly, weekly, and daily seasonality, plus holiday effects. It works best with time series that have strong seasonal effects and several seasons of historical data. Prophet is robust to missing data and shifts in the trend, and typically handles outliers well. 
 
 Prophet is stated as a decomposable model with three main components: trend, seasonality, and holidays. 
@@ -54,7 +54,7 @@ The MA part of ARIMA indicates that the forecast error is a linear combination o
 .. math::
     X_{t}=\varepsilon _{t}+\beta _{1}\varepsilon _{t-1}+...+\beta _{q}\varepsilon _{t-q},
 
-where, :math:`\varepsilon _{}` are the errors of the AR models of the respective lags. :math:`\beta_{}`is the coefficient. From the equation, we could see that the past errors impact the current value indirectly. 
+where, :math:`\varepsilon _{}` are the errors of the AR models of the respective lags. :math:`\beta_{}` is the coefficient. From the equation, we could see that the past errors impact the current value indirectly. 
 
 The ARMA(p, q) model is combined with AR and MA models:
 
@@ -116,7 +116,7 @@ K-nearest-neighbor(KNN) classifiers with dynamic time warping `(DTW) <https://en
 
 
 Deep Learning Algorithms
-********
+*************************
 
 DeepAR
 ======
@@ -154,7 +154,7 @@ For more information, please refer to the paper `Modeling Long- and Short-Term T
 --------
 
 Neural Architecture Search
-*************
+*****************************
 Since AlexNet won the 2012 ImageNet competition, deep learning has made breakthroughs in many challenging tasks and fields. In addition to AlexNet,
 e.g., VGG, Inception, ResNet, Transformer, GPT and so on have been proposed and widely used in industry and academia. And then, behind all these great networks,
 it is the crystallization of the experience of countless human experts. Consequently, neural architecture search (NAS) has emerged as a promising tool to alleviate human efforts in this trial-and-error design process.

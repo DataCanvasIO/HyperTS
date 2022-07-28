@@ -71,14 +71,14 @@ The deep learning method is based on the Tensorfolw framework, which processes i
 
 - 0: processing in CPU;
 - 1: processing in GPU with increasing memory according to the data scale;  
-- 2: processing in GPU with limited memory (2048M). Change the memory limit by the argument ``dl_memory_limit``.
+- 2: processing in GPU with limited memory (2048M). Change the memory limit by the argument ``tf_memory_limit``.
 
 
 .. code-block:: python
 
   experiment = make_experiment(train_data, 
                               mode='dl',
-                              dl_gpu_usage_strategy=1,
+                              tf_gpu_usage_strategy=1,
                               ...)                            
 
 ------------------
