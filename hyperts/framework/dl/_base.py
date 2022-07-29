@@ -832,7 +832,9 @@ class BaseDeepEstimator(object):
             data = buf.getvalue()
             buf.close()
             fw.write(data)
+        del self.model
         self.model = None
+        tf.keras.backend.clear_session()
         logger.info('Save model to disk.')
 
     @staticmethod

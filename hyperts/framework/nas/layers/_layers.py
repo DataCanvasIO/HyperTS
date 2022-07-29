@@ -122,10 +122,11 @@ def stem_ops(input, units=64):
 
 def cell_ops(inputs,
              name_prefix,
+             block_no,
              node_no, cell_no,
              filters_or_units,
              kernel_size=(1, 3, 5)):
-    name_prefix = f'{name_prefix}_node{node_no}_cell{cell_no}'
+    name_prefix = f'{name_prefix}_block{block_no}_node{node_no}_cell{cell_no}'
 
     inpc = InputChoice(inputs, num_chosen_most=1, name=f'{name_prefix}_inputchoice')(inputs)
 
@@ -168,11 +169,11 @@ def node_ops(inputs,
              block_no, node_no,
              filters_or_units=(16, 32, 64),
              kernel_size=(1, 3, 5)):
-    out0 = cell_ops(inputs, name_prefix, node_no, f'block{block_no}_0', filters_or_units, kernel_size)
-    out1 = cell_ops(inputs, name_prefix, node_no, f'block{block_no}_1', filters_or_units, kernel_size)
+    cell0 = cell_ops(inputs, name_prefix, block_no, node_no, 0, filters_or_units, kernel_size)
+    cell1 = cell_ops(inputs, name_prefix, block_no, node_no, 1, filters_or_units, kernel_size)
 
-    out0 = CalibrateSize(node=0, name_prefix=f'{name_prefix}_block{block_no}_node{node_no}_reduce0')([out0, out1])
-    out1 = CalibrateSize(node=1, name_prefix=f'{name_prefix}_block{block_no}_node{node_no}_reduce1')([out0, out1])
+    out0 = CalibrateSize(node=0, name_prefix=f'{name_prefix}_block{block_no}_node{node_no}_reduce0')([cell0, cell1])
+    out1 = CalibrateSize(node=1, name_prefix=f'{name_prefix}_block{block_no}_node{node_no}_reduce1')([cell0, cell1])
 
     out = merge_ops(inputs=[out0, out1], name_prefix=f'{name_prefix}_block{block_no}_node{node_no}')
 

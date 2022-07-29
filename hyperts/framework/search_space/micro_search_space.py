@@ -93,12 +93,15 @@ class TSNASGenrealSearchSpace(SearchSpaceMixin):
             head = ModuleChoice([ffa, identity], name='modulechoice_head')(stem)
             head = ops.HyperLayer(layers.Identity, name='head_identity')(head)
 
-            node0 = input
+            node0 = stem
             node1 = head
             for block_no in range(self.num_blocks):
                 inputs = [node0, node1]
                 for node_no in range(self.num_nodes):
-                    node = ops.node_ops(inputs, name_prefix=self.name, block_no=block_no, node_no=node_no)
+                    node = ops.node_ops(inputs,
+                                        name_prefix=self.name,
+                                        block_no=block_no,
+                                        node_no=node_no)
                     inputs.append(node)
 
                 if self.block_ops.lower() == 'concat':
