@@ -2,6 +2,7 @@
 """
 
 """
+import os
 import copy
 
 import time
@@ -371,35 +372,50 @@ class HyperTSEstimator(Estimator):
 
         return scores
 
-    def save(self, model_file):
+    def save(self, model_file, external=False):
+        if external:
+            open_func = open
+            if '.model' in model_file:
+                model_file = model_file + '_estimator.pkl'
+            else:
+                model_file = os.path.join(model_file, 'estimator.pkl')
+        else:
+            open_func = fs.open
+
         if self.mode == consts.Mode_STATS:
-            with fs.open(f'{model_file}', 'wb') as output:
+            with open_func(f'{model_file}', 'wb') as output:
                 pickle.dump(self, output, protocol=pickle.HIGHEST_PROTOCOL)
         else:
             subself = copy.copy(self)
             if self.cv_models_ is None:
-                subself.model.model.save_model(model_file)
+                subself.model.model.save_model(model_file, external=external)
             else:
                 for est in subself.cv_models_:
-                    est.model.save_model(model_file + '_' + est.group_id)
-            with fs.open(f'{model_file}', 'wb') as output:
+                    est.model.save_model(model_file + '_' + est.group_id, external=external)
+            with open_func(f'{model_file}', 'wb') as output:
                 pickle.dump(subself, output, protocol=pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
-    def _load(model_file, mode):
+    def _load(model_file, mode, external=False):
+        if external:
+            model_file = model_file + '_estimator.pkl'
+            open_func = open
+        else:
+            open_func = fs.open
+
         if mode == consts.Mode_STATS:
-            with fs.open(f'{model_file}', 'rb') as input:
+            with open_func(f'{model_file}', 'rb') as input:
                 estimator = pickle.load(input)
         else:
             from hyperts.framework.dl import BaseDeepEstimator
-            with fs.open(f'{model_file}', 'rb') as input:
+            with open_func(f'{model_file}', 'rb') as input:
                 estimator = pickle.load(input)
             if estimator.cv_models_ is None:
-                model = BaseDeepEstimator.load_model(model_file)
+                model = BaseDeepEstimator.load_model(model_file, external=external)
                 estimator.model.model.model = model
             else:
                 for est in estimator.cv_models_:
-                    model = BaseDeepEstimator.load_model(model_file + '_' + est.group_id)
+                    model = BaseDeepEstimator.load_model(model_file + '_' + est.group_id, external=external)
                     est.model.model = model
         return estimator
 

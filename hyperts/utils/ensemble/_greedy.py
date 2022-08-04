@@ -1,10 +1,13 @@
 # -*- coding:utf-8 -*-
 
+import os
+import copy
+import pickle
 import joblib
 import numpy as np
 from sklearn.metrics import get_scorer
 from hypernets.tabular.ensemble import GreedyEnsemble
-from hypernets.utils import logging
+from hypernets.utils import fs, logging
 
 logger = logging.get_logger(__name__)
 
@@ -139,3 +142,66 @@ class TSGreedyEnsemble(GreedyEnsemble):
                     pred = pred.reshape(pred.shape[0])
                 est_predictions[:, n] = pred
         return est_predictions
+
+    def save(self, model_path, external=False):
+        if external:
+            open_func = open
+            model_path = os.path.join(model_path, 'est')
+        else:
+            open_func = fs.open
+            if not model_path.endswith(fs.sep):
+                model_path = model_path + fs.sep
+            if not fs.exists(model_path):
+                fs.mkdirs(model_path, exist_ok=True)
+
+        stub = copy.copy(self)
+        estimators = self.estimators
+        if estimators is not None:
+            stub.estimators = [None for _ in estimators]  # keep size
+
+        if estimators is not None:
+            for i, est in enumerate(estimators):
+                est_pkl = f'{model_path}{i}.pkl'
+                est_model = f'{model_path}{i}.model'
+                for t in [est_pkl, est_model]:
+                    if not external and fs.exists(t):
+                        fs.rm(t)
+
+                if est is None:
+                    continue
+
+                if hasattr(est, 'save') and hasattr(est, '_load'):
+                    est.save(est_model, external=external)
+
+                with open_func(est_pkl, 'wb') as f:
+                    pickle.dump(est, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+        with open_func(f'{model_path}_ensemble.pkl', 'wb') as f:
+            pickle.dump(stub, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    @staticmethod
+    def load(model_path, external=False):
+        if external:
+            open_func = open
+            exists_func = os.path.isfile
+            model_path = os.path.join(model_path, 'est')
+        else:
+            open_func = fs.open
+            exists_func = fs.exists
+
+        if not external and not model_path.endswith(fs.sep):
+            model_path = model_path + fs.sep
+
+        with open_func(f'{model_path}_ensemble.pkl', 'rb') as f:
+            stub = pickle.load(f)
+
+        if stub.estimators is not None:
+            for i in range(len(stub.estimators)):
+                if exists_func(f'{model_path}{i}.pkl'):
+                    with open_func(f'{model_path}{i}.pkl', 'rb') as f:
+                        est = pickle.load(f)
+                    if exists_func(f'{model_path}{i}.model_estimator.pkl') and hasattr(est, '_load'):
+                        est = est._load(f'{model_path}{i}.model', mode=est.mode, external=external)
+                    stub.estimators[i] = est
+
+        return stub

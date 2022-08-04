@@ -2,8 +2,11 @@
 """
 
 """
+import os
 import copy
+import pickle
 import numpy as np
+from sklearn.pipeline import Pipeline
 
 from hypernets.core import set_random_state
 from hypernets.experiment.compete import SteppedExperiment, ExperimentStep, \
@@ -777,6 +780,32 @@ class TSPipeline:
         else:
             forecast_start = preprocess(X, y, self.sk_pipeline.named_steps.estimator)
             self.sk_pipeline.named_steps.estimator.model.model.forecast_start = forecast_start
+
+    def save(self, model_file):
+        """Save TSPipeline.
+
+        Parameters
+        ----------
+        Parameters
+        ----------
+        model_file: str, the path where the file is saved. For example, "home/xxx/xxx/models".
+        """
+        from hyperts.utils.models import save_model
+        save_model(model=self, model_file=model_file)
+
+    @staticmethod
+    def load(model_file):
+        """Load TSPipeline.
+
+        Parameters
+        ----------
+        model_file: str, the path where the file is saved. For example,
+            1. "home/xxx/xxx/models/stats_models"
+            2. "home/xxx/xxx/models/dl_models"
+            3. "home/xxx/xxx/models/nas_models"
+        """
+        from hyperts.utils.models import load_model
+        load_model(model_file)
 
 
 class TSCompeteExperiment(SteppedExperiment):
