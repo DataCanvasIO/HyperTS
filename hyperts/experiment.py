@@ -98,10 +98,10 @@ def make_experiment(train_data,
     timestamp_format : str, the date format of timestamp col for forecast task, (default='%Y-%m-%d %H:%M:%S').
     covariates/covariables : list[n*str], if the data contains covariates, specify the covariable column names,
         (default=None).
-    dl_forecast_window : int or None. When selecting 'dl' mode, you can specify window, which is the sequence
-        length of each sample (lag), (default=None).
-    dl_forecast_horizon : int or None. When selecting 'dl' mode, you can specify horizon, which is the length of
-        the interval between the input and the target, (default=1).
+    dl_forecast_window : int, list or None. When selecting 'dl' or 'nas' mode, you can specify window, which is the
+        sequence length of each sample (lag), (default=None).
+    dl_forecast_horizon : int or None. When selecting 'dl' or 'nas' mode, you can specify horizon, which is the length
+        of the interval between the input and the target, (default=1).
     id : str or None, (default=None).
         The experiment id.
     callbacks: list of ExperimentCallback, optional.
@@ -456,8 +456,8 @@ def make_experiment(train_data,
             max_win_size = int((X_train_length * (1 - eval_size) - dl_forecast_horizon + 1) / 2)
 
         if max_win_size < 1:
-            logger.warning('The trian data is too short to start dl mode, '
-                           'stats mode has been automatically switched.')
+            logger.warning(f'The trian data is too short to start {mode} mode, '
+                            'stats mode has been automatically switched.')
             mode = consts.Mode_STATS
             hist_store_upper_limit = consts.HISTORY_UPPER_LIMIT
         else:
@@ -480,7 +480,7 @@ def make_experiment(train_data,
                     dl_forecast_window) < max_win_size, f'The slide window can not be greater than {max_win_size}'
             else:
                 raise ValueError(f'This type of {dl_forecast_window} is not supported.')
-            logger.info(f'The forecast window length of DL mode list is: {dl_forecast_window}')
+            logger.info(f'The forecast window length of {mode} mode list is: {dl_forecast_window}')
             hist_store_upper_limit = max(dl_forecast_window) + 1
     else:
         hist_store_upper_limit = consts.HISTORY_UPPER_LIMIT
