@@ -466,7 +466,11 @@ class TSPipeline:
 
             if X[self.timestamp].dtypes == object:
                 X[self.timestamp] = tb.to_datetime(X[self.timestamp])
-            X_transformed = tb.smooth_missed_ts_rows(X, ts_name=self.timestamp)
+
+            if X.shape[0] >= 3:
+                X_transformed = tb.smooth_missed_ts_rows(X, ts_name=self.timestamp)
+            else:
+                X_transformed = X.copy()
 
             y_pred = self.sk_pipeline.predict(X_transformed)
 
