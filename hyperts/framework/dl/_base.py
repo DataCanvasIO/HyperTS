@@ -482,9 +482,14 @@ class BaseDeepEstimator(object):
         else:
             raise ValueError('X is missing the timestamp columns.')
 
+        forecast_steps = steps
         if steps < self.forecast_length:
-            raise ValueError(f'Forecast steps {steps} cannot be '
-                             f'less than forecast length {self.forecast_length}.')
+            aligning_steps = self.forecast_length - steps
+            steps = self.forecast_length
+            tail_data = np.reshape(X.values[-1, :], (1, -1))
+            aligning_X = np.repeat(tail_data, repeats=aligning_steps, axis=0)
+            aligning_X = pd.DataFrame(aligning_X, columns=X.columns)
+            X = pd.concat([X, aligning_X], axis=0)
 
         if X.shape[1] >= 1:
             X = self.meta.transform_X(X)
@@ -525,6 +530,7 @@ class BaseDeepEstimator(object):
 
         futures = np.concatenate(futures, axis=0)
         futures = futures.reshape(-1, len(self.meta.target_columns))[:steps]
+        futures = futures[:forecast_steps, :]
 
         logger.info(f'forecast taken {time.time() - start}s')
         return futures
