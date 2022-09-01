@@ -10,8 +10,9 @@ from sklearn.pipeline import make_pipeline
 from hypernets.utils import logging
 from hypernets.tabular import sklearn_ex
 
+from hyperts.utils import consts
 from hyperts.utils._base import get_tool_box
-from hyperts.utils.transformers import CategoricalTransformer
+from hyperts.utils.transformers import CategoricalTransformer, MinMaxTransformer
 
 logger = logging.get_logger(__name__)
 
@@ -378,12 +379,14 @@ class MetaTSCprocessor(MetaPreprocessor):
     cat_remain_numeric: bool, default True.
     """
     def __init__(self,
+                 task,
                  embedding_output_dim=4,
                  auto_categorize=False,
                  auto_discard_unique=True,
                  cat_remain_numeric=True
                  ) -> None:
         super(MetaTSCprocessor, self).__init__()
+        self.task = task
         self.embedding_output_dim = embedding_output_dim
         self.auto_categorize = auto_categorize
         self.auto_discard_unique = auto_discard_unique
@@ -433,12 +436,14 @@ class MetaTSCprocessor(MetaPreprocessor):
         """Fit and Transform y.
         Transform ont hot encoding for multiclass.
         """
-        if y.dtype != 'float':
+        if self.task in consts.TASK_LIST_CLASSIFICATION:
             self.y_label_encoder = CategoricalTransformer()
             y = self.y_label_encoder.fit_transform(y)
             self.labels_ = self.y_label_encoder.classes_
             self.classes_ = len(self.labels_)
         else:
+            self.y_label_encoder = MinMaxTransformer()
+            y = self.y_label_encoder.fit_transform(y)
             self.labels_ = []
             self.classes_ = 1
         return y

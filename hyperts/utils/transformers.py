@@ -190,7 +190,8 @@ class MinMaxTransformer(BaseEstimator, TransformerMixin):
             X = copy.deepcopy(X)
         if not isinstance(X, np.ndarray):
             X = np.array(X)
-        if len(X.shape) == 2:
+        if len(X.shape) == 1 or len(X.shape) == 2:
+            X = X.reshape(-1, 1)
             self.min = X.min(axis=0, initial=None)
             self.max = X.max(axis=0, initial=None)
         else:

@@ -549,6 +549,9 @@ class BaseDeepEstimator(object):
         probs = np.concatenate(probs, axis=0)
         if probs.shape[-1] == 1 and self.task in consts.TASK_LIST_CLASSIFICATION:
             probs = np.hstack([1 - probs, probs])
+        elif probs.shape[-1] == 1 and self.task in consts.TASK_LIST_REGRESSION:
+            probs = self.meta.inverse_transform_y(probs)
+
         return probs
 
     def proba2predict(self, proba, encode_to_label=True):
@@ -782,7 +785,7 @@ class BaseDeepEstimator(object):
             dtype, input_name) about categorical variables.
         """
         if isinstance(X.iloc[0, 0], (np.ndarray, pd.Series)):
-            self.meta = MetaTSCprocessor()
+            self.meta = MetaTSCprocessor(task=self.task)
             X, y = self.meta.fit_transform(X, y)
             self.continuous_columns = self.meta.continuous_columns
             self.categorical_columns = self.meta.categorical_columns

@@ -398,8 +398,11 @@ class HyperTSEstimator(Estimator):
     @staticmethod
     def _load(model_file, mode, external=False):
         if external:
-            model_file = model_file + '_estimator.pkl'
             open_func = open
+            if '.model' in model_file:
+                model_file = model_file + '_estimator.pkl'
+            else:
+                model_file = os.path.join(model_file, 'estimator.pkl')
         else:
             open_func = fs.open
 
