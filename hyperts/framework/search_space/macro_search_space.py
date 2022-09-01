@@ -806,21 +806,28 @@ class DLClassRegressSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
 
     @property
     def estimators(self):
-        containers = {}
+        class_containers = {}
+        regress_containers = {}
 
         if self.enable_hybirdrnn:
-            containers['hybirdrnn'] = (
+            class_containers['hybirdrnn'] = (
+                HybirdRNNGeneralEstimator, self.default_hybirdrnn_init_kwargs, self.default_hybirdrnn_fit_kwargs)
+            regress_containers['hybirdrnn'] = (
                 HybirdRNNGeneralEstimator, self.default_hybirdrnn_init_kwargs, self.default_hybirdrnn_fit_kwargs)
         if self.enable_lstnet:
-            containers['lstnet'] = (
+            class_containers['lstnet'] = (
+                LSTNetGeneralEstimator, self.default_lstnet_init_kwargs, self.default_lstnet_fit_kwargs)
+            regress_containers['lstnet'] = (
                 LSTNetGeneralEstimator, self.default_lstnet_init_kwargs, self.default_lstnet_fit_kwargs)
         if self.enable_inceptiontime:
-            containers['inceptiontime'] = (
+            class_containers['inceptiontime'] = (
                 InceptionTimeClassificationEstimator, self.default_inceptiontime_init_kwargs,
                 self.default_inceptiontime_fit_kwargs)
 
-        if self.task in consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION:
-            return containers
+        if self.task in consts.TASK_LIST_CLASSIFICATION:
+            return class_containers
+        elif self.task in consts.TASK_LIST_REGRESSION:
+            return regress_containers
         else:
             raise ValueError(f'Incorrect task name, default {consts.TASK_LIST_CLASSIFICATION}'
                              f', or {consts.TASK_LIST_REGRESSION}.')
