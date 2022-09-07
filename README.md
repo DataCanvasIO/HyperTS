@@ -27,7 +27,7 @@ HyperTS is a Python package that provides an end-to-end time series (TS) analysi
 
 Multi-mode drive, light-heavy combination is the highlighted features of HyperTS. Therefore, statistical models (STATS), deep learning (DL), and neural architecture search (NAS) can be switched arbitrarily to get a powerful TS estimator.
 
-As an easy-to-use and lower-thoreshold API, users can get a model after simply running the experiment, and then execute ```.predict()```, ```.predict_proba()```, ```.evalute()```, ```.plot()``` for various time series analysis.
+As an easy-to-use and lower-threshold API, users can get a model after simply running the experiment, and then execute ```.predict()```, ```.predict_proba()```, ```.evalute()```, ```.plot()``` for various time series analysis.
 
 ## Installation
 
