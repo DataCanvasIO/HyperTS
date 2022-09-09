@@ -34,7 +34,7 @@ def InceptionTimeModel(task, window, continuous_columns, categorical_columns, bl
     short_filters: Int - The number of filters of shortcut conv1d layer.
     nb_outputs : Int - The number of classes, default 1.
     """
-    if task not in consts.TASK_LIST_CLASSIFICATION:
+    if task not in consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION:
         raise ValueError(f'Unsupported task type {task}.')
 
     kernel_size_list = list(filter(lambda x: x < window, kernel_size_list))

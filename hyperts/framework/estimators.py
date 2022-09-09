@@ -1033,10 +1033,10 @@ class NBeatsForecastEstimator(HyperEstimator):
         return nbeats
 
 
-class InceptionTimeClassificationEstimator(HyperEstimator):
-    """Time Series Classification Estimator based on Hypernets.
+class InceptionTimeGeneralEstimator(HyperEstimator):
+    """Time Series Classification or Regression Estimator based on Hypernets.
     Estimator:  Inception Time (InceptionTime).
-    Suitable for: Univariate/Multivariate Classification Task.
+    Suitable for: Univariate/Multivariate Classification or Regression Task.
 
     Parameters
     ----------
@@ -1173,8 +1173,8 @@ class InceptionTimeClassificationEstimator(HyperEstimator):
         HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
 
     def _build_estimator(self, task, fit_kwargs, kwargs):
-        if task in consts.TASK_LIST_CLASSIFICATION:
+        if task in consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION:
             inceptiontime = InceptionTimeWrapper(fit_kwargs, **kwargs)
         else:
-            raise ValueError('InceptionTime model supports only classification task.')
+            raise ValueError('InceptionTime model supports only classification or regression task.')
         return inceptiontime

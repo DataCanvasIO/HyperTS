@@ -18,7 +18,7 @@ from hyperts.framework.estimators import (ProphetForecastEstimator,
                                           HybirdRNNGeneralEstimator,
                                           LSTNetGeneralEstimator,
                                           NBeatsForecastEstimator,
-                                          InceptionTimeClassificationEstimator)
+                                          InceptionTimeGeneralEstimator)
 
 from hypernets.tabular import column_selector as tcs
 from hypernets.core.ops import HyperInput, ModuleChoice, Optional
@@ -821,7 +821,10 @@ class DLClassRegressSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
                 LSTNetGeneralEstimator, self.default_lstnet_init_kwargs, self.default_lstnet_fit_kwargs)
         if self.enable_inceptiontime:
             class_containers['inceptiontime'] = (
-                InceptionTimeClassificationEstimator, self.default_inceptiontime_init_kwargs,
+                InceptionTimeGeneralEstimator, self.default_inceptiontime_init_kwargs,
+                self.default_inceptiontime_fit_kwargs)
+            regress_containers['inceptiontime'] = (
+                InceptionTimeGeneralEstimator, self.default_inceptiontime_init_kwargs,
                 self.default_inceptiontime_fit_kwargs)
 
         if self.task in consts.TASK_LIST_CLASSIFICATION:

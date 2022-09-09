@@ -102,7 +102,7 @@ class TSGreedyEnsemble(GreedyEnsemble):
             proba = np.stack([1 - proba, proba], axis=1)
         return proba
 
-    def _parallel_fit_predictions(self, est_predictions, y_true, n_jobs=-1):
+    def _parallel_fit_predictions(self, est_predictions, y_true, n_jobs=1):
         fn = joblib.delayed(self._fit_predictions)
         paral = joblib.Parallel(n_jobs=n_jobs)
         res = paral(fn(est_predictions[..., i], y_true.values[..., i]) for i in range(self.target_dims))
