@@ -330,7 +330,7 @@ class TSEnsembleStep(EnsembleStep):
         if self.retrain_on_wholedata:
             estimators = self.est_retrain(trials, hyper_model, X_train, y_train, X_eval, y_eval, weights, **kwargs)
         else:
-            estimators = np.where(weights > 0, estimators, None)
+            estimators = np.where(np.array(weights) > 0, estimators, None)
 
         ensemble.estimators = list(estimators)
 
