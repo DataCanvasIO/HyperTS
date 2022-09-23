@@ -29,6 +29,7 @@ def make_experiment(train_data,
                     freq=None,
                     timestamp=None,
                     forecast_train_data_periods=None,
+                    forecast_drop_part_sample=False,
                     timestamp_format='%Y-%m-%d %H:%M:%S',
                     covariates=None,
                     dl_forecast_window=None,
@@ -217,7 +218,8 @@ def make_experiment(train_data,
         if mode == consts.Mode_STATS and task in consts.TASK_LIST_FORECAST:
             from hyperts.framework.search_space import StatsForecastSearchSpace
 
-            search_space = StatsForecastSearchSpace(task=task, timestamp=timestamp, covariables=covariates)
+            search_space = StatsForecastSearchSpace(task=task, timestamp=timestamp,
+                           covariables=covariates, drop_observed_sample=forecast_drop_part_sample)
         elif mode == consts.Mode_STATS and task in consts.TASK_LIST_CLASSIFICATION:
             from hyperts.framework.search_space import StatsClassificationSearchSpace
 
@@ -229,8 +231,9 @@ def make_experiment(train_data,
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_FORECAST:
             from hyperts.framework.search_space import DLForecastSearchSpace
 
-            search_space = DLForecastSearchSpace(task=task, timestamp=timestamp, metrics=metrics,
-                           covariables=covariates, window=dl_forecast_window, horizon=dl_forecast_horizon)
+            search_space = DLForecastSearchSpace(task=task, timestamp=timestamp,
+                           metrics=metrics, covariables=covariates, window=dl_forecast_window,
+                           horizon=dl_forecast_horizon, drop_observed_sample=forecast_drop_part_sample)
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_CLASSIFICATION:
             from hyperts.framework.search_space import DLClassRegressSearchSpace
 
@@ -474,7 +477,7 @@ def make_experiment(train_data,
                     dl_forecast_window.append(period)
             elif isinstance(dl_forecast_window, int):
                 assert dl_forecast_window < max_win_size, f'The slide window can not be greater than {max_win_size}'
-                dl_forecast_window = [dl_forecast_window]
+                dl_forecast_window = [dl_forecast_window]*2
             elif isinstance(dl_forecast_window, list):
                 assert max(
                     dl_forecast_window) < max_win_size, f'The slide window can not be greater than {max_win_size}'

@@ -74,7 +74,7 @@ def log_gaussian_error(y_true, y_pred):
 def symmetric_mean_absolute_percentage_error(y_true, y_pred):
     y_pred = ops.convert_to_tensor(y_pred)
     y_true = math_ops.cast(y_true, y_pred.dtype)
-    diff = math_ops.abs(y_true - y_pred) / \
+    diff = math_ops.abs(y_pred - y_true) / \
            K.maximum((math_ops.abs(y_true) + math_ops.abs(y_pred)), K.epsilon())
     return 2.0 * K.mean(diff, axis=-1)
 

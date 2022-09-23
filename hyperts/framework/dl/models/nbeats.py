@@ -42,7 +42,7 @@ def NBeatsModel(task, continuous_columns, categorical_columns, window=10, nb_ste
     share_weights_in_stack : Bool - Whether to share weights in stack.
     hidden_layer_units : Int - The units of hidden layer.
     nb_outputs : Int, default 1.
-    nb_harmonics : Int or None, default None.
+    nb_harmonics : Int or None, -The number of harmonic terms for each stack type, default None.
     out_activation : Str - Forecast the task output activation function,
                  optional {'linear', 'sigmoid'}, default = 'linear'.
 
@@ -74,7 +74,7 @@ def NBeatsModel(task, continuous_columns, categorical_columns, window=10, nb_ste
         return K.dot(thetas, s)
 
     def trend_model(thetas, backcast_length, forecast_length, is_forecast):
-        p = thetas.shape[-1]
+        p = thetas.get_shape().as_list()[-1]
         t = linear_space(backcast_length, forecast_length, is_forecast=is_forecast)
         t = K.transpose(K.stack([t ** i for i in range(p)]))
         t = K.cast(t, np.float32)
@@ -205,7 +205,7 @@ class NBeats(BaseDeepEstimator):
     ----------
     task       : Str - Support forecast, classification, and regression.
                  See hyperts.utils.consts for details.
-    stack_types : Tuple(Str) - Stack types, optional {'trend', 'seasonality', generic}.
+    stack_types : Tuple(Str) - Stack types, optional {'trend', 'seasonality', 'generic'}.
                   default = ('trend', 'seasonality').
     thetas_dim  : Tuple(Int) - The number of units that make up each dense layer in each block of every stack.
                   default = (4, 8).

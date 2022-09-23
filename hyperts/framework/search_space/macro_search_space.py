@@ -230,6 +230,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
                  prophet_init_kwargs=None,
                  arima_init_kwargs=None,
                  var_init_kwargs=None,
+                 drop_observed_sample=True,
                  **kwargs):
         if enable_prophet and prophet_init_kwargs is not None:
             kwargs['prophet_init_kwargs'] = prophet_init_kwargs
@@ -244,10 +245,11 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
         self.enable_prophet = enable_prophet
         self.enable_arima = enable_arima
         self.enable_var = enable_var
+        self.drop_observed_sample = drop_observed_sample
 
     @property
     def default_prophet_init_kwargs(self):
-        return {
+        default_init_kwargs = {
             'freq': self.freq,
 
             'seasonality_mode': Choice(['additive', 'multiplicative']),
@@ -261,6 +263,11 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
         }
 
+        if not self.drop_observed_sample:
+            default_init_kwargs.pop('drop_sample_rate')
+
+        return default_init_kwargs
+
     @property
     def default_prophet_fit_kwargs(self):
         return {
@@ -269,7 +276,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
 
     @property
     def default_arima_init_kwargs(self):
-        return {
+        default_init_kwargs = {
             'freq': self.freq,
 
             'p': Choice([1, 2, 3, 4, 5]),
@@ -285,6 +292,11 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
         }
 
+        if not self.drop_observed_sample:
+            default_init_kwargs.pop('drop_sample_rate')
+
+        return default_init_kwargs
+
     @property
     def default_arima_fit_kwargs(self):
         return {
@@ -293,7 +305,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
 
     @property
     def default_var_init_kwargs(self):
-        return {
+        default_init_kwargs = {
             # 'ic': Choice(['aic', 'fpe', 'hqic', 'bic']),
             'maxlags': Choice([None, 2, 6, 12, 24, 48]),
             'trend': Choice(['c', 'ct', 'ctt', 'nc', 'n']),
@@ -301,6 +313,11 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'y_scale': Choice(['min_max']*5+['z_scale']*2+['max_abs']*1),
             'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
         }
+
+        if not self.drop_observed_sample:
+            default_init_kwargs.pop('drop_sample_rate')
+
+        return default_init_kwargs
 
     @property
     def default_var_fit_kwargs(self):
@@ -480,6 +497,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
                  hybirdrnn_init_kwargs=None,
                  lstnet_init_kwargs=None,
                  nbeats_init_kwargs=None,
+                 drop_observed_sample=True,
                  **kwargs):
         if enable_deepar and deepar_init_kwargs is not None:
             kwargs['deepar_init_kwargs'] = deepar_init_kwargs
@@ -500,10 +518,11 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
         self.enable_hybirdrnn = enable_hybirdrnn
         self.enable_lstnet = enable_lstnet
         self.enable_nbeats = enable_nbeats
+        self.drop_observed_sample = drop_observed_sample
 
     @property
     def default_deepar_init_kwargs(self):
-        return {
+        default_init_kwargs = {
             'timestamp': self.timestamp,
             'task': self.task,
             'metrics': self.metrics,
@@ -527,6 +546,11 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
         }
 
+        if not self.drop_observed_sample:
+            default_init_kwargs.pop('drop_sample_rate')
+
+        return default_init_kwargs
+
     @property
     def default_deepar_fit_kwargs(self):
         return {
@@ -537,7 +561,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
 
     @property
     def default_hybirdrnn_init_kwargs(self):
-        return {
+        default_init_kwargs = {
             'timestamp': self.timestamp,
             'task': self.task,
             'metrics': self.metrics,
@@ -560,6 +584,11 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
         }
 
+        if not self.drop_observed_sample:
+            default_init_kwargs.pop('drop_sample_rate')
+
+        return default_init_kwargs
+
     @property
     def default_hybirdrnn_fit_kwargs(self):
         return {
@@ -570,7 +599,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
 
     @property
     def default_lstnet_init_kwargs(self):
-        return {
+        default_init_kwargs = {
             'timestamp': self.timestamp,
             'task': self.task,
             'metrics': self.metrics,
@@ -600,6 +629,11 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
         }
 
+        if not self.drop_observed_sample:
+            default_init_kwargs.pop('drop_sample_rate')
+
+        return default_init_kwargs
+
     @property
     def default_lstnet_fit_kwargs(self):
         return {
@@ -610,7 +644,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
 
     @property
     def default_nbeats_init_kwargs(self):
-        return {
+        default_init_kwargs = {
             'timestamp': self.timestamp,
             'task': self.task,
             'metrics': self.metrics,
@@ -630,6 +664,11 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
             'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
         }
+
+        if not self.drop_observed_sample:
+            default_init_kwargs.pop('drop_sample_rate')
+
+        return default_init_kwargs
 
     @property
     def default_nbeats_fit_kwargs(self):

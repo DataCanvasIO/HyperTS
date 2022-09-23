@@ -292,8 +292,9 @@ class RevInstanceNormalization(layers.Layer):
 
     def _get_statistics(self, x):
         dim2reduce = tuple(range(1, len(x.shape) - 1))
-        self.mean = K.mean(x, axis=dim2reduce, keepdims=True)
-        self.stdev = K.sqrt(K.var(x, axis=dim2reduce, keepdims=True) + self.eps)
+        self.mean = K.stop_gradient(K.mean(x, axis=dim2reduce, keepdims=True))
+        self.stdev = K.stop_gradient(K.sqrt(K.var(x, axis=dim2reduce, keepdims=True) + self.eps))
+        print(self.stdev)
 
     def _normalize(self, x):
         x = x - self.mean
