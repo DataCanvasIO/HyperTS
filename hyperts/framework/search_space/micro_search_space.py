@@ -38,17 +38,18 @@ class TSNASGenrealSearchSpace(SearchSpaceMixin):
     search space.
     """
     def __init__(self, num_blocks=2, num_nodes=4, init_filters_or_units=64,
-                 block_ops='concat', name='tsnas', **kwargs):
+                 block_ops='concat', name='tsnas', drop_observed_sample=True, **kwargs):
         super(TSNASGenrealSearchSpace, self).__init__(**kwargs)
         self.name = name
         self.num_blocks = num_blocks
         self.num_nodes = num_nodes
         self.block_ops = block_ops
         self.init_filters_or_units = init_filters_or_units
+        self.drop_observed_sample = drop_observed_sample
 
     @property
     def default_forecasting_init_kwargs(self):
-        return {
+        default_init_kwargs = {
             'timestamp': self.timestamp,
             'task': self.task,
             'metrics': self.metrics,
@@ -61,11 +62,17 @@ class TSNASGenrealSearchSpace(SearchSpaceMixin):
             'verbose': 1,
 
             'forecast_length': Choice([1] * 8 + [3, 6]),
-            'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
             'y_log': Choice(['none-log'] * 4 + ['logx'] * 1),
             'y_scale': Choice(['min_max'] * 4 + ['z_scale'] * 1),
             'outlier': Choice(['none-outlier'] * 5 + ['clip'] * 3 + ['fill'] * 1),
             'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8])}
+
+        default_init_kwargs = self.initial_window_kwargs(default_init_kwargs)
+
+        if not self.drop_observed_sample:
+            default_init_kwargs.pop('drop_sample_rate')
+
+        return default_init_kwargs
 
     @property
     def default_classification_regression_init_kwargs(self):

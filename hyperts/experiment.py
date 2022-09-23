@@ -477,7 +477,7 @@ def make_experiment(train_data,
                     dl_forecast_window.append(period)
             elif isinstance(dl_forecast_window, int):
                 assert dl_forecast_window < max_win_size, f'The slide window can not be greater than {max_win_size}'
-                dl_forecast_window = [dl_forecast_window]*2
+                dl_forecast_window = [dl_forecast_window]
             elif isinstance(dl_forecast_window, list):
                 assert max(
                     dl_forecast_window) < max_win_size, f'The slide window can not be greater than {max_win_size}'

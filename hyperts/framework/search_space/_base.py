@@ -1,4 +1,4 @@
-from hypernets.core.search_space import ModuleSpace
+from hypernets.core.search_space import ModuleSpace, Choice
 
 
 class SearchSpaceMixin:
@@ -28,6 +28,16 @@ class SearchSpaceMixin:
         if self.horizon == 1 and kwargs.get('horizon') is not None:
             self.horizon = kwargs.get('horizon')
 
+    def initial_window_kwargs(self, default_init_kwargs):
+        if isinstance(self.window, int):
+            default_init_kwargs.update({'window': self.window})
+        elif (isinstance(self.window, list) and len(self.window) == 1):
+            default_init_kwargs.update({'window': self.window[0]})
+        elif (isinstance(self.window, list) and len(self.window) > 1):
+            default_init_kwargs.update({'window': Choice(self.window)})
+        else:
+            raise ValueError('window must be int or list.')
+        return default_init_kwargs
 
 class WithinColumnSelector:
 

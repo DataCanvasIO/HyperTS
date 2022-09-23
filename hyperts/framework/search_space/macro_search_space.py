@@ -546,6 +546,8 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
         }
 
+        default_init_kwargs = self.initial_window_kwargs(default_init_kwargs)
+
         if not self.drop_observed_sample:
             default_init_kwargs.pop('drop_sample_rate')
 
@@ -583,6 +585,8 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
             'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
         }
+
+        default_init_kwargs = self.initial_window_kwargs(default_init_kwargs)
 
         if not self.drop_observed_sample:
             default_init_kwargs.pop('drop_sample_rate')
@@ -629,6 +633,8 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
         }
 
+        default_init_kwargs = self.initial_window_kwargs(default_init_kwargs)
+
         if not self.drop_observed_sample:
             default_init_kwargs.pop('drop_sample_rate')
 
@@ -657,13 +663,14 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'nb_blocks_per_stack': Choice([1, 2, 3]),
             'hidden_layer_units': Choice([64, 128, 256]),
             'forecast_length': Choice([1]*8+[3, 6]),
-            'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
             'y_log': Choice(['none-log']*4+['logx']*1),
             'y_scale': Choice(['min_max']*4+['z_scale']*1),
             'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
             'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
         }
+
+        default_init_kwargs = self.initial_window_kwargs(default_init_kwargs)
 
         if not self.drop_observed_sample:
             default_init_kwargs.pop('drop_sample_rate')
