@@ -122,7 +122,22 @@ def load_fixed_univariate_forecast_dataset(return_X_y=False):
         return df
 
 
+def load_real_known_cause_dataset(return_X_y=False):
+    """Real Known Cause for anomaly detection.
 
+    Notes
+    ----------
+    timestamp name: 'timestamp'.
+    feature names: ['value'].
+    target name: ['anomaly'].
+    """
+    module_path = dirname(__file__)
+    data_file_name = join(module_path, 'realKnownCause.csv')
+    df = pd.read_csv(data_file_name)
+    if return_X_y:
+        return df[['timestamp', 'value']], df['anomaly']
+    else:
+        return df
 
 
 if __name__ == '__main__':

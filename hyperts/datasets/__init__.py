@@ -4,7 +4,8 @@ from hyperts.datasets.base import (
     load_basic_motions,
     load_random_univariate_forecast_dataset,
     load_random_multivariate_forecast_dataset,
-    load_fixed_univariate_forecast_dataset
+    load_fixed_univariate_forecast_dataset,
+    load_real_known_cause_dataset
 )
 
 __all__ = [
@@ -13,5 +14,6 @@ __all__ = [
     'load_basic_motions',
     'load_random_univariate_forecast_dataset',
     'load_random_multivariate_forecast_dataset',
-    'load_fixed_univariate_forecast_dataset'
+    'load_fixed_univariate_forecast_dataset',
+    'load_real_known_cause_dataset'
 ]
