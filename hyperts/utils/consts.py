@@ -19,9 +19,12 @@ Task_UNIVARIATE_BINARYCLASS        = 'univariate-binaryclass'
 Task_MULTIVARIATE_BINARYCLASS      = 'multivariate-binaryclass'
 Task_UNIVARIATE_MULTICALSS         = 'univariate-multiclass'
 Task_MULTIVARIATE_MULTICALSS       = 'multivariate-multiclass'
+Task_UNIVARIATE_DETECTION          = 'univariate-detection'
+Task_MULTIVARIATE_DETECTION        = 'multivariate-detection'
 Task_FORECAST                      = 'forecast'
 Task_CLASSIFICATION                = 'classification'
 Task_REGRESSION                    = 'regression'
+Task_DETECTION                     = 'detection'
 
 TASK_LIST_FORECAST                 = ['forecast', 'tsf',
 'univariate-forecast', 'multivariate-forecast'
@@ -33,6 +36,10 @@ TASK_LIST_CLASSIFICATION           = ['classification', 'tsc',
 ]
 
 TASK_LIST_REGRESSION               = ['regression', 'tsr'
+]
+
+TASK_LIST_DETECTION                = ['detection', 'tsad',
+'univariate-detection', 'multivariate-detection'
 ]
 
 TASK_LIST_BINARYCLASS              = ['univariate-binaryclass', 'multivariate-binaryclass']
@@ -80,3 +87,5 @@ OptimizerSGD                       = 'sgd'
 OptimizerADAM                      = 'adam'
 OptimizerADAMP                     = 'adamp'
 OptimizerRMSPROP                   = 'rmsprop'
+
+TARGET                             = 'ground truth'
