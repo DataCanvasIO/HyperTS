@@ -8,7 +8,8 @@ from hypernets.core.search_space import ModuleSpace
 from hyperts.utils import consts
 
 from hyperts.framework.wrappers.stats_wrappers import ProphetWrapper, is_prophet_installed, \
-                                 VARWrapper, ARIMAWrapper, TSForestWrapper, KNeighborsWrapper
+                                 VARWrapper, ARIMAWrapper, TSForestWrapper, KNeighborsWrapper, \
+                                 IForestWrapper
 try:
     import tensorflow
 except:
@@ -1178,3 +1179,82 @@ class InceptionTimeGeneralEstimator(HyperEstimator):
         else:
             raise ValueError('InceptionTime model supports only classification or regression task.')
         return inceptiontime
+
+
+class IForestDetectionEstimator(HyperEstimator):
+    """Time Series Anomaly Detection Estimator based on Hypernets.
+    Estimator:  Isolation Forest (IForest).
+    Suitable for: Univariate/Multivariate Anomaly Detection Task.
+
+    Parameters
+    ----------
+    n_estimators : int, default=100
+        The number of base estimators in the ensemble.
+    max_samples : "auto", int or float, default="auto"
+        The number of samples to draw from X to train each base estimator.
+            - If int, then draw `max_samples` samples.
+            - If float, then draw `max_samples * X.shape[0]` samples.
+            - If "auto", then `max_samples=min(256, n_samples)`.
+        If max_samples is larger than the number of samples provided,
+        all samples will be used for all trees (no sampling).
+    contamination : 'auto' or float, default='auto'
+        The amount of contamination of the data set, i.e. the proportion
+        of outliers in the data set. Used when fitting to define the threshold
+        on the scores of the samples.
+            - If 'auto', the threshold is determined as in the
+              original paper.
+            - If float, the contamination should be in the range (0, 0.5].
+    max_features : int or float, default=1.0
+        The number of features to draw from X to train each base estimator.
+            - If int, then draw `max_features` features.
+            - If float, then draw `max_features * X.shape[1]` features.
+    bootstrap : bool, default=False
+        If True, individual trees are fit on random subsets of the training
+        data sampled with replacement. If False, sampling without replacement
+        is performed.
+    n_jobs : int, default=None
+        The number of jobs to run in parallel for both :meth:`fit` and
+        :meth:`predict`. ``None`` means 1 unless in a
+        :obj:`joblib.parallel_backend` context. ``-1`` means using all
+        processors. See :term:`Glossary <n_jobs>` for more details.
+    random_state : int, RandomState instance or None, default=None
+        Controls the pseudo-randomness of the selection of the feature
+        and split values for each branching step and each tree in the forest.
+        Pass an int for reproducible results across multiple function calls.
+        See :term:`Glossary <random_state>`.
+
+    verbose : int, default=0
+        Controls the verbosity of the tree building process.
+
+
+    """
+    def __init__(self, fit_kwargs=None,
+                 n_estimators=100, max_samples="auto", contamination="auto",
+                 max_features=1.0, bootstrap=False, n_jobs=None, random_state=None,
+                 verbose=0, space=None, name=None, **kwargs):
+
+        if n_estimators is not None and n_estimators != 100:
+            kwargs['n_estimators'] = n_estimators
+        if max_samples is not None and max_samples != 'auto':
+            kwargs['max_samples'] = 'auto'
+        if contamination is not None and contamination != 'auto':
+            kwargs['contamination'] = contamination
+        if max_features is not None and max_features != 1.0:
+            kwargs['max_features'] = max_features
+        if bootstrap is not None and bootstrap != False:
+            kwargs['bootstrap'] = bootstrap
+        if n_jobs is not None:
+            kwargs['n_jobs'] = n_jobs
+        if random_state is not None:
+            kwargs['random_state'] = random_state
+        if verbose is not None and verbose != 0:
+            kwargs['verbose'] = verbose
+
+        HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
+
+    def _build_estimator(self, task, fit_kwargs, kwargs):
+        if task in consts.TASK_LIST_DETECTION:
+            iforest = IForestWrapper(fit_kwargs, **kwargs)
+        else:
+            raise ValueError('Isolation Forest model supports only anomaly detection task.')
+        return iforest

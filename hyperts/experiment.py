@@ -257,6 +257,11 @@ def make_experiment(train_data,
 
             search_space = TSNASGenrealSearchSpace(task=task, timestamp=timestamp, metrics=metrics,
                            covariables=covariates, window=dl_forecast_window, horizon=dl_forecast_horizon)
+        elif mode == consts.Mode_STATS and task in consts.TASK_LIST_DETECTION:
+            from hyperts.framework.search_space.macro_search_space import StatsDetectionSearchSpace
+
+            search_space = StatsDetectionSearchSpace(task=task, timestamp=timestamp,
+                           covariables=covariates, drop_observed_sample=forecast_drop_part_sample)
         else:
             raise ValueError('The default search space was not found!')
 
@@ -326,22 +331,22 @@ def make_experiment(train_data,
         except ImportError:
             raise RuntimeError('Please install `tensorflow` package first. command: pip install tensorflow.')
 
-    # 3. Check Data ,Task and Mode
+    # 3. Check Data, Task and Mode
     assert train_data is not None, 'train data is required.'
     assert eval_data is None or type(eval_data) is type(train_data)
     assert test_data is None or type(test_data) is type(train_data)
 
-    assert task is not None, 'task is required. Task naming paradigm:' \
-                    f'{consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION}'
+    TASK_LIST = consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + \
+                consts.TASK_LIST_REGRESSION + consts.TASK_LIST_DETECTION
+    assert task is not None, f'task is required. Task naming paradigm: {TASK_LIST}.'
 
-    if task not in consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION:
-        raise ValueError(f'Task naming paradigm:' 
-                   f'{consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION}')
+    if task not in TASK_LIST:
+        raise ValueError(f'Task naming paradigm: {TASK_LIST}')
 
-    if task in consts.TASK_LIST_FORECAST and timestamp is None:
+    if task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_DETECTION and timestamp is None:
         raise ValueError("Forecast task 'timestamp' cannot be None.")
 
-    if task in consts.TASK_LIST_FORECAST and covariates is None:
+    if task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_DETECTION and covariates is None:
         logger.info('If the data contains covariates, specify the covariable column names.')
 
     if freq is consts.DISCRETE_FORECAST and mode is consts.Mode_STATS:
@@ -375,7 +380,7 @@ def make_experiment(train_data,
         eval_data = tb.reset_index(eval_data) if eval_data is not None else None
         X_test = tb.reset_index(test_data) if test_data is not None else None
 
-    if task in consts.TASK_LIST_FORECAST:
+    if task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_DETECTION:
         if timestamp is consts.MISSING_TIMESTAMP:
             timestamp = consts.TIMESTAMP
             if freq is None or freq is consts.DISCRETE_FORECAST:
@@ -401,18 +406,27 @@ def make_experiment(train_data,
 
     # 6. Split X_train, y_train, X_eval, y_eval
     X_train, y_train, X_eval, y_eval = None, None, None, None
+    unsupervised_anomaly_detection_task = False
+    anomaly_detection_label = None
     if task in consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION:
         if target is None:
             target = find_target(train_data)
         X_train, y_train = train_data.drop(columns=[target]), train_data.pop(target)
         if eval_data is not None:
             X_eval, y_eval = eval_data.drop(columns=[target]), eval_data.pop(target)
-    elif task in consts.TASK_LIST_FORECAST:
+    elif task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_DETECTION:
         excluded_variables = [timestamp] + covariates if covariates is not None else [timestamp]
         if target is None:
+            unsupervised_anomaly_detection_task = True
             target = tb.list_diff(train_data.columns.tolist(), excluded_variables)
-        elif target is not None and isinstance(target, str):
-            target = [target]
+        elif target is not None:
+            if task in consts.TASK_LIST_FORECAST and isinstance(target, str):
+                target = [target]
+            elif task in consts.TASK_LIST_DETECTION:
+                assert isinstance(target, str)
+                anomaly_detection_label = target
+                target = tb.list_diff(train_data.columns.tolist(), excluded_variables)
+
         X_train, y_train = train_data[excluded_variables], train_data[target]
         if eval_data is not None:
             X_eval, y_eval = eval_data[excluded_variables], eval_data[target]
@@ -437,7 +451,7 @@ def make_experiment(train_data,
         actual_covariates = covariates
 
     # 8. Infer Forecast Window for DL Mode
-    if mode in [consts.Mode_DL, consts.Mode_NAS] and task in consts.TASK_LIST_FORECAST:
+    if mode in [consts.Mode_DL, consts.Mode_NAS] and task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_DETECTION:
         if forecast_train_data_periods is None:
             X_train_length = len(X_train)
         elif isinstance(forecast_train_data_periods, int) and forecast_train_data_periods < len(X_train):
@@ -471,7 +485,11 @@ def make_experiment(train_data,
                 else:
                     candidate_windows = [3, 8, 12, 24, 30]*1 + [48, 60]*1 + [72, 96, 168, 183]*1
                     dl_forecast_window = list(filter(lambda x: x <= max_win_size, candidate_windows))
-                periods = [tb.fft_infer_period(y_train[col]) for col in target]
+                if anomaly_detection_label is None:
+                    target_variables = target
+                else:
+                    target_variables = tb.list_diff(target, [anomaly_detection_label])
+                periods = [tb.fft_infer_period(y_train[col]) for col in target_variables]
                 period = int(np.argmax(np.bincount(periods)))
                 if period > 0 and period <= max_win_size:
                     dl_forecast_window.append(period)
@@ -505,6 +523,23 @@ def make_experiment(train_data,
                 task = consts.Task_UNIVARIATE_MULTICALSS
             else:
                 task = consts.Task_MULTIVARIATE_MULTICALSS
+
+    if task in [consts.Task_DETECTION]:
+        if unsupervised_anomaly_detection_task:
+            if len(train_data.columns) - 1 == 1:
+                task = consts.Task_UNIVARIATE_DETECTION
+            elif len(train_data.columns) - 1 > 1:
+                task = consts.Task_MULTIVARIATE_DETECTION
+        else:
+            if actual_covariates is not None:
+                len_covariates = len(actual_covariates)
+            else:
+                len_covariates = 0
+            if len(y_train.columns) + len_covariates - 1 == 1:
+                task = consts.Task_UNIVARIATE_DETECTION
+            elif len(y_train.columns) + len_covariates - 1 > 1:
+                task = consts.Task_MULTIVARIATE_DETECTION
+
     logger.info(f'Inference task type could be [{task}].')
 
     # 10. Configuration
@@ -515,6 +550,8 @@ def make_experiment(train_data,
             reward_metric = 'accuracy'
         if task in consts.TASK_LIST_REGRESSION:
             reward_metric = 'rmse'
+        if task in consts.TASK_LIST_DETECTION:
+            reward_metric = 'f1'
         logger.info(f'No reward metric specified, use "{reward_metric}" for {task} task by default.')
     if isinstance(reward_metric, str):
         logger.info(f'Reward_metric is [{reward_metric}].')
@@ -523,7 +560,7 @@ def make_experiment(train_data,
 
     # 11. Get scorer
     if kwargs.get('scorer') is None:
-        kwargs['pos_label'] = tb.infer_pos_label(y_train, task, kwargs.get('pos_label'))
+        kwargs['pos_label'] = tb.infer_pos_label(y_train, task, anomaly_detection_label, kwargs.get('pos_label'))
         scorer = tb.metrics.metric_to_scorer(reward_metric, task=task, pos_label=kwargs.get('pos_label'),
                                                                   optimize_direction=optimize_direction)
     else:
@@ -576,7 +613,7 @@ def make_experiment(train_data,
 
     # 18. Define hyper_model
     if hyper_model_options is None:
-        hyper_model_options = {}
+        hyper_model_options = {'covariates': covariates}
     hyper_model = hyper_ts_cls(searcher, mode=mode, timestamp=timestamp, reward_metric=reward_metric,
           task=task, callbacks=search_callbacks, discriminator=discriminator, **hyper_model_options)
 
@@ -589,6 +626,7 @@ def make_experiment(train_data,
                                      id=id, forecast_train_data_periods=forecast_train_data_periods,
                                      hist_store_upper_limit=hist_store_upper_limit,
                                      ensemble_size=ensemble_size, callbacks=callbacks,
+                                     anomaly_label_col=anomaly_detection_label,
                                      final_retrain_on_wholedata=final_retrain_on_wholedata, **kwargs)
 
     # 20. Clear Cache

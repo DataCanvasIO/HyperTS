@@ -39,11 +39,15 @@ class HyperTSEstimator(Estimator):
         For details of parameters, refer to hypernets.tabular.data_cleaner.
     """
 
-    def __init__(self, task, mode, reward_metric, space_sample, data_cleaner_params=None, weights_cache=None):
+    def __init__(self, task, mode, reward_metric, space_sample,
+                       timestamp=None, covariates=None,
+                       data_cleaner_params=None, weights_cache=None):
         super(HyperTSEstimator, self).__init__(space_sample=space_sample, task=task)
         self.data_pipeline = None
         self.mode = mode
         self.reward_metric = reward_metric
+        self.timestamp = timestamp
+        self.covariates = covariates
         self.data_cleaner_params = data_cleaner_params
         self.weights_cache = weights_cache
         self.model = None
@@ -124,7 +128,7 @@ class HyperTSEstimator(Estimator):
 
         tb = get_tool_box(X, y)
         if self.data_pipeline is not None:
-            X_transformed = self.data_pipeline.fit_transform(X)
+            X_transformed = self.fit_transform_X(X)
         else:
             X_transformed = X
 
@@ -132,7 +136,7 @@ class HyperTSEstimator(Estimator):
         if cross_validator is not None:
             iterators = cross_validator
         else:
-            if self.task in consts.TASK_LIST_FORECAST:
+            if self.task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_DETECTION:
                 iterators = tb.preqfold(strategy='preq-bls', n_splits=num_folds)
             elif stratified and self.task not in consts.TASK_LIST_REGRESSION:
                 iterators = tb.statified_kfold(n_splits=num_folds, shuffle=True, random_state=random_state)
@@ -149,6 +153,8 @@ class HyperTSEstimator(Estimator):
                     metrics = ['accuracy']
                 elif self.task in consts.TASK_LIST_REGRESSION:
                     metrics = ['rmse']
+                elif self.task in consts.TASK_LIST_DETECTION:
+                    metrics = ['f1']
                 else:
                     raise ValueError(f'This task type [{self.task}] is not supported.')
 
@@ -173,7 +179,7 @@ class HyperTSEstimator(Estimator):
             if self.classes_ is None and hasattr(fold_est, 'classes_'):
                 self.classes_ = np.array(tb.to_local(fold_est.classes_)[0])
 
-            if self.task in consts.TASK_LIST_CLASSIFICATION:
+            if self.task in consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_DETECTION:
                 proba = fold_est.predict_proba(x_val_fold)
             else:
                 proba = fold_est.predict(x_val_fold)
@@ -200,8 +206,8 @@ class HyperTSEstimator(Estimator):
         y, proba = tb.select_valid_oof(y, oof_)
         y = np.array(y) if not isinstance(y, np.ndarray) else y
 
-        if self.task in consts.TASK_LIST_CLASSIFICATION:
-            if 'binaryclass' in self.task:
+        if self.task in consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_DETECTION:
+            if 'binaryclass' in self.task or self.task in consts.TASK_LIST_DETECTION:
                 classification_type = 'binary'
             else:
                 classification_type = 'multiclass'
@@ -250,7 +256,7 @@ class HyperTSEstimator(Estimator):
         self.pos_label = pos_label
 
         if self.data_pipeline is not None:
-            X_transformed = self.data_pipeline.fit_transform(X)
+            X_transformed = self.fit_transform_X(X)
         else:
             X_transformed = X
         self.model.fit(X_transformed, y, **kwargs)
@@ -272,7 +278,7 @@ class HyperTSEstimator(Estimator):
             kwargs['verbose'] = verbose
 
         if self.data_pipeline is not None:
-            X_transformed = self.data_pipeline.transform(X)
+            X_transformed = self.fit_transform_X(X)
         else:
             X_transformed = X
 
@@ -306,7 +312,7 @@ class HyperTSEstimator(Estimator):
             logger.info('estimator is predicting the data')
 
         if self.data_pipeline is not None:
-            X_transformed = self.data_pipeline.transform(X)
+            X_transformed = self.fit_transform_X(X)
         else:
             X_transformed = X
 
@@ -332,8 +338,24 @@ class HyperTSEstimator(Estimator):
 
         return proba
 
+    def fit_transform_X(self, X):
+        assert self.data_pipeline is not None
+        tb = get_tool_box(X)
+        if self.timestamp is not None:
+            if self.covariates is not None:
+                col_transformed = [self.timestamp] + self.covariates
+            else:
+                col_transformed = [self.timestamp]
+            X_transformed = self.data_pipeline.fit_transform(X[col_transformed])
+            excluded_variables = tb.list_diff(X.columns.tolist(), col_transformed)
+            X_transformed[excluded_variables] = X[excluded_variables]
+        else:
+            X_transformed = self.data_pipeline.fit_transform(X)
+
+        return X_transformed
+
     def proba2predict(self, proba, proba_threshold=0.5):
-        if self.task in consts.TASK_LIST_FORECAST+consts.TASK_LIST_REGRESSION:
+        if self.task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_REGRESSION:
             return proba
         if proba.shape[-1] > 2:
             predict = proba.argmax(axis=-1)
@@ -351,12 +373,14 @@ class HyperTSEstimator(Estimator):
                 metrics = ['rmse']
             elif self.task in consts.TASK_LIST_CLASSIFICATION:
                 metrics = ['accuracy']
+            elif self.task in consts.TASK_LIST_DETECTION:
+                metrics = ['f1']
 
         y_pred = self.predict(X, verbose=verbose)
 
-        if self.task in consts.TASK_LIST_CLASSIFICATION:
+        if self.task in consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_DETECTION:
             y_proba = self.predict_proba(X, verbose=verbose)
-            if 'binaryclass' in self.task:
+            if 'binaryclass' in self.task or self.task in consts.TASK_LIST_DETECTION:
                 classification_type = 'binary'
             else:
                 classification_type = 'multiclass'
@@ -460,6 +484,7 @@ class HyperTS(HyperModel):
                  task=None,
                  mode='stats',
                  timestamp=None,
+                 covariates=None,
                  dispatcher=None,
                  callbacks=None,
                  reward_metric='accuracy',
@@ -469,6 +494,7 @@ class HyperTS(HyperModel):
 
         self.mode = mode
         self.timestamp = timestamp
+        self.covariates= covariates
         self.data_cleaner_params = data_cleaner_params
         if mode == consts.Mode_NAS and use_layer_weight_cache:
             from hyperts.framework.nas import LayerWeightsCache
@@ -489,6 +515,8 @@ class HyperTS(HyperModel):
                                      mode=self.mode,
                                      reward_metric=self.reward_metric,
                                      space_sample=space_sample,
+                                     timestamp=self.timestamp,
+                                     covariates=self.covariates,
                                      data_cleaner_params=self.data_cleaner_params,
                                      weights_cache=self.weights_cache)
         return estimator

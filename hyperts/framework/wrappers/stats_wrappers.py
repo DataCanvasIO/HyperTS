@@ -23,6 +23,7 @@ from hypernets.utils import logging
 
 from hyperts.utils import get_tool_box
 from hyperts.framework.wrappers import EstimatorWrapper, WrapperMixin, suppress_stdout_stderr
+from hyperts.framework.stats import TSIsolationForest, TSOneClassSVM
 
 logger = logging.get_logger(__name__)
 
@@ -219,3 +220,66 @@ class KNeighborsWrapper(EstimatorWrapper, WrapperMixin):
     @property
     def classes_(self):
         return self.model.classes_
+
+
+#################################### Define Time Series Anomaly Detection Wrapper ####################################
+class IForestWrapper(EstimatorWrapper, WrapperMixin):
+    """
+    Adapt: univariate/multivariate anomaly detection.
+    """
+    def __init__(self, fit_kwargs, **kwargs):
+        super(IForestWrapper, self).__init__(fit_kwargs, **kwargs)
+        self.model = TSIsolationForest(**self.init_kwargs)
+
+    def fit(self, X, y=None, **kwargs):
+        # adapt for prophet
+        X = X.drop(columns=[self.timestamp])
+        X = self.fit_transform(X)
+        self.model.fit(X, y)
+        if y is not None:
+            self.y_unique_ = np.unique(y)
+
+    def predict(self, X, **kwargs):
+        X = X.drop(columns=[self.timestamp])
+        X = self.transform(X)
+        return self.model.predict(X)
+
+    def predict_proba(self, X, **kwargs):
+        X = X.drop(columns=[self.timestamp])
+        X = self.transform(X)
+        return self.model.predict_proba(X)
+
+    @property
+    def classes_(self):
+        return self.y_unique_
+
+
+class OneClassSVMWrapper(EstimatorWrapper, WrapperMixin):
+    """
+    Adapt: univariate/multivariate anomaly detection.
+    """
+    def __init__(self, fit_kwargs, **kwargs):
+        super(OneClassSVMWrapper, self).__init__(fit_kwargs, **kwargs)
+        self.model = TSOneClassSVM(**self.init_kwargs)
+
+    def fit(self, X, y=None, **kwargs):
+        # adapt for prophet
+        X = X.drop(columns=[self.timestamp])
+        X = self.fit_transform(X)
+        self.model.fit(X, y)
+        if y is not None:
+            self.y_unique_ = np.unique(y)
+
+    def predict(self, X, **kwargs):
+        X = X.drop(columns=[self.timestamp])
+        X = self.transform(X)
+        return self.model.predict(X)
+
+    def predict_proba(self, X, **kwargs):
+        X = X.drop(columns=[self.timestamp])
+        X = self.transform(X)
+        return self.model.predict_proba(X)
+
+    @property
+    def classes_(self):
+        return self.y_unique_

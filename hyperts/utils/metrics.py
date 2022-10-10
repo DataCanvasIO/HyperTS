@@ -190,7 +190,7 @@ def auc(y_true, y_score, average="macro", sample_weight=None,
 
 
 def _task_to_average(task):
-    if 'binary' in task:
+    if 'binary' in task or task in const.TASK_LIST_DETECTION:
         average = 'binary'
     elif 'multiclass' in task:
         average = 'macro'
