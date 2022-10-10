@@ -4,11 +4,11 @@
 """
 import numpy as np
 from sklearn.ensemble import IsolationForest
-from hyperts.framework.stats import BaseAnomalyDetector
+from hyperts.framework.wrappers import BaseAnomalyDetectorWrapper
 
 
-class TSIsolationForest(BaseAnomalyDetector):
-    """Threshold method (n-sigma rule) for anomaly detection.
+class TSIsolationForest(BaseAnomalyDetectorWrapper):
+    """Isolation Forest for anomaly detection.
 
     Parameters
     ----------
@@ -24,7 +24,7 @@ class TSIsolationForest(BaseAnomalyDetector):
         If max_samples is larger than the number of samples provided,
         all samples will be used for all trees (no sampling).
 
-    contamination : 'auto' or float, default='auto'
+    contamination : float, default=0.05
         The amount of contamination of the data set, i.e. the proportion
         of outliers in the data set. Used when fitting to define the threshold
         on the scores of the samples.
@@ -32,10 +32,6 @@ class TSIsolationForest(BaseAnomalyDetector):
             - If 'auto', the threshold is determined as in the
               original paper.
             - If float, the contamination should be in the range (0, 0.5].
-
-        .. versionchanged:: 0.22
-           The default value of ``contamination`` changed from 0.1
-           to ``'auto'``.
 
     max_features : int or float, default=1.0
         The number of features to draw from X to train each base estimator.
@@ -67,7 +63,7 @@ class TSIsolationForest(BaseAnomalyDetector):
     def __init__(self,
                  n_estimators=100,
                  max_samples="auto",
-                 contamination="auto",
+                 contamination=0.05,
                  max_features=1.0,
                  bootstrap=False,
                  n_jobs=None,
@@ -86,7 +82,7 @@ class TSIsolationForest(BaseAnomalyDetector):
             verbose=verbose)
 
     def _fit(self, X, y=None, **kwargs):
-        self.model.fit(X=X, y=y, sample_weight=kwargs.get('sample_weight', None))
+        self.model.fit(X=X, y=None, sample_weight=kwargs.get('sample_weight', None))
         self.decision_scores_ = self.model.decision_function(X) * -1
         self._get_decision_attributes()
 
