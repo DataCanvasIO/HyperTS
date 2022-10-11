@@ -242,7 +242,11 @@ class IForestWrapper(EstimatorWrapper, WrapperMixin):
     def predict(self, X, **kwargs):
         X = X.drop(columns=[self.timestamp])
         X = self.transform(X)
-        return self.model.predict(X)
+        pred = self.model.predict(X)
+        if kwargs.get('return_confidence', False) is True:
+            confidence = self.model.predict_confidence(X)
+            return pred, confidence
+        return pred
 
     def predict_proba(self, X, **kwargs):
         X = X.drop(columns=[self.timestamp])
@@ -273,7 +277,11 @@ class OneClassSVMWrapper(EstimatorWrapper, WrapperMixin):
     def predict(self, X, **kwargs):
         X = X.drop(columns=[self.timestamp])
         X = self.transform(X)
-        return self.model.predict(X)
+        pred = self.model.predict(X)
+        if kwargs.get('return_confidence', False) is True:
+            confidence = self.model.predict_confidence(X)
+            return pred, confidence
+        return pred
 
     def predict_proba(self, X, **kwargs):
         X = X.drop(columns=[self.timestamp])

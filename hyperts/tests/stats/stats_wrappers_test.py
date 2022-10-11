@@ -115,7 +115,7 @@ class Test_Stats_Wrappers():
         model = IForestWrapper(fit_kwargs=fit_kwargs, **init_kwargs)
 
         model.fit(X_train)
-        y_pred = model.predict(X_test)
+        y_pred, y_confidence = model.predict(X_test, return_confidence=True)
         score = accuracy_score(y_test, y_pred)
         assert score >= 0
 
@@ -136,6 +136,6 @@ class Test_Stats_Wrappers():
         model = OneClassSVMWrapper(fit_kwargs=fit_kwargs, **init_kwargs)
 
         model.fit(X_train)
-        y_pred = model.predict(X_test)
+        y_pred, y_confidence = model.predict(X_test, return_confidence=True)
         score = accuracy_score(y_test, y_pred)
         assert score >= 0

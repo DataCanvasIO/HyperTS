@@ -75,11 +75,12 @@ class TSOneClassSVM(BaseAnomalyDetectorWrapper):
                  gamma="auto",
                  coef0=0.0,
                  tol=1e-3,
+                 nu=0.5,
                  shrinking=True,
                  cache_size=200,
                  max_iter=-1,
                  contamination=0.05,
-                 verbose=0,
+                 verbose=False,
                  name='one class svm'):
         super(TSOneClassSVM, self).__init__(name=name, contamination=contamination)
         self.model = OneClassSVM(
@@ -88,6 +89,7 @@ class TSOneClassSVM(BaseAnomalyDetectorWrapper):
             gamma=gamma,
             coef0=coef0,
             tol=tol,
+            nu=nu,
             shrinking=shrinking,
             cache_size=cache_size,
             max_iter=max_iter,

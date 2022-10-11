@@ -9,27 +9,28 @@ from hyperts.utils import consts
 from hyperts.utils.transformers import TimeSeriesHyperTransformer
 
 from hyperts.framework.search_space import SearchSpaceMixin, WithinColumnSelector
-from hyperts.framework.estimators import (ProphetForecastEstimator,
-                                          ARIMAForecastEstimator,
-                                          VARForecastEstimator,
-                                          TSFClassificationEstimator,
-                                          KNNClassificationEstimator,
-                                          DeepARForecastEstimator,
-                                          HybirdRNNGeneralEstimator,
-                                          LSTNetGeneralEstimator,
-                                          NBeatsForecastEstimator,
-                                          InceptionTimeGeneralEstimator,
-                                          IForestDetectionEstimator)
+from hyperts.framework.estimators import ProphetForecastEstimator
+from hyperts.framework.estimators import ARIMAForecastEstimator
+from hyperts.framework.estimators import VARForecastEstimator
+from hyperts.framework.estimators import TSFClassificationEstimator
+from hyperts.framework.estimators import KNNClassificationEstimator
+from hyperts.framework.estimators import DeepARForecastEstimator
+from hyperts.framework.estimators import HybirdRNNGeneralEstimator
+from hyperts.framework.estimators import LSTNetGeneralEstimator
+from hyperts.framework.estimators import NBeatsForecastEstimator
+from hyperts.framework.estimators import InceptionTimeGeneralEstimator
+from hyperts.framework.estimators import IForestDetectionEstimator
+from hyperts.framework.estimators import OCSVMDetectionEstimator
 
 from hypernets.tabular import column_selector as tcs
 from hypernets.core.ops import HyperInput, ModuleChoice, Optional
 from hypernets.core.search_space import HyperSpace, Choice
-from hypernets.pipeline.transformers import (SimpleImputer,
-                                             StandardScaler,
-                                             MinMaxScaler,
-                                             MaxAbsScaler,
-                                             SafeOrdinalEncoder,
-                                             AsTypeTransformer)
+from hypernets.pipeline.transformers import SimpleImputer
+from hypernets.pipeline.transformers import StandardScaler
+from hypernets.pipeline.transformers import MinMaxScaler
+from hypernets.pipeline.transformers import MaxAbsScaler
+from hypernets.pipeline.transformers import SafeOrdinalEncoder
+from hypernets.pipeline.transformers import AsTypeTransformer
 
 from hypernets.pipeline.base import Pipeline, DataFrameMapper
 from hypernets.utils import logging, get_params
@@ -892,7 +893,10 @@ class StatsDetectionSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
     timestamp: str or None, optional, default None.
     metrics: str or None, optional, default None. Support f1, precision, recall, and so on.
     enable_iforest: bool, default True.
-    prophet_init_iforest: dict or None, optional, default None. If not None, you can customize
+    enable_ocsvm: bool, default True.
+    iforest_init_kwargs: dict or None, optional, default None. If not None, you can customize
+        the hyper-parameters by which prophet is searched.
+    ocsvm_init_kwargs: dict or None, optional, default None. If not None, you can customize
         the hyper-parameters by which prophet is searched.
 
     Returns
@@ -901,22 +905,28 @@ class StatsDetectionSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
 
     Notes
     ----------
-    1. For the hyper-parameters of prophet_init_iforest,
-        you can refer to `hyperts.framework.estimators.IforestDetectionEstimator,
+    1. For the hyper-parameters of iforest_init_kwargs, ocsvm_init_kwargs,
+        you can refer to `hyperts.framework.estimators.IforestDetectionEstimator`,
+        'hyperts.framework.estimators.OCSVMDetectionEstimator'.
     2. If other parameters exist, set them directly. For example, covariables=['is_holiday'].
     """
     def __init__(self, task=None, timestamp=None,
                  enable_iforest=True,
+                 enable_ocsvm=True,
                  iforest_init_kwargs=None,
+                 ocsvm_init_kwargs=None,
                  drop_observed_sample=False,
                  **kwargs):
         if enable_iforest and iforest_init_kwargs is not None:
             kwargs['iforest_init_kwargs'] = iforest_init_kwargs
+        if enable_ocsvm and ocsvm_init_kwargs is not None:
+            kwargs['ocsvm_init_kwargs'] = ocsvm_init_kwargs
         super(StatsDetectionSearchSpace, self).__init__(task, **kwargs)
 
         self.task = task
         self.timestamp = timestamp
         self.enable_iforest = enable_iforest
+        self.enable_ocsvm = enable_ocsvm
         self.drop_observed_sample = drop_observed_sample
 
     @property
@@ -942,6 +952,30 @@ class StatsDetectionSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
         }
 
     @property
+    def default_ocsvm_init_kwargs(self):
+        default_init_kwargs = {
+            'kernel': Choice(['linear', 'poly', 'sigmoid']+['rbf']*7),
+            'tol': Choice([1e-5, 1e-3, 1e-2, 1e-1]),
+            'nu': Choice([0.05, 0.1, 0.2, 0.5]),
+            'contamination': Choice([0.05, 0.1, 0.2]),
+
+            'x_scale': Choice(['none-scale', 'min_max', 'z_scale']),
+            'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
+        }
+
+        if not self.drop_observed_sample:
+            default_init_kwargs.pop('drop_sample_rate')
+
+        return default_init_kwargs
+
+    @property
+    def default_ocsvm_fit_kwargs(self):
+        return {
+            'timestamp': self.timestamp,
+            'covariates': self.covariables,
+        }
+
+    @property
     def estimators(self):
         univar_containers = {}
         multivar_containers = {}
@@ -951,6 +985,10 @@ class StatsDetectionSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             IForestDetectionEstimator, self.default_iforest_init_kwargs, self.default_iforest_fit_kwargs)
             multivar_containers['iforest'] = (
             IForestDetectionEstimator, self.default_iforest_init_kwargs, self.default_iforest_fit_kwargs)
+            univar_containers['ocsvm'] = (
+            OCSVMDetectionEstimator, self.default_ocsvm_init_kwargs, self.default_ocsvm_fit_kwargs)
+            multivar_containers['ocsvm'] = (
+            OCSVMDetectionEstimator, self.default_ocsvm_init_kwargs, self.default_ocsvm_fit_kwargs)
 
         if self.task == consts.Task_UNIVARIATE_DETECTION:
             return univar_containers
