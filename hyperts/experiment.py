@@ -34,6 +34,7 @@ def make_experiment(train_data,
                     covariates=None,
                     dl_forecast_window=None,
                     dl_forecast_horizon=1,
+                    contamination=0.05,
                     id=None,
                     searcher=None,
                     search_space=None,
@@ -65,8 +66,10 @@ def make_experiment(train_data,
     task : str.
         Task could be 'univariate-forecast', 'multivariate-forecast', and 'univariate-binaryclass',
         'univariate-multiclass', 'multivariate-binaryclass, and ’multivariate-multiclass’.
-        Notably, task can also configure 'forecast', 'classification', and 'regression'. At this point, HyprTS
-        will perform detailed task type inference from the data combined with other known column information.
+        Notably, task can also configure 'forecast', 'classification', 'regression'，and 'detection'.
+        Besides, 'tsf', 'utsf'，'mtsf', 'tsc', 'tsr', 'tsd'('tsa', 'tsad') are also ok.
+        At this point, HyprTS will perform detailed task type inference from the data combined with other
+        known column information.
     eval_data : str, Pandas or Dask or Cudf DataFrame, optional.
         Feature data for evaluation, should be None or have the same python type with 'train_data'.
     test_data : str, Pandas or Dask or Cudf DataFrame, optional.
@@ -103,6 +106,11 @@ def make_experiment(train_data,
         sequence length of each sample (lag), (default=None).
     dl_forecast_horizon : int or None. When selecting 'dl' or 'nas' mode, you can specify horizon, which is the length
         of the interval between the input and the target, (default=1).
+    contamination : float, should be in the interval (0, 1], optional (default=0.05).
+        This parameter is adopted only in anomaly detection task to generate pseudo ground truth.
+        The amount of contamination of the data set, i.e. the proportion
+        of outliers in the data set. Used when fitting to define the threshold
+        on the scores of the samples.
     id : str or None, (default=None).
         The experiment id.
     callbacks: list of ExperimentCallback, optional.
@@ -262,6 +270,14 @@ def make_experiment(train_data,
 
             search_space = StatsDetectionSearchSpace(task=task, timestamp=timestamp,
                            covariables=covariates, drop_observed_sample=forecast_drop_part_sample)
+        elif mode == consts.Mode_DL and task in consts.TASK_LIST_DETECTION:
+            raise NotImplementedError(
+                'DLDetectionSearchSpace is not implemented yet.'
+            )
+        elif mode == consts.Mode_NAS and task in consts.TASK_LIST_DETECTION:
+            raise NotImplementedError(
+                'NASDetectionSearchSpace is not implemented yet.'
+            )
         else:
             raise ValueError('The default search space was not found!')
 
@@ -301,6 +317,23 @@ def make_experiment(train_data,
                                    expected_reward=early_stopping_reward)
         return [es] + cbs
 
+    def task_omit_mapping(task):
+        assert isinstance(task, str)
+        if task.lower() == 'tsf':
+            return consts.Task_FORECAST
+        elif task.lower() == 'utsf':
+            return consts.Task_UNIVARIATE_FORECAST
+        elif task.lower() == 'mtsf':
+            return consts.Task_MULTIVARIATE_FORECAST
+        elif task.lower() == 'tsc':
+            return consts.Task_CLASSIFICATION
+        elif task.lower() == 'tsr':
+            return consts.Task_REGRESSION
+        elif task.lower() in ['tsa', 'tsd', 'tsad']:
+            return consts.Task_DETECTION
+        else:
+            return task
+
     kwargs = kwargs.copy()
     kwargs['max_trials'] = max_trials
     kwargs['eval_size'] = eval_size
@@ -339,6 +372,8 @@ def make_experiment(train_data,
     TASK_LIST = consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + \
                 consts.TASK_LIST_REGRESSION + consts.TASK_LIST_DETECTION
     assert task is not None, f'task is required. Task naming paradigm: {TASK_LIST}.'
+
+    task = task_omit_mapping(task)
 
     if task not in TASK_LIST:
         raise ValueError(f'Task naming paradigm: {TASK_LIST}')
@@ -411,21 +446,24 @@ def make_experiment(train_data,
     if task in consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION:
         if target is None:
             target = find_target(train_data)
-        X_train, y_train = train_data.drop(columns=[target]), train_data.pop(target)
+        X_train = train_data.copy()
+        y_train = tb.pop(X_train, item=target)
         if eval_data is not None:
-            X_eval, y_eval = eval_data.drop(columns=[target]), eval_data.pop(target)
+            X_eval = eval_data.copy()
+            y_eval = tb.pop(X_eval, item=target)
     elif task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_DETECTION:
         excluded_variables = [timestamp] + covariates if covariates is not None else [timestamp]
+        all_variables = tb.columns_tolist(train_data)
         if target is None:
             unsupervised_anomaly_detection_task = True
-            target = tb.list_diff(train_data.columns.tolist(), excluded_variables)
+            target = tb.list_diff(all_variables, excluded_variables)
         elif target is not None:
             if task in consts.TASK_LIST_FORECAST and isinstance(target, str):
                 target = [target]
             elif task in consts.TASK_LIST_DETECTION:
                 assert isinstance(target, str)
                 anomaly_detection_label = target
-                target = tb.list_diff(train_data.columns.tolist(), excluded_variables)
+                target = tb.list_diff(all_variables, excluded_variables)
 
         X_train, y_train = train_data[excluded_variables], train_data[target]
         if eval_data is not None:
@@ -434,11 +472,16 @@ def make_experiment(train_data,
         if freq is None:
             freq = tb.infer_ts_freq(X_train, ts_name=timestamp)
             if freq is None:
-                raise RuntimeError('Unable to infer correct frequency, please check data or specify frequency.')
+                raise RuntimeError('Unable to infer correct frequency, '
+                                   'please check data or specify frequency.')
         elif freq is not None and freq is not consts.DISCRETE_FORECAST:
             infer_freq = tb.infer_ts_freq(X_train, ts_name=timestamp)
             if freq != infer_freq:
-                logger.warning(f'The specified frequency is {freq}, but the inferred frequency is {infer_freq}.')
+                logger.warning(f'The specified frequency is {freq}, but '
+                               f'the inferred frequency is {infer_freq}.')
+
+    if anomaly_detection_label is not None:
+        target = tb.list_diff(target, [anomaly_detection_label])
 
     # 7. Covarite Transformer
     if covariates is not None:
@@ -485,11 +528,7 @@ def make_experiment(train_data,
                 else:
                     candidate_windows = [3, 8, 12, 24, 30]*1 + [48, 60]*1 + [72, 96, 168, 183]*1
                     dl_forecast_window = list(filter(lambda x: x <= max_win_size, candidate_windows))
-                if anomaly_detection_label is None:
-                    target_variables = target
-                else:
-                    target_variables = tb.list_diff(target, [anomaly_detection_label])
-                periods = [tb.fft_infer_period(y_train[col]) for col in target_variables]
+                periods = [tb.fft_infer_period(y_train[col]) for col in target]
                 period = int(np.argmax(np.bincount(periods)))
                 if period > 0 and period <= max_win_size:
                     dl_forecast_window.append(period)
@@ -626,7 +665,7 @@ def make_experiment(train_data,
                                      id=id, forecast_train_data_periods=forecast_train_data_periods,
                                      hist_store_upper_limit=hist_store_upper_limit,
                                      ensemble_size=ensemble_size, callbacks=callbacks,
-                                     anomaly_label_col=anomaly_detection_label,
+                                     anomaly_label_col=anomaly_detection_label, contamination=contamination,
                                      final_retrain_on_wholedata=final_retrain_on_wholedata, **kwargs)
 
     # 20. Clear Cache
@@ -637,7 +676,11 @@ def make_experiment(train_data,
         train_shape = tb.get_shape(X_train)
         test_shape = tb.get_shape(X_test, allow_none=True)
         eval_shape = tb.get_shape(X_eval, allow_none=True)
+        if anomaly_detection_label is None:
+            actual_target = target
+        else:
+            actual_target = anomaly_detection_label
         logger.info(f'make_experiment with train data:{train_shape}, '
-                    f'test data:{test_shape}, eval data:{eval_shape}, target:{target}, task:{task}')
+                    f'test data:{test_shape}, eval data:{eval_shape}, target:{actual_target}, task:{task}')
 
     return experiment

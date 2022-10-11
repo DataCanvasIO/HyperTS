@@ -78,7 +78,7 @@ def plot_plotly(forecast,
 
     ts_free = False if timestamp_col in tb.columns_values(forecast) else True
 
-    y_forecast = forecast[target_col] if task in consts.TASK_LIST_FORECAST else forecast[['anomaly']]
+    y_forecast = forecast[target_col] if task in consts.TASK_LIST_FORECAST else forecast[[consts.ANOMALY_LABEL]]
     y_actual = actual[target_col] if actual is not None else None
 
     if history is not None and include_history:
@@ -102,7 +102,7 @@ def plot_plotly(forecast,
     plt.set_loglevel('WARNING')
 
     if task in consts.TASK_LIST_DETECTION:
-        outliers = y_forecast.loc[y_forecast['anomaly'] == 1]
+        outliers = y_forecast.loc[y_forecast[consts.ANOMALY_LABEL] == 1]
         outlier_index = list(outliers.index)
         outliers_trace = go.Scatter(
             x=X_forecast.loc[outlier_index],
@@ -125,7 +125,7 @@ def plot_plotly(forecast,
                 name='Ground Truth')
             fig.add_trace(actual_outliers_trace)
 
-        severity_score = forecast[['severity']]*np.mean(y_actual.values[:, var_id])
+        severity_score = forecast[[consts.ANOMALY_LABEL]]*np.mean(y_actual.values[:, var_id])
         severity_trace = go.Scatter(
             x=X_forecast,
             y=severity_score.values[:, 0],
@@ -311,7 +311,7 @@ def plot_mpl(forecast,
 
     ts_free = False if timestamp_col in tb.columns_values(forecast) else True
 
-    y_forecast = forecast[target_col] if task in consts.TASK_LIST_FORECAST else forecast[['anomaly']]
+    y_forecast = forecast[target_col] if task in consts.TASK_LIST_FORECAST else forecast[[consts.ANOMALY_LABEL]]
     y_actual = actual[target_col] if actual is not None else None
 
     if history is not None and include_history:
@@ -372,7 +372,7 @@ def plot_mpl(forecast,
                          label='Uncertainty Interval')
 
     if task in consts.TASK_LIST_DETECTION:
-        outliers = y_forecast.loc[y_forecast['anomaly'] == 1]
+        outliers = y_forecast.loc[y_forecast[consts.ANOMALY_LABEL] == 1]
         outlier_index = list(outliers.index)
         plt.scatter(X_forecast.loc[outlier_index],
                     y_actual.values[outlier_index, var_id],
@@ -389,7 +389,7 @@ def plot_mpl(forecast,
                         c='#FF0000',
                         label='Ground Truth')
 
-        severity_score = forecast[['severity']]*np.mean(y_actual.values[:, var_id])
+        severity_score = forecast[[consts.ANOMALY_CONFIDENCE]]*np.mean(y_actual.values[:, var_id])
         plt.plot(
             X_forecast,
             severity_score.values[:, 0],

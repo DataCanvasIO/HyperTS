@@ -9,6 +9,7 @@ NAN_DROP_SIZE                      = 0.6
 TRAINING_EPOCHS                    = 60
 FINAL_TRAINING_EPOCHS              = 240
 HISTORY_UPPER_LIMIT                = 200
+CONTAMINATION                      = 0.05
 
 DISCRETE_FORECAST                  = 'null'
 MISSING_TIMESTAMP                  = 'null'
@@ -89,3 +90,5 @@ OptimizerADAMP                     = 'adamp'
 OptimizerRMSPROP                   = 'rmsprop'
 
 TARGET                             = 'ground truth'
+ANOMALY_LABEL                      = 'anomaly'
+ANOMALY_CONFIDENCE                 = 'severity'

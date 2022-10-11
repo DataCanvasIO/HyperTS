@@ -7,9 +7,15 @@ from hypernets.core.search_space import ModuleSpace
 
 from hyperts.utils import consts
 
-from hyperts.framework.wrappers.stats_wrappers import ProphetWrapper, is_prophet_installed, \
-                                 VARWrapper, ARIMAWrapper, TSForestWrapper, KNeighborsWrapper, \
-                                 IForestWrapper
+from hyperts.framework.wrappers.stats_wrappers import ProphetWrapper
+from hyperts.framework.wrappers.stats_wrappers import is_prophet_installed
+from hyperts.framework.wrappers.stats_wrappers import VARWrapper
+from hyperts.framework.wrappers.stats_wrappers import ARIMAWrapper
+from hyperts.framework.wrappers.stats_wrappers import TSForestWrapper
+from hyperts.framework.wrappers.stats_wrappers import KNeighborsWrapper
+from hyperts.framework.wrappers.stats_wrappers import IForestWrapper
+from hyperts.framework.wrappers.stats_wrappers import OneClassSVMWrapper
+
 try:
     import tensorflow
 except:
@@ -18,8 +24,11 @@ else:
     is_tensorflow_installed = True
 
 if is_tensorflow_installed:
-    from hyperts.framework.wrappers.dl_wrappers import DeepARWrapper, HybirdRNNWrapper, \
-                                LSTNetWrapper, NBeatsWrapper, InceptionTimeWrapper
+    from hyperts.framework.wrappers.dl_wrappers import DeepARWrapper
+    from hyperts.framework.wrappers.dl_wrappers import HybirdRNNWrapper
+    from hyperts.framework.wrappers.dl_wrappers import LSTNetWrapper
+    from hyperts.framework.wrappers.dl_wrappers import NBeatsWrapper
+    from hyperts.framework.wrappers.dl_wrappers import InceptionTimeWrapper
 
 
 logger = logging.get_logger(__name__)
@@ -1197,7 +1206,7 @@ class IForestDetectionEstimator(HyperEstimator):
             - If "auto", then `max_samples=min(256, n_samples)`.
         If max_samples is larger than the number of samples provided,
         all samples will be used for all trees (no sampling).
-    contamination : 'auto' or float, default='auto'
+    contamination : 'auto' or float, default=0.05
         The amount of contamination of the data set, i.e. the proportion
         of outliers in the data set. Used when fitting to define the threshold
         on the scores of the samples.
@@ -1222,22 +1231,19 @@ class IForestDetectionEstimator(HyperEstimator):
         and split values for each branching step and each tree in the forest.
         Pass an int for reproducible results across multiple function calls.
         See :term:`Glossary <random_state>`.
-
     verbose : int, default=0
         Controls the verbosity of the tree building process.
-
-
     """
-    def __init__(self, fit_kwargs=None,
-                 n_estimators=100, max_samples="auto", contamination="auto",
-                 max_features=1.0, bootstrap=False, n_jobs=None, random_state=None,
+    def __init__(self, fit_kwargs=None, n_estimators=100,
+                 max_samples="auto", contamination=0.05, max_features=1.0,
+                 bootstrap=False, n_jobs=None, random_state=None,
                  verbose=0, space=None, name=None, **kwargs):
 
         if n_estimators is not None and n_estimators != 100:
             kwargs['n_estimators'] = n_estimators
         if max_samples is not None and max_samples != 'auto':
-            kwargs['max_samples'] = 'auto'
-        if contamination is not None and contamination != 'auto':
+            kwargs['max_samples'] = max_samples
+        if contamination is not None and contamination != 0.05:
             kwargs['contamination'] = contamination
         if max_features is not None and max_features != 1.0:
             kwargs['max_features'] = max_features
@@ -1258,3 +1264,92 @@ class IForestDetectionEstimator(HyperEstimator):
         else:
             raise ValueError('Isolation Forest model supports only anomaly detection task.')
         return iforest
+
+
+class OCSVMDetectionEstimator(HyperEstimator):
+    """Time Series Anomaly Detection Estimator based on Hypernets.
+    Estimator:  One Class SVM (OCSVM).
+    Suitable for: Univariate/Multivariate Anomaly Detection Task.
+
+    Parameters
+    ----------
+    kernel : {'linear', 'poly', 'rbf', 'sigmoid', 'precomputed'} or callable,  \
+        default='rbf'
+         Specifies the kernel type to be used in the algorithm.
+         If none is given, 'rbf' will be used. If a callable is given it is
+         used to precompute the kernel matrix.
+    degree : int, default=3
+        Degree of the polynomial kernel function ('poly').
+        Ignored by all other kernels.
+    gamma : {'scale', 'auto'} or float, default='scale'
+        Kernel coefficient for 'rbf', 'poly' and 'sigmoid'.
+        - if ``gamma='scale'`` (default) is passed then it uses
+          1 / (n_features * X.var()) as value of gamma,
+        - if 'auto', uses 1 / n_features.
+        .. versionchanged:: 0.22
+           The default value of ``gamma`` changed from 'auto' to 'scale'.
+    coef0 : float, default=0.0
+        Independent term in kernel function.
+        It is only significant in 'poly' and 'sigmoid'.
+    tol : float, default=1e-3
+        Tolerance for stopping criterion.
+    nu : float, default=0.5
+        An upper bound on the fraction of training
+        errors and a lower bound of the fraction of support
+        vectors. Should be in the interval (0, 1]. By default 0.5
+        will be taken.
+    shrinking : bool, default=True
+        Whether to use the shrinking heuristic.
+        See the :ref:`User Guide <shrinking_svm>`.
+    cache_size : float, default=200
+        Specify the size of the kernel cache (in MB).
+    max_iter : int, default=-1
+        Hard limit on iterations within solver, or -1 for no limit.
+    contamination : 'auto' or float, default=0.05
+        The amount of contamination of the data set, i.e. the proportion
+        of outliers in the data set. Used when fitting to define the threshold
+        on the scores of the samples.
+            - If 'auto', the threshold is determined as in the
+              original paper.
+            - If float, the contamination should be in the range (0, 0.5].
+    verbose : bool, default=False
+        Enable verbose output. Note that this setting takes advantage of a
+        per-process runtime setting in libsvm that, if enabled, may not work
+        properly in a multithreaded context.
+    """
+    def __init__(self, fit_kwargs=None, kernel="rbf", degree=3,
+                 gamma="auto", coef0=0.0, tol=1e-3, nu=0.5, shrinking=True,
+                 cache_size=200, max_iter=-1, contamination=0.05, verbose=False,
+                 space=None, name=None, **kwargs):
+
+        if kernel is not None and kernel != 'rbf':
+            kwargs['kernel'] = kernel
+        if degree is not None and degree != 'auto':
+            kwargs['degree'] = 3
+        if gamma is not None and gamma != 'auto':
+            kwargs['gamma'] = gamma
+        if coef0 is not None and coef0 != 0.0:
+            kwargs['coef0'] = coef0
+        if tol is not None and tol != 1e-3:
+            kwargs['tol'] = tol
+        if nu is not None and nu != 0.5:
+            kwargs['nu'] = nu
+        if shrinking is not None and shrinking != True:
+            kwargs['shrinking'] = shrinking
+        if cache_size is not None and cache_size !=200:
+            kwargs['cache_size'] = cache_size
+        if max_iter is not None and max_iter != -1:
+            kwargs['max_iter'] = max_iter
+        if contamination is not None and contamination != 0.05:
+            kwargs['contamination'] = contamination
+        if verbose is not None and verbose != False:
+            kwargs['verbose'] = verbose
+
+        HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
+
+    def _build_estimator(self, task, fit_kwargs, kwargs):
+        if task in consts.TASK_LIST_DETECTION:
+            ocsvm = OneClassSVMWrapper(fit_kwargs, **kwargs)
+        else:
+            raise ValueError('OneClassSVM model supports only anomaly detection task.')
+        return ocsvm
