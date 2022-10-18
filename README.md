@@ -146,7 +146,7 @@ data = load_real_known_cause_dataset()
 ground_truth = data.pop('anomaly')
 
 detection_length = 15000
-train_data, test_data = train_test_split(data, test_size=detection_length)
+train_data, test_data = train_test_split(data, test_size=detection_length, shuffle=False)
 
 model = make_experiment(train_data.copy(),
                         task='detection',
