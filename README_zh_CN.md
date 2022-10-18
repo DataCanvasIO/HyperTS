@@ -15,7 +15,7 @@
 [![License](https://img.shields.io/github/license/DataCanvasIO/hyperts.svg)](https://github.com/DataCanvasIO/hyperts/blob/master/LICENSE)
 </div>
 
-:dizzy: 易用，高效，统一的全管道自动时间序列分析工具，支持时间序列预测，分类及回归。
+:dizzy: 易用，高效，统一的全管道自动时间序列分析工具，支持时间序列预测，分类，回归以及异常检测。
 
 ## 有志者，跟我来！
 亲爱的朋友们，我们在为热爱AutoML/NAS的专业人士和学生提供具有挑战性的机会。目前，我们的团队遍布北京(总部)、上海，成都，美国等世界各地，欢迎有志之士加入我们的团队DataCanvas Lab! 请您发送您的简历到 yangjian@zetyun.com. 
@@ -133,7 +133,42 @@ print(scores)
 </details>
 
 <details>
-  <summary>时间序列元特征 (点击拓展)</summary>
+  <summary>时间序列异常检测 (点击拓展)</summary>
+
+```python
+from hyperts import make_experiment
+from hyperts.datasets import load_real_known_cause_dataset
+
+from sklearn.model_selection import train_test_split
+
+data = load_real_known_cause_dataset()
+ground_truth = data.pop('anomaly')
+
+detection_length = 15000
+train_data, test_data = train_test_split(data, test_size=detection_length)
+
+model = make_experiment(train_data.copy(),
+                        task='detection',
+                        mode='stats',
+                        reward_metric='f1',
+                        max_trials=30,
+                        early_stopping_rounds=10).run()
+
+X_test, _ = model.split_X_y(test_data.copy())
+y_test = ground_truth.iloc[-detection_length:]
+
+y_pred = model.predict(X_test)
+y_proba = model.predict_proba(X_test)
+
+scores = model.evaluate(y_test, y_pred, y_proba=y_proba)
+
+model.plot(y_pred, actual=test_data, history=train_data, interactive=False)
+  ```
+</details>
+
+
+<details>
+  <summary>时间序列元特征提取 (点击拓展)</summary>
 
 ```python
 from hyperts.toolbox import metafeatures_from_timeseries
