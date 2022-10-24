@@ -20,7 +20,7 @@ def DeepARModel(task, window, rnn_type, continuous_columns, categorical_columns,
     task       : Str - Only 'univariate-forecast' is supported.
     window     : Positive Int - Length of the time series sequences for a sample,
     rnn_type   : Str - Type of recurrent neural network, including
-                 optional {'simple_rnn', 'gru', 'lstm}.
+                 optional {'basic', 'gru', 'lstm}.
     continuous_columns: CategoricalColumn class.
                  Contains some information(name, column_names, input_dim, dtype,
                  input_name) about continuous variables.
@@ -73,7 +73,7 @@ class DeepAR(BaseDeepEstimator):
                  default = 'univariate-forecast'.
     timestamp  : Str - Timestamp name, not optional.
     rnn_type   : Str - Type of recurrent neural network,
-                 {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
+                 {'basic', 'gru', 'lstm}, default = 'gru'.
     rnn_units  : Positive Int - The dimensionality of the output space for recurrent neural network,
                  default = 16.
     rnn_layers : Positive Int - The number of the layers for recurrent neural network,

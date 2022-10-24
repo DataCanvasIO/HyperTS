@@ -22,7 +22,7 @@ def LSTNetModel(task, window, rnn_type, skip_rnn_type, continuous_columns, categ
                  See hyperts.utils.consts for details.
     window     : Positive Int - Length of the time series sequences for a sample.
     rnn_type   : Str - Type of recurrent neural network,
-                 optional {'simple_rnn', 'gru', 'lstm}.
+                 optional {'basic', 'gru', 'lstm}.
     skip_rnn_type : Str - Type of skip recurrent neural network,
                  optional {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
     continuous_columns: CategoricalColumn class.
@@ -119,7 +119,7 @@ class LSTNet(BaseDeepEstimator):
     rnn_type   : Str - Type of recurrent neural network,
                  optional {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
     skip_rnn_type : Str - Type of skip recurrent neural network,
-                 optional {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
+                 optional {'basic', 'gru', 'lstm}, default = 'gru'.
     cnn_filters: Positive Int - The dimensionality of the output space (i.e. the number of filters
                  in the convolution), default = 16.
     kernel_size: Positive Int - A single integer specifying the spatial dimensions of the filters,
