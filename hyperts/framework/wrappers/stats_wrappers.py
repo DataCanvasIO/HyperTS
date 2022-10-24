@@ -22,8 +22,11 @@ from sktime.classification.distance_based import KNeighborsTimeSeriesClassifier
 from hypernets.utils import logging
 
 from hyperts.utils import get_tool_box
-from hyperts.framework.wrappers import EstimatorWrapper, WrapperMixin, suppress_stdout_stderr
-from hyperts.framework.stats import TSIsolationForest, TSOneClassSVM
+from hyperts.framework.wrappers import EstimatorWrapper
+from hyperts.framework.wrappers import WrapperMixin
+from hyperts.framework.wrappers import suppress_stdout_stderr
+from hyperts.framework.stats import TSIsolationForest
+from hyperts.framework.stats import TSOneClassSVM
 
 logger = logging.get_logger(__name__)
 
@@ -233,6 +236,8 @@ class IForestWrapper(EstimatorWrapper, WrapperMixin):
 
     def fit(self, X, y=None, **kwargs):
         # adapt for prophet
+        if self.drop_sample_rate:
+            X, y = self.drop_hist_sample(X, y)
         X = X.drop(columns=[self.timestamp])
         X = self.fit_transform(X)
         self.model.fit(X, y)
@@ -268,6 +273,8 @@ class OneClassSVMWrapper(EstimatorWrapper, WrapperMixin):
 
     def fit(self, X, y=None, **kwargs):
         # adapt for prophet
+        if self.drop_sample_rate:
+            X, y = self.drop_hist_sample(X, y)
         X = X.drop(columns=[self.timestamp])
         X = self.fit_transform(X)
         self.model.fit(X, y)
