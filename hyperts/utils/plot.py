@@ -125,7 +125,7 @@ def plot_plotly(forecast,
                 name='Ground Truth')
             fig.add_trace(actual_outliers_trace)
 
-        severity_score = forecast[[consts.ANOMALY_LABEL]]*np.mean(y_actual.values[:, var_id])
+        severity_score = forecast[[consts.ANOMALY_CONFIDENCE]]*np.mean(y_actual.values[:, var_id])
         severity_trace = go.Scatter(
             x=X_forecast,
             y=severity_score.values[:, 0],
