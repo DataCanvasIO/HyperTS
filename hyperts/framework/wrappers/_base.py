@@ -62,6 +62,8 @@ class WrapperMixin:
 
         if fit_kwargs.get('covariates') is not None:
             self.covariates = fit_kwargs.pop('timestamp')
+        elif kwargs.get('covariates') is not None:
+            self.covariates = kwargs.get('covariates')
         else:
             self.covariates = None
 
@@ -169,7 +171,7 @@ class WrapperMixin:
 
         if isinstance(transform_X, np.ndarray):
             if len(transform_X.shape) == 2:
-                transform_X = pd.DataFrame(transform_X, columns=cols)
+                transform_X = tb.DataFrame(transform_X, columns=cols)
             else:
                 transform_X = tb.from_3d_array_to_nested_df(transform_X, columns=cols)
 
@@ -196,12 +198,33 @@ class WrapperMixin:
             y = tb.reset_index(y)
         return X, y
 
+    def detection_split_XTC(self, XTC):
+        tb = get_tool_box(XTC)
+        all_var_cols = tb.columns_tolist(XTC)
+        if self.covariates is None:
+            ex_var_cols = [self.timestamp]
+        else:
+            ex_var_cols = [self.timestamp] + self.covariates
+        x_var_cols = tb.list_diff(all_var_cols, ex_var_cols)
+        X = XTC[x_var_cols]
+        TC = tb.drop(XTC, columns=x_var_cols)
+
+        X = tb.reset_index(X)
+        TC = tb.reset_index(TC)
+
+        return TC, X
+
     def update_init_kwargs(self, **kwargs):
         if kwargs.get('y_scale') is not None:
             if kwargs.get('y_scale') == 'min_max':
                 kwargs['out_activation'] = 'sigmoid'
             elif kwargs.get('y_scale') == 'max_abs':
                 kwargs['out_activation'] = 'tanh'
+            else:
+                kwargs['out_activation'] = 'linear'
+        if kwargs.get('x_scale') is not None:
+            if kwargs.get('x_scale') == 'min_max':
+                kwargs['out_activation'] = 'sigmoid'
             else:
                 kwargs['out_activation'] = 'linear'
         return kwargs

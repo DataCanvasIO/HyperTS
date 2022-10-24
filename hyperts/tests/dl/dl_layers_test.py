@@ -104,3 +104,12 @@ class Test_DL_Layers():
                                        bottleneck_size=8)(data)
 
         assert output.shape == (4, 8, 40)
+
+    def test_vae_sampling(self):
+        tf, layers = self.import_package()
+        z_mean = tf.reshape(tf.range(0, 8), shape=(4, 2)) / 8
+        z_log_var = tf.reshape(tf.range(8, 16), shape=(4, 2)) / 8
+
+        output = layers.Sampling()([z_mean, z_log_var])
+
+        assert output.shape == (4, 2)

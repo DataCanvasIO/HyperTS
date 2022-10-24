@@ -271,9 +271,11 @@ def make_experiment(train_data,
             search_space = StatsDetectionSearchSpace(task=task, timestamp=timestamp,
                            covariables=covariates, drop_observed_sample=forecast_drop_part_sample)
         elif mode == consts.Mode_DL and task in consts.TASK_LIST_DETECTION:
-            raise NotImplementedError(
-                'DLDetectionSearchSpace is not implemented yet.'
-            )
+            from  hyperts.framework.search_space.macro_search_space import DLDetectionSearchSpace
+
+            search_space = DLDetectionSearchSpace(task=task, timestamp=timestamp,
+                           metrics=metrics, covariables=covariates, window=dl_forecast_window,
+                           horizon=dl_forecast_horizon, drop_observed_sample=forecast_drop_part_sample)
         elif mode == consts.Mode_NAS and task in consts.TASK_LIST_DETECTION:
             raise NotImplementedError(
                 'NASDetectionSearchSpace is not implemented yet.'
@@ -526,11 +528,14 @@ def make_experiment(train_data,
                 if max_win_size <= 10:
                     dl_forecast_window = list(filter(lambda x: x <= max_win_size, [2, 4, 6, 8, 10]))
                 else:
-                    candidate_windows = [3, 8, 12, 24, 30]*1 + [48, 60]*1 + [72, 96, 168, 183]*1
+                    if task in consts.TASK_LIST_FORECAST:
+                        candidate_windows = [3, 8, 12, 24, 30]*1 + [48, 60]*1 + [72, 96, 168, 183]*1
+                    else:
+                        candidate_windows = [4, 8, 16, 24, 32]
                     dl_forecast_window = list(filter(lambda x: x <= max_win_size, candidate_windows))
                 periods = [tb.fft_infer_period(y_train[col]) for col in target]
                 period = int(np.argmax(np.bincount(periods)))
-                if period > 0 and period <= max_win_size:
+                if period > 0 and period <= max_win_size and period < 367:
                     dl_forecast_window.append(period)
             elif isinstance(dl_forecast_window, int):
                 assert dl_forecast_window < max_win_size, f'The slide window can not be greater than {max_win_size}'
