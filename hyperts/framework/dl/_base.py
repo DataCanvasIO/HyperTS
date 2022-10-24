@@ -17,6 +17,9 @@ from hyperts.framework.dl.dl_utils.metainfo import MetaTSFprocessor, MetaTSCproc
 
 from hyperts.utils import consts, get_tool_box
 
+from scipy.stats import binom
+from sklearn.preprocessing import MinMaxScaler
+
 from hypernets.utils import logging, fs
 
 logger = logging.get_logger(__name__)
@@ -204,6 +207,8 @@ class BaseDeepEstimator(object):
             self.optimizer = kwargs.get('optimizer')
         if kwargs.get('summary') is not None and isinstance(kwargs.get('summary'), bool):
             self.summary = kwargs.get('summary')
+        if kwargs.get('reconstract_dim') is not None and isinstance(kwargs.get('reconstract_dim'), int):
+            self.reconstract_dim = kwargs.get('reconstract_dim')
 
         self.model_kwargs = {**self.model_kwargs, **kwargs}
 
@@ -231,11 +236,13 @@ class BaseDeepEstimator(object):
 
         Parameters
         ----------
-        X: 2D DataFrame, shape: (series_length, nb_covariables) for forecast task,
-            2D nested DataFrame, shape: (sample, nb_covariables(series_length)) for
-            classification or regression task,
-        y:  2D DataFrame, shape: (series_length, nb_target_variables) for forecast task,
-            2D DataFrame, shape: (nb_samples, 1) for classification or regression task,
+        X:  2D DataFrame of shape: (series_length, 1+(n_covariates)) for forecast task,
+            2D nested DataFrame shape: (sample, nb_covariables(series_length)) for
+            classification or regression task, 2D DataFrame of shape
+            (n_samples, 1+(n_covariates)) for anomaly detection.
+        y:  2D DataFrame of shape: (series_length, n_target_variables) for forecast task,
+            2D DataFrame of shape: (nb_samples, 1) for classification or regression task,
+            2D DataFrame of shape (n_samples, reconstract_dim).
         batch_size: Integer or `None`.
             Number of samples per gradient update.
             If unspecified, `batch_size` will default to self-adaption based on number of samples.
@@ -389,13 +396,15 @@ class BaseDeepEstimator(object):
             logger.warning('window must not be smaller than forecast_length, reset forecast_length=1.')
             self.forecast_length = 1
 
-        X_train, y_train = self._dataloader(self.task, X, y, self.window, self.horizon, self.forecast_length)
+        X_train, y_train = self._dataloader(X=X, y=y, task=self.task, window=self.window,
+                           horizon=self.horizon, forecast_length=self.forecast_length,
+                           reset_forecast_start=True)
 
         validation_length = int(len(y_train) * validation_split)
         if validation_length <= 0:
             raise RuntimeError(f'The train set must not be less than {int(1 / validation_split)}.')
 
-        if self.task in consts.TASK_LIST_FORECAST:
+        if self.task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_DETECTION:
             if isinstance(X_train, list):
                 X_valid = [x[-validation_length:] for x in X_train]
             else:
@@ -440,22 +449,25 @@ class BaseDeepEstimator(object):
                 self.earlystop_patience = 30
             else:
                 epochs = int(epochs / 1.5)
-                self.reducelr_patience = 5
-                self.earlystop_patience = 10
+                self.reducelr_patience = 15
+                self.earlystop_patience = 30
             self.learning_rate = self.learning_rate / 2
 
         logger.info(f'Fit epochs is {epochs}, batch_size is {batch_size}.')
 
-        callbacks = self._inject_callbacks(callbacks, epochs, self.reducelr_patience, self.earlystop_patience, verbose)
+        callbacks = self._inject_callbacks(callbacks=callbacks, epochs=epochs,
+                                           reducelr_patience=self.reducelr_patience,
+                                           earlystop_patience=self.earlystop_patience,
+                                           verbose=verbose)
 
         model, history = self._fit(X_train, y_train, X_valid, y_valid, epochs=epochs, batch_size=batch_size,
-                                   initial_epoch=initial_epoch,
-                                   verbose=verbose, callbacks=callbacks, shuffle=shuffle, class_weight=class_weight,
-                                   sample_weight=sample_weight,
+                                   initial_epoch=initial_epoch, verbose=verbose, callbacks=callbacks,
+                                   shuffle=shuffle, class_weight=class_weight, sample_weight=sample_weight,
                                    steps_per_epoch=steps_per_epoch, validation_steps=validation_steps,
                                    validation_freq=validation_freq, max_queue_size=max_queue_size, workers=workers,
                                    use_multiprocessing=use_multiprocessing)
         self.model = model
+
         logger.info(f'Training finished, total taken {time.time() - start}s.')
         return history
 
@@ -540,13 +552,19 @@ class BaseDeepEstimator(object):
 
         Task: time series classification/regression.
         """
-        probs = []
         X = self.meta.transform_X(X)
-        sample_size, iters = X.shape[0], X.shape[0] // batch_size + 1
-        for idx in range(iters):
-            proba = self._predict(X[idx * batch_size:min((idx + 1) * batch_size, sample_size)])
-            probs.append(proba.numpy())
-        probs = np.concatenate(probs, axis=0)
+
+        sample_size = X.shape[0]
+
+        if batch_size >= sample_size:
+            probs = self._predict(X).numpy()
+        else:
+            probs = []
+            iters = sample_size // batch_size + 1
+            for idx in range(iters):
+                proba = self._predict(X[idx * batch_size:min((idx + 1) * batch_size, sample_size)])
+                probs.append(proba.numpy())
+            probs = np.concatenate(probs, axis=0)
         if probs.shape[-1] == 1 and self.task in consts.TASK_LIST_CLASSIFICATION:
             probs = np.hstack([1 - probs, probs])
         elif probs.shape[-1] == 1 and self.task in consts.TASK_LIST_REGRESSION:
@@ -644,12 +662,21 @@ class BaseDeepEstimator(object):
                 self.loss = 'binary_crossentropy'
             if self.metrics == 'auto':
                 self.metrics = ['auc']
+        elif self.task in consts.TASK_LIST_DETECTION:
+            self.loss = None
+            self.metrics = ['mse']
         else:
             logger.info('Unsupport this task: {}, Apart from [multiclass, binary, \
-                         forecast, and regression].'.format(self.task))
+                         forecast, regression, and anomaly detection].'.format(self.task))
 
-        loss = Losses()[self.loss]
-        if set(self.metrics) < set(Metrics().keys()):
+        if self.loss is None:
+            loss = None
+        else:
+            loss = Losses()[self.loss]
+
+        if self.metrics is None:
+            metrics = None
+        elif set(self.metrics) < set(Metrics().keys()):
             metrics = [Metrics()[m] for m in self.metrics]
         else:
             if self.task in consts.TASK_LIST_BINARYCLASS:
@@ -660,7 +687,11 @@ class BaseDeepEstimator(object):
                 metrics = [Metrics()['rmse']]
             logger.warning(f"In dl model, {self.metrics} is not supported, "
                            f"so ['{metrics[0].name}'] will be called.")
-        logger.info(f'The compile loss is `{loss.name}`, metrics is `{metrics[0].name}`.')
+
+        if loss is not None and metrics is not None:
+            logger.info(f'The compile loss is `{loss.name}`, metrics is `{metrics[0].name}`.')
+        elif loss is None and metrics is not None:
+            logger.info(f'metrics is `{metrics[0].name}`.')
 
         if optimizer.lower() in ['auto', consts.OptimizerADAM]:
             optimizer = optimizers.Adam(lr=learning_rate, decay=1e-8, clipnorm=10.)
@@ -677,7 +708,7 @@ class BaseDeepEstimator(object):
         model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
         return model
 
-    def _dataloader(self, task, X, y, window=1, horizon=1, forecast_length=1, is_train=False):
+    def _dataloader(self, X, y, task, window=1, horizon=1, forecast_length=1, reset_forecast_start=False):
         """ Load data set.
 
         Parameters
@@ -699,7 +730,7 @@ class BaseDeepEstimator(object):
             A forecast field of vision during a forecast task.
         """
 
-        if task in consts.TASK_LIST_FORECAST:
+        if task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_DETECTION:
             tb = get_tool_box(X, y)
             target_length = tb.get_shape(y)[1]
             continuous_length = len(self.meta.cont_column_names)
@@ -708,7 +739,7 @@ class BaseDeepEstimator(object):
             data = tb.concat_df([y, X], axis=1).drop([self.timestamp], axis=1)
             data = tb.df_to_array(data[column_names]).astype(consts.DATATYPE_TENSOR_FLOAT)
             target_start = window + horizon - 1
-            inputs = data[:-1].copy()
+            inputs = data.copy()
             targets = data[target_start:].copy()
             targets_app = np.zeros(inputs.size - targets.size, dtype=consts.DATATYPE_TENSOR_FLOAT)
             targets = np.append(targets, targets_app).reshape(inputs.shape)
@@ -722,23 +753,28 @@ class BaseDeepEstimator(object):
                 X_data = np.concatenate(X_data, axis=0)
                 y_data = np.concatenate(y_data, axis=0)[:, :, :target_length]
             except:
-                raise ValueError(f'Reset forecast window, which should be less than {len(X)//2}.')
-            if not is_train:
+                raise ValueError(f'Reset slide window, which should be less than {len(X)//2}.')
+            if reset_forecast_start:
                 self.forecast_start = data[-window:].reshape(1, window, data.shape[1])
             if categorical_length != 0:
                 X_cont = X_data[:, :, :continuous_length]
                 X_cat = X_data[:, :, continuous_length:]
                 X_data = [X_cont, X_cat]
-                if not is_train:
+                if reset_forecast_start:
                     X_cont_start = self.forecast_start[:, :, :continuous_length]
                     X_cat_start = self.forecast_start[:, :, continuous_length:]
                     self.forecast_start = [X_cont_start, X_cat_start]
+            if task in consts.TASK_LIST_DETECTION:
+                if categorical_length != 0:
+                    y_data = X_data[0][:, :, :self.reconstract_dim]
+                else:
+                    y_data = X_data[:, :, :self.reconstract_dim]
         else:
-            if not is_train:
-                tb = get_tool_box(X)
-                self.window = tb.get_shape(X)[1]
+            tb = get_tool_box(X)
+            self.window = tb.get_shape(X)[1]
             X_data = X.astype(consts.DATATYPE_TENSOR_FLOAT)
             y_data = y
+
         return X_data, y_data
 
     def _from_tensor_slices(self, X, y, batch_size, epochs=None, shuffle=False, drop_remainder=True):
@@ -784,6 +820,8 @@ class BaseDeepEstimator(object):
             Contains some information(name, vocabulary_size, embedding_dim,
             dtype, input_name) about categorical variables.
         """
+        self.n_samples_ = len(X)
+
         if isinstance(X.iloc[0, 0], (np.ndarray, pd.Series)):
             self.meta = MetaTSCprocessor(task=self.task)
             X, y = self.meta.fit_transform(X, y)
@@ -887,3 +925,258 @@ class BaseDeepEstimator(object):
             model = load_model(h, custom_objects=custom_objects)
         logger.info('Loaded model from disk.')
         return model
+
+
+class BaseDeepDetectionMixin:
+    """Mixin class for anomaly detection in estimator wrapper.
+
+    Parameters
+    ----------
+    name: str, the name of detection algorithm.
+
+    contamination: float, the range in (0., 0.5), optional (default=0.05).
+        The amount of contamination of the data set, i.e. the proportion of
+        outliers in the data set. Used when fitting to define the threshold
+        on the decision function.
+
+    Attributes
+    ----------
+    decision_scores_ : numpy array of shape (n_samples,).
+        The outlier scores of the training data.
+
+    threshold_ : float, the threshold is based on `contamination`.
+        It is the `n_samples * contamination` most abnormal samples in
+        `decision_scores_`. The threshold is calculated for generating
+        binary outlier labels.
+
+    labels_ : int, either 0 or 1.
+        The binary labels of the training data. 0 stands for inliers
+        and 1 for outliers/anomalies. It is generated by applying
+        `threshold_` on `decision_scores_`.
+
+    classes_: int, default 2.
+        Default as binary classification.
+
+    """
+
+    def __init__(self, name=None, contamination=0.05):
+        self.name = name
+        self.contamination = contamination
+
+        self.classes_ = 2
+        self.decision_scores_ = None
+        self.threshold_ = None
+        self.labels_ = None
+
+    def decision_function(self, X, y, batch_size=128, **kwargs):
+        """Predict raw anomaly score of X using the fitted detector.
+
+        Parameters
+        ----------
+        X : numpy array of shape (n_samples, timestamp, continuous_dim) or
+            [(n_samples, timestamp, continuous_dim), (n_samples, timestamp, categorical_dim)]
+            The training input samples.
+
+        y : numpy array of shape (n_samples, timestamp, reconstract_dim).
+            The training input samples.
+
+        Returns
+        -------
+        anomaly_scores : numpy array of shape (n_samples,)
+            The anomaly score of the input samples.
+        """
+        self._check_is_fitted()
+
+        sample_size = X.shape[0]
+
+        if batch_size >= sample_size:
+            y_pred = self._predict(X).numpy()
+        else:
+            y_pred = []
+            iters = sample_size // batch_size + 1
+            for idx in range(iters):
+                pred = self._predict(X[idx * batch_size:min((idx + 1) * batch_size, sample_size)])
+                y_pred.append(pred.numpy())
+            y_pred = np.concatenate(y_pred, axis=0)
+
+        timestamp, reconstract_dim = y.shape[1], y.shape[2]
+        decision_scores = self._pairwise_distances(
+            y_true=y,
+            y_pred=y_pred,
+            n_samples=kwargs.get('n_samples'),
+            timestamp=timestamp,
+            reconstract_dim=reconstract_dim)
+
+        return decision_scores
+
+    def predict_outliers(self, X, y):
+        """Predict labels for sequences in X.
+
+        Parameters
+        ----------
+        X : DataFrame of shape (n_samples, 1+(n_covariates)).
+        y : DataFrame of shape (n_samples, reconstract_dim).
+
+        Returns
+        -------
+        outlier_labels : numpy array of shape (n_samples,)
+            For each observation, tells whether or not
+            it should be considered as an outlier according to the
+            fitted model. 0 stands for inliers and 1 for outliers.
+        """
+        self._check_is_fitted()
+
+        X, y = self.meta.transform(X, y)
+
+        X_test, y_test = self._dataloader(X=X, y=y, task=self.task, window=self.window,
+                         horizon=self.horizon, forecast_length=self.forecast_length)
+
+        decision_func = self.decision_function(X_test, y_test, n_samples=len(X))
+
+        is_outlier = np.zeros_like(decision_func, dtype=int)
+        is_outlier[decision_func > self.threshold_] = 1
+
+        return is_outlier
+
+    def predict_outliers_prob(self, X, y):
+        """Predict the probability for sequences in X.
+
+        Parameters
+        ----------
+        X : DataFrame of shape (n_samples, 1+(n_covariates)).
+        y : DataFrame of shape (n_samples, reconstact_dim).
+
+        Returns
+        -------
+        outlier_probability : numpy array of shape (n_samples, n_classes)
+            For each observation, tells whether or not it should be considered
+            as an outlier according to the fitted model. Return the outlier
+            probability, ranging in [0,1]. Note it depends on the number of
+            classes, which is by default 2 classes ([proba of normal, proba of outliers]).
+        """
+        self._check_is_fitted()
+
+        X, y = self.meta.transform(X, y)
+
+        X_test, y_test = self._dataloader(X=X, y=y, task=self.task, window=self.window,
+                         horizon=self.horizon, forecast_length=self.forecast_length)
+
+        train_scores = self.decision_scores_
+        test_scores = self.decision_function(X_test, y_test, n_samples=len(X))
+
+        probas = np.zeros((X.shape[0], self.classes_))
+
+        scaler = MinMaxScaler((0, 1))
+        scaler.fit(train_scores.reshape(-1, 1))
+        pr = scaler.transform(test_scores.reshape(-1, 1))
+        pr = pr.ravel().clip(0, 1)
+        probas[:, 0] = 1. - pr
+        probas[:, 1] = pr
+
+        return probas
+
+    def predict_outliers_confidence(self, X, y):
+        """Predict the confidence of model in making the same prediction
+           under slightly different training sets.
+
+        Parameters
+        -------
+        X : DataFrame of shape (n_samples, 1+(n_covariates)).
+        y : DataFrame of shape (n_samples, reconstact_dim).
+
+        Returns
+        -------
+        confidence : numpy array of shape (n_samples,).
+            For each observation, tells how consistently the model would
+            make the same prediction if the training set was perturbed.
+            Return a probability, ranging in [0,1].
+
+        """
+        self._check_is_fitted()
+
+        X, y = self.meta.transform(X, y)
+
+        X_test, y_test = self._dataloader(X=X, y=y, task=self.task, window=self.window,
+                         horizon=self.horizon, forecast_length=self.forecast_length)
+
+        test_scores = self.decision_function(X_test, y_test, n_samples=len(X))
+
+        n_train_samples = len(self.decision_scores_)
+
+        count_instances = np.vectorize(lambda x: np.count_nonzero(self.decision_scores_ <= x))
+        nb_test_instances =  count_instances(test_scores)
+
+        posterior_prob = np.vectorize(lambda x: (1+x)/(2+n_train_samples))(nb_test_instances)
+
+        confidence = np.vectorize(
+            lambda p: 1 - binom.cdf(n_train_samples - int(n_train_samples * self.contamination),
+            n_train_samples, p))(posterior_prob)
+
+        prediction = (test_scores > self.threshold_).astype('int32').ravel()
+        np.place(confidence, prediction == 0, 1 - confidence[prediction == 0])
+
+        return confidence
+
+    def _get_decision_attributes(self):
+        """Calculate key attributes: threshold_ and labels_.
+
+        Returns
+        -------
+        self : object.
+        """
+        self.threshold_ = np.percentile(self.decision_scores_, 100*(1-self.contamination))
+        self.labels_ = (self.decision_scores_ > self.threshold_).astype('int').ravel()
+        self.classes_ = len(np.unique(self.labels_))
+
+        return self
+
+    def _check_is_fitted(self):
+        """Check if key attributes 'decision_scores_', 'threshold_',
+           and 'labels_' are None.
+
+        Returns
+        -------
+        True or False.
+        """
+        if self.decision_scores_ is None:
+            return False
+        elif self.threshold_ is None:
+            return False
+        elif self.labels_ is None:
+            return False
+        else:
+            return True
+
+    def _update_mixin_params(self, **kwargs):
+        self.name = kwargs.get('name', None)
+        self.contamination = kwargs.get('contamination', 0.05)
+
+    def _pairwise_distances(self, y_true, y_pred, **kwargs):
+        """Utility function to calculate row-wise euclidean distance of two matrix.
+           Different from pair-wise calculation, this function would not broadcast.
+
+        Parameters
+        ----------
+        y_true : array of shape (n_samples, n_features)
+            First input samples
+        y_pred : array of shape (n_samples, n_features)
+            Second input samples
+        Returns
+        -------
+        distance : array of shape (n_samples,)
+            Row-wise euclidean distance of y_true and y_pred.
+        """
+        n_samples = kwargs.get('n_samples')
+        timestamp = kwargs.get('timestamp')
+        reconstract_dim = kwargs.get('reconstract_dim')
+        indices = np.arange(len(y_true))[::timestamp]
+        out_true = y_true[indices].reshape(-1, reconstract_dim)
+        out_pred = y_pred[indices].reshape(-1, reconstract_dim)
+        assert out_true.shape == out_pred.shape
+        n_diff = n_samples - len(out_true)
+        if n_diff != 0:
+            out_true = np.concatenate([out_true, y_true[-1][-n_diff:].reshape(-1, reconstract_dim)])
+            out_pred = np.concatenate([out_pred, y_pred[-1][-n_diff:].reshape(-1, reconstract_dim)])
+        distance = np.sqrt(np.sum(np.square(out_true - out_pred), axis=1)).ravel()
+
+        return distance
