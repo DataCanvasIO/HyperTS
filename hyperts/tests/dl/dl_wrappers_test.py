@@ -3,7 +3,7 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 import numpy as np
 from hyperts.datasets import *
-from hyperts.utils.metrics import rmse, mape, accuracy_score
+from hyperts.utils.metrics import rmse, mape, accuracy_score, f1_score
 from hyperts.utils import consts
 from hyperts.utils import get_tool_box
 from hyperts.tests import skip_if_not_tf
@@ -69,7 +69,7 @@ class Test_DL_Wrappers():
             'task': task,
             'timestamp': timestamp,
 
-            'rnn_type': 'simple_rnn',
+            'rnn_type': 'basic',
             'rnn_units': 10,
             'rnn_layers': 2,
             'learning_rate': 0.001,
@@ -191,7 +191,7 @@ class Test_DL_Wrappers():
         init_kwargs = {
             'task': task,
 
-            'rnn_type': 'simple_rnn',
+            'rnn_type': 'basic',
             'rnn_units': 10,
             'rnn_layers': 3,
             'learning_rate': 0.001,
@@ -227,7 +227,7 @@ class Test_DL_Wrappers():
         init_kwargs = {
             'task': task,
 
-            'rnn_type': 'simple_rnn',
+            'rnn_type': 'basic',
             'rnn_units': 10,
             'rnn_layers': 2,
             'learning_rate': 0.001,
@@ -264,8 +264,8 @@ class Test_DL_Wrappers():
             'task': task,
             'timestamp': timestamp,
 
-            'rnn_type': 'simple_rnn',
-            'skip_rnn_type': 'simple_rnn',
+            'rnn_type': 'basic',
+            'skip_rnn_type': 'basic',
             'cnn_filters': 16,
             'kernel_size': 3,
             'rnn_units': 10,
@@ -312,8 +312,8 @@ class Test_DL_Wrappers():
             'task': task,
             'timestamp': timestamp,
 
-            'rnn_type': 'simple_rnn',
-            'skip_rnn_type': 'simple_rnn',
+            'rnn_type': 'basic',
+            'skip_rnn_type': 'basic',
             'cnn_filters': 16,
             'kernel_size': 3,
             'rnn_units': 10,
@@ -361,8 +361,8 @@ class Test_DL_Wrappers():
             'task': task,
             'timestamp': timestamp,
 
-            'rnn_type': 'simple_rnn',
-            'skip_rnn_type': 'simple_rnn',
+            'rnn_type': 'basic',
+            'skip_rnn_type': 'basic',
             'cnn_filters': 16,
             'kernel_size': 3,
             'rnn_units': 10,
@@ -645,3 +645,31 @@ class Test_DL_Wrappers():
         print('accuracy:', acc)
 
         assert acc >= 0
+
+
+    def test_univariate_anomaly_detection(self):
+        from hyperts.framework.wrappers.dl_wrappers import ConvVAEWrapper
+
+        X, y = load_real_known_cause_dataset(return_X_y=True)
+        tb = get_tool_box(X)
+        X_train, X_test, y_train, y_test = tb.temporal_train_test_split(X, y, test_horizon=15000)
+
+        fit_kwargs = {
+            'epochs': 10,
+            'batch_size': 64,
+        }
+
+        init_kwargs = {
+            'task': 'detection',
+            'timestamp': 'timestamp',
+            'cnn_filters': 32,
+            'contamination': 0.1,
+            'x_scale': np.random.choice(['min_max', 'z_scale'], size=1)[0]
+        }
+
+        model = ConvVAEWrapper(fit_kwargs=fit_kwargs, **init_kwargs)
+
+        model.fit(X_train)
+        y_pred = model.predict(X_test)
+        score = f1_score(y_test, y_pred)
+        assert score >= 0

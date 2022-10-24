@@ -71,6 +71,18 @@ class Test_HyperTS_Ensemble():
     def test_stats_anomaly_detection_nocv_ensemble(self):
         tsad_ensemble_test(mode='stats', cv=False, ensemble_size=3)
 
+    @skip_if_not_tf
+    def test_stats_anomaly_detection_cv_ensemble(self):
+        tsad_ensemble_test(mode='stats', cv=True, ensemble_size=3)
+
+    @skip_if_not_tf
+    def test_dl_anomaly_detection_nocv_ensemble(self):
+        tsad_ensemble_test(mode='dl', cv=False, ensemble_size=3)
+
+    @skip_if_not_tf
+    def test_dl_anomaly_detection_cv_ensemble(self):
+        tsad_ensemble_test(mode='dl', cv=True, ensemble_size=3)
+
 
 @skip_if_not_tf
 @skip_if_not_prophet
@@ -152,7 +164,7 @@ def tsad_ensemble_test(mode='stats', cv=False, ensemble_size=None):
                           ensemble_size=ensemble_size,
                           random_state=2022)
 
-    model = exp.run(max_trials=3)
+    model = exp.run(max_trials=3, epochs=10, final_train_epochs=10)
 
     X_test, _ = model.split_X_y(test_df.copy())
     y_pred = model.predict(X_test)
