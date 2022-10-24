@@ -11,6 +11,7 @@ from ._layers import Identity
 from ._layers import Shortcut
 from ._layers import InceptionBlock
 from ._layers import FactorizedReduce
+from ._layers import Sampling
 
 from ._layers import build_input_head
 from ._layers import build_denses
