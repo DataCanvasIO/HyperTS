@@ -21,6 +21,7 @@ from hyperts.framework.estimators import NBeatsForecastEstimator
 from hyperts.framework.estimators import InceptionTimeGeneralEstimator
 from hyperts.framework.estimators import IForestDetectionEstimator
 from hyperts.framework.estimators import OCSVMDetectionEstimator
+from hyperts.framework.estimators import ConvVAEDetectionEstimator
 
 from hypernets.tabular import column_selector as tcs
 from hypernets.core.ops import HyperInput, ModuleChoice, Optional
@@ -261,12 +262,11 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'changepoint_range': Choice([0.8, 0.85, 0.9, 0.95]),
 
             # 'y_scale': Choice(['none-scale', 'min_max', 'max_abs', 'z_scale']),
-            'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
-            'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
+            'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1)
         }
 
-        if not self.drop_observed_sample:
-            default_init_kwargs.pop('drop_sample_rate')
+        if self.drop_observed_sample:
+            default_init_kwargs['drop_sample_rate'] = Choice([0.0, 0.1, 0.2, 0.5, 0.8])
 
         return default_init_kwargs
 
@@ -290,12 +290,11 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             # 'period_offset': Choice([0, 0, 0, 0, 0, 0, 1, -1, 2, -2]),
 
             'y_scale': Choice(['none-scale', 'min_max', 'max_abs', 'z_scale']),
-            'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
-            'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
+            'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1)
         }
 
-        if not self.drop_observed_sample:
-            default_init_kwargs.pop('drop_sample_rate')
+        if self.drop_observed_sample:
+            default_init_kwargs['drop_sample_rate'] = Choice([0.0, 0.1, 0.2, 0.5, 0.8])
 
         return default_init_kwargs
 
@@ -312,12 +311,11 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'maxlags': Choice([None, 2, 6, 12, 24, 48]),
             'trend': Choice(['c', 'ct', 'ctt', 'nc', 'n']),
             'y_log': Choice(['none-log']*4+['logx']*1),
-            'y_scale': Choice(['min_max']*5+['z_scale']*2+['max_abs']*1),
-            'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
+            'y_scale': Choice(['min_max']*5+['z_scale']*2+['max_abs']*1)
         }
 
-        if not self.drop_observed_sample:
-            default_init_kwargs.pop('drop_sample_rate')
+        if self.drop_observed_sample:
+            default_init_kwargs['drop_sample_rate'] = Choice([0.0, 0.1, 0.2, 0.5, 0.8])
 
         return default_init_kwargs
 
@@ -544,14 +542,13 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
 
             'y_log': Choice(['none-log']*4+['logx']*1),
             'y_scale': Choice(['min_max']*4+['z_scale']*1),
-            'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
-            'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
+            'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1)
         }
 
         default_init_kwargs = self.initial_window_kwargs(default_init_kwargs)
 
-        if not self.drop_observed_sample:
-            default_init_kwargs.pop('drop_sample_rate')
+        if self.drop_observed_sample:
+            default_init_kwargs['drop_sample_rate'] = Choice([0.0, 0.1, 0.2, 0.5, 0.8])
 
         return default_init_kwargs
 
@@ -584,14 +581,13 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
 
             'y_log': Choice(['none-log']*4+['logx']*1),
             'y_scale': Choice(['min_max']*5+['z_scale']*2+['max_abs']*1),
-            'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
-            'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
+            'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1)
         }
 
         default_init_kwargs = self.initial_window_kwargs(default_init_kwargs)
 
-        if not self.drop_observed_sample:
-            default_init_kwargs.pop('drop_sample_rate')
+        if self.drop_observed_sample:
+            default_init_kwargs['drop_sample_rate'] = Choice([0.0, 0.1, 0.2, 0.5, 0.8])
 
         return default_init_kwargs
 
@@ -631,14 +627,13 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
 
             'y_log': Choice(['none-log']*4+['logx']*1),
             'y_scale': Choice(['min_max']*5+['z_scale']*2+['max_abs']*1),
-            'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
-            'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
+            'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1)
         }
 
         default_init_kwargs = self.initial_window_kwargs(default_init_kwargs)
 
-        if not self.drop_observed_sample:
-            default_init_kwargs.pop('drop_sample_rate')
+        if self.drop_observed_sample:
+            default_init_kwargs['drop_sample_rate'] = Choice([0.0, 0.1, 0.2, 0.5, 0.8])
 
         return default_init_kwargs
 
@@ -668,14 +663,13 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
 
             'y_log': Choice(['none-log']*4+['logx']*1),
             'y_scale': Choice(['min_max']*4+['z_scale']*1),
-            'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1),
-            'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
+            'outlier': Choice(['none-outlier']*5+['clip']*3+['fill']*1)
         }
 
         default_init_kwargs = self.initial_window_kwargs(default_init_kwargs)
 
-        if not self.drop_observed_sample:
-            default_init_kwargs.pop('drop_sample_rate')
+        if self.drop_observed_sample:
+            default_init_kwargs['drop_sample_rate'] = Choice([0.0, 0.1, 0.2, 0.5, 0.8])
 
         return default_init_kwargs
 
@@ -935,12 +929,11 @@ class StatsDetectionSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'n_estimators': Choice([50, 100, 200, 500]),
             'contamination': Choice([0.05, 0.1, 0.2]),
 
-            'x_scale': Choice(['none-scale', 'min_max', 'z_scale']),
-            'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
+            'x_scale': Choice(['min_max', 'z_scale'])
         }
 
-        if not self.drop_observed_sample:
-            default_init_kwargs.pop('drop_sample_rate')
+        if self.drop_observed_sample:
+            default_init_kwargs['drop_sample_rate'] = Choice([0.0, 0.1, 0.2, 0.5, 0.8])
 
         return default_init_kwargs
 
@@ -959,12 +952,11 @@ class StatsDetectionSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'nu': Choice([0.05, 0.1, 0.2, 0.5]),
             'contamination': Choice([0.05, 0.1, 0.2]),
 
-            'x_scale': Choice(['none-scale', 'min_max', 'z_scale']),
-            'drop_sample_rate': Choice([0.0, 0.1, 0.2, 0.5, 0.8]),
+            'x_scale': Choice(['min_max', 'z_scale'])
         }
 
-        if not self.drop_observed_sample:
-            default_init_kwargs.pop('drop_sample_rate')
+        if self.drop_observed_sample:
+            default_init_kwargs['drop_sample_rate'] = Choice([0.0, 0.1, 0.2, 0.5, 0.8])
 
         return default_init_kwargs
 
@@ -985,10 +977,110 @@ class StatsDetectionSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             IForestDetectionEstimator, self.default_iforest_init_kwargs, self.default_iforest_fit_kwargs)
             multivar_containers['iforest'] = (
             IForestDetectionEstimator, self.default_iforest_init_kwargs, self.default_iforest_fit_kwargs)
+        if self.enable_ocsvm:
             univar_containers['ocsvm'] = (
             OCSVMDetectionEstimator, self.default_ocsvm_init_kwargs, self.default_ocsvm_fit_kwargs)
             multivar_containers['ocsvm'] = (
             OCSVMDetectionEstimator, self.default_ocsvm_init_kwargs, self.default_ocsvm_fit_kwargs)
+
+        if self.task == consts.Task_UNIVARIATE_DETECTION:
+            return univar_containers
+        elif self.task == consts.Task_MULTIVARIATE_DETECTION:
+            return multivar_containers
+        else:
+            raise ValueError(f'Incorrect task name, default {consts.Task_UNIVARIATE_DETECTION}'
+                             f' or {consts.Task_MULTIVARIATE_DETECTION}.')
+
+
+class DLDetectionSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
+    """Deep Learning Search Space for Time Series Anomaly Detection.
+
+    Parameters
+    ----------
+    task: str or None, optional, default None. If not None, it must be 'detection'.
+    timestamp: str or None, optional, default None.
+    metrics: str or None, optional, default None. Support f1, precision, recall, and so on.
+    enable_convvae: bool, default True.
+    convvae_init_kwargs: dict or None, optional, default None. If not None, you can customize
+        the hyper-parameters by which prophet is searched.
+
+    Returns
+    ----------
+    search space.
+
+    Notes
+    ----------
+    1. For the hyper-parameters of iforest_init_kwargs, ocsvm_init_kwargs,
+        you can refer to `hyperts.framework.estimators.ConvVAEDetectionEstimator`.
+    2. If other parameters exist, set them directly. For example, covariables=['is_holiday'].
+    """
+    def __init__(self, task=None,
+                 timestamp=None, metrics=None,
+                 window=None, horizon=1,
+                 enable_conv_vae=True,
+                 conv_vae_init_kwargs=None,
+                 drop_observed_sample=False,
+                 **kwargs):
+        if enable_conv_vae and conv_vae_init_kwargs is not None:
+            kwargs['conv_vae_init_kwargs'] = conv_vae_init_kwargs
+        super(DLDetectionSearchSpace, self).__init__(task, **kwargs)
+
+        self.task = task
+        self.timestamp = timestamp
+        self.metrics = metrics
+        self.window = window
+        self.horizon = horizon
+        self.enable_conv_vae = enable_conv_vae
+        self.drop_observed_sample = drop_observed_sample
+
+    @property
+    def default_conv_vae_init_kwargs(self):
+        default_init_kwargs = {
+            'timestamp': self.timestamp,
+            'task': self.task,
+            'metrics': self.metrics,
+            'reducelr_patience': 5,
+            'earlystop_patience': 15,
+            'summary': True,
+
+            'contamination': Choice([0.05, 0.1, 0.2]),
+            'latent_dim': Choice([2, 4, 8, 16, 32]),
+            'conv_type': Choice(['general', 'separable']),
+            'cnn_filters': Choice([64] * 2 + [128] * 3 + [256] * 1),
+            'nb_layers': Choice([2, 3]),
+            'drop_rate': Choice([0.] * 4 + [0.1] * 4 + [0.2] * 1),
+            'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
+
+            'x_scale': Choice(['min_max', 'z_scale'])
+        }
+
+        default_init_kwargs = self.initial_window_kwargs(default_init_kwargs)
+
+        if self.drop_observed_sample:
+            default_init_kwargs['drop_sample_rate'] = Choice([0.0, 0.1, 0.2, 0.5, 0.8])
+
+        return default_init_kwargs
+
+    @property
+    def default_conv_vae_fit_kwargs(self):
+        return {
+            'covariates': self.covariables,
+
+            'epochs': consts.TRAINING_EPOCHS,
+            'batch_size': None,
+            'verbose': 1,
+        }
+
+    @property
+    def estimators(self):
+        univar_containers = {}
+        multivar_containers = {}
+
+        if self.enable_conv_vae:
+            univar_containers['conv_vae'] = (
+            ConvVAEDetectionEstimator, self.default_conv_vae_init_kwargs, self.default_conv_vae_fit_kwargs)
+            multivar_containers['conv_vae'] = (
+            ConvVAEDetectionEstimator, self.default_conv_vae_init_kwargs, self.default_conv_vae_fit_kwargs)
 
         if self.task == consts.Task_UNIVARIATE_DETECTION:
             return univar_containers

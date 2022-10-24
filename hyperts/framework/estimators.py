@@ -29,6 +29,7 @@ if is_tensorflow_installed:
     from hyperts.framework.wrappers.dl_wrappers import LSTNetWrapper
     from hyperts.framework.wrappers.dl_wrappers import NBeatsWrapper
     from hyperts.framework.wrappers.dl_wrappers import InceptionTimeWrapper
+    from hyperts.framework.wrappers.dl_wrappers import ConvVAEWrapper
 
 
 logger = logging.get_logger(__name__)
@@ -196,7 +197,8 @@ class ARIMAForecastEstimator(HyperEstimator):
 
     Notes
     ----------
-    Parameter Description Reference: https://github.com/statsmodels/statsmodels/blob/main/statsmodels/tsa/arima/model.py
+    Parameter Description Reference: https://github.com/statsmodels/statsmodels/blob/main/
+        statsmodels/tsa/arima/model.py
 
     The (p,d,q) order of the model for the autoregressive, differences, and
     moving average components. d is always an integer, while p and q may
@@ -260,7 +262,8 @@ class VARForecastEstimator(HyperEstimator):
 
     Notes
     ----------
-    Parameter Description Reference: https://github.com/statsmodels/statsmodels/blob/main/statsmodels/tsa/vector_ar/var_model.py
+    Parameter Description Reference: https://github.com/statsmodels/statsmodels/blob/main/statsmodels/
+        tsa/vector_ar/var_model.py
     """
 
     def __init__(self, fit_kwargs=None, maxlags=None,
@@ -301,7 +304,8 @@ class TSFClassificationEstimator(HyperEstimator):
 
     Notes
     ----------
-    Parameter Description Reference: https://github.com/alan-turing-institute/sktime/blob/main/sktime/classification/interval_based/_tsf.py
+    Parameter Description Reference: https://github.com/alan-turing-institute/sktime/blob/main/sktime/
+        classification/interval_based/_tsf.py
     """
 
     def __init__(self, fit_kwargs=None, min_interval=3,
@@ -345,7 +349,8 @@ class KNNClassificationEstimator(HyperEstimator):
 
     Notes
     ----------
-    Parameter Description Reference: https://github.com/alan-turing-institute/sktime/blob/main/sktime/classification/distance_based/_time_series_neighbors.py
+    Parameter Description Reference: https://github.com/alan-turing-institute/sktime/blob/main/sktime/
+        classification/distance_based/_time_series_neighbors.py
     """
 
     def __init__(self, fit_kwargs=None, n_neighbors=1,
@@ -371,6 +376,171 @@ class KNNClassificationEstimator(HyperEstimator):
         return knn
 
 
+class IForestDetectionEstimator(HyperEstimator):
+    """Time Series Anomaly Detection Estimator based on Hypernets.
+    Estimator:  Isolation Forest (IForest).
+    Suitable for: Univariate/Multivariate Anomaly Detection Task.
+
+    Parameters
+    ----------
+    n_estimators : int, default=100
+        The number of base estimators in the ensemble.
+    max_samples : "auto", int or float, default="auto"
+        The number of samples to draw from X to train each base estimator.
+            - If int, then draw `max_samples` samples.
+            - If float, then draw `max_samples * X.shape[0]` samples.
+            - If "auto", then `max_samples=min(256, n_samples)`.
+        If max_samples is larger than the number of samples provided,
+        all samples will be used for all trees (no sampling).
+    contamination : 'auto' or float, default=0.05
+        The amount of contamination of the data set, i.e. the proportion
+        of outliers in the data set. Used when fitting to define the threshold
+        on the scores of the samples.
+            - If 'auto', the threshold is determined as in the
+              original paper.
+            - If float, the contamination should be in the range (0, 0.5].
+    max_features : int or float, default=1.0
+        The number of features to draw from X to train each base estimator.
+            - If int, then draw `max_features` features.
+            - If float, then draw `max_features * X.shape[1]` features.
+    bootstrap : bool, default=False
+        If True, individual trees are fit on random subsets of the training
+        data sampled with replacement. If False, sampling without replacement
+        is performed.
+    n_jobs : int, default=None
+        The number of jobs to run in parallel for both :meth:`fit` and
+        :meth:`predict`. ``None`` means 1 unless in a
+        :obj:`joblib.parallel_backend` context. ``-1`` means using all
+        processors. See :term:`Glossary <n_jobs>` for more details.
+    random_state : int, RandomState instance or None, default=None
+        Controls the pseudo-randomness of the selection of the feature
+        and split values for each branching step and each tree in the forest.
+        Pass an int for reproducible results across multiple function calls.
+        See :term:`Glossary <random_state>`.
+    verbose : int, default=0
+        Controls the verbosity of the tree building process.
+    """
+    def __init__(self, fit_kwargs=None, n_estimators=100,
+                 max_samples="auto", contamination=0.05, max_features=1.0,
+                 bootstrap=False, n_jobs=None, random_state=None,
+                 verbose=0, space=None, name=None, **kwargs):
+
+        if n_estimators is not None and n_estimators != 100:
+            kwargs['n_estimators'] = n_estimators
+        if max_samples is not None and max_samples != 'auto':
+            kwargs['max_samples'] = max_samples
+        if contamination is not None and contamination != 0.05:
+            kwargs['contamination'] = contamination
+        if max_features is not None and max_features != 1.0:
+            kwargs['max_features'] = max_features
+        if bootstrap is not None and bootstrap != False:
+            kwargs['bootstrap'] = bootstrap
+        if n_jobs is not None:
+            kwargs['n_jobs'] = n_jobs
+        if random_state is not None:
+            kwargs['random_state'] = random_state
+        if verbose is not None and verbose != 0:
+            kwargs['verbose'] = verbose
+
+        HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
+
+    def _build_estimator(self, task, fit_kwargs, kwargs):
+        if task in consts.TASK_LIST_DETECTION:
+            iforest = IForestWrapper(fit_kwargs, **kwargs)
+        else:
+            raise ValueError('Isolation Forest model supports only anomaly detection task.')
+        return iforest
+
+
+class OCSVMDetectionEstimator(HyperEstimator):
+    """Time Series Anomaly Detection Estimator based on Hypernets.
+    Estimator:  One Class SVM (OCSVM).
+    Suitable for: Univariate/Multivariate Anomaly Detection Task.
+
+    Parameters
+    ----------
+    kernel : {'linear', 'poly', 'rbf', 'sigmoid', 'precomputed'} or callable,  \
+        default='rbf'
+         Specifies the kernel type to be used in the algorithm.
+         If none is given, 'rbf' will be used. If a callable is given it is
+         used to precompute the kernel matrix.
+    degree : int, default=3
+        Degree of the polynomial kernel function ('poly').
+        Ignored by all other kernels.
+    gamma : {'scale', 'auto'} or float, default='scale'
+        Kernel coefficient for 'rbf', 'poly' and 'sigmoid'.
+        - if ``gamma='scale'`` (default) is passed then it uses
+          1 / (n_features * X.var()) as value of gamma,
+        - if 'auto', uses 1 / n_features.
+        .. versionchanged:: 0.22
+           The default value of ``gamma`` changed from 'auto' to 'scale'.
+    coef0 : float, default=0.0
+        Independent term in kernel function.
+        It is only significant in 'poly' and 'sigmoid'.
+    tol : float, default=1e-3
+        Tolerance for stopping criterion.
+    nu : float, default=0.5
+        An upper bound on the fraction of training
+        errors and a lower bound of the fraction of support
+        vectors. Should be in the interval (0, 1]. By default 0.5
+        will be taken.
+    shrinking : bool, default=True
+        Whether to use the shrinking heuristic.
+        See the :ref:`User Guide <shrinking_svm>`.
+    cache_size : float, default=200
+        Specify the size of the kernel cache (in MB).
+    max_iter : int, default=-1
+        Hard limit on iterations within solver, or -1 for no limit.
+    contamination : 'auto' or float, default=0.05
+        The amount of contamination of the data set, i.e. the proportion
+        of outliers in the data set. Used when fitting to define the threshold
+        on the scores of the samples.
+            - If 'auto', the threshold is determined as in the
+              original paper.
+            - If float, the contamination should be in the range (0, 0.5].
+    verbose : bool, default=False
+        Enable verbose output. Note that this setting takes advantage of a
+        per-process runtime setting in libsvm that, if enabled, may not work
+        properly in a multithreaded context.
+    """
+    def __init__(self, fit_kwargs=None, kernel="rbf", degree=3,
+                 gamma="auto", coef0=0.0, tol=1e-3, nu=0.5, shrinking=True,
+                 cache_size=200, max_iter=-1, contamination=0.05, verbose=False,
+                 space=None, name=None, **kwargs):
+
+        if kernel is not None and kernel != 'rbf':
+            kwargs['kernel'] = kernel
+        if degree is not None and degree != 'auto':
+            kwargs['degree'] = 3
+        if gamma is not None and gamma != 'auto':
+            kwargs['gamma'] = gamma
+        if coef0 is not None and coef0 != 0.0:
+            kwargs['coef0'] = coef0
+        if tol is not None and tol != 1e-3:
+            kwargs['tol'] = tol
+        if nu is not None and nu != 0.5:
+            kwargs['nu'] = nu
+        if shrinking is not None and shrinking != True:
+            kwargs['shrinking'] = shrinking
+        if cache_size is not None and cache_size !=200:
+            kwargs['cache_size'] = cache_size
+        if max_iter is not None and max_iter != -1:
+            kwargs['max_iter'] = max_iter
+        if contamination is not None and contamination != 0.05:
+            kwargs['contamination'] = contamination
+        if verbose is not None and verbose != False:
+            kwargs['verbose'] = verbose
+
+        HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
+
+    def _build_estimator(self, task, fit_kwargs, kwargs):
+        if task in consts.TASK_LIST_DETECTION:
+            ocsvm = OneClassSVMWrapper(fit_kwargs, **kwargs)
+        else:
+            raise ValueError('OneClassSVM model supports only anomaly detection task.')
+        return ocsvm
+
+
 ##################################### Define Deep Learning Model HyperEstimator #####################################
 class DeepARForecastEstimator(HyperEstimator):
     """Time Series Forecast Estimator based on Hypernets.
@@ -383,7 +553,7 @@ class DeepARForecastEstimator(HyperEstimator):
     task       : Str - Only 'univariate-forecast' is supported,
                  default = 'univariate-forecast'.
     rnn_type   : Str - Type of recurrent neural network,
-                 optional {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
+                 optional {'basic', 'gru', 'lstm}, default = 'gru'.
     rnn_units  : Positive Int - The dimensionality of the output space for recurrent neural network,
                  default = 16.
     rnn_layers : Positive Int - The number of the layers for recurrent neural network,
@@ -469,6 +639,8 @@ class DeepARForecastEstimator(HyperEstimator):
             raise ValueError('timestamp can not be None.')
         if task is not None:
             kwargs['task'] = task
+        else:
+            raise ValueError('task can not be None.')
         if rnn_type is not None and rnn_type != 'gru':
             kwargs['rnn_type'] = rnn_type
         if rnn_units is not None and rnn_units != 16:
@@ -542,7 +714,7 @@ class HybirdRNNGeneralEstimator(HyperEstimator):
     task       : Str - Support forecast, classification, and regression.
                  default = 'univariate-forecast'.
     rnn_type   : Str - Type of recurrent neural network,
-                 optional {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
+                 optional {'basic', 'gru', 'lstm}, default = 'gru'.
     rnn_units  : Positive Int - The dimensionality of the output space for recurrent neural network,
                  default = 16.
     rnn_layers : Positive Int - The number of the layers for recurrent neural network,
@@ -622,12 +794,14 @@ class HybirdRNNGeneralEstimator(HyperEstimator):
                  workers=1, use_multiprocessing=False,
                  space=None, name=None, **kwargs):
 
+        if task is not None:
+            kwargs['task'] = task
+        else:
+            raise ValueError('task can not be None.')
         if task in consts.TASK_LIST_FORECAST and timestamp is None:
             raise ValueError('Timestamp need to be given for forecast task.')
         else:
             kwargs['timestamp'] = timestamp
-        if task is not None:
-            kwargs['task'] = task
         if rnn_type is not None and rnn_type != 'gru':
             kwargs['rnn_type'] = rnn_type
         if rnn_units is not None and rnn_units != 16:
@@ -701,7 +875,7 @@ class LSTNetGeneralEstimator(HyperEstimator):
     task       : Str - Support forecast, classification, and regression.
                  default = 'univariate-forecast'.
     rnn_type   : Str - Type of recurrent neural network,
-                 optional {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
+                 optional {'basic', 'gru', 'lstm}, default = 'gru'.
     skip_rnn_type : Str - Type of skip recurrent neural network,
                  optional {'simple_rnn', 'gru', 'lstm}, default = 'gru'.
     cnn_filters: Positive Int - The dimensionality of the output space (i.e. the number of filters
@@ -797,12 +971,14 @@ class LSTNetGeneralEstimator(HyperEstimator):
                  workers=1, use_multiprocessing=False,
                  space=None, name=None, **kwargs):
 
+        if task is not None:
+            kwargs['task'] = task
+        else:
+            raise ValueError('task can not be None.')
         if task in consts.TASK_LIST_FORECAST and timestamp is None:
             raise ValueError('Timestamp need to be given for forecast task.')
         else:
             kwargs['timestamp'] = timestamp
-        if task is not None:
-            kwargs['task'] = task
         if rnn_type is not None and rnn_type != 'gru':
             kwargs['rnn_type'] = rnn_type
         if skip_rnn_type is not None and skip_rnn_type != 'gru':
@@ -979,6 +1155,8 @@ class NBeatsForecastEstimator(HyperEstimator):
             raise ValueError('timestamp can not be None.')
         if task is not None:
             kwargs['task'] = task
+        else:
+            raise ValueError('task can not be None.')
         if stack_types is not None and stack_types != ('trend', 'seasonality'):
             kwargs['stack_types'] = stack_types
         if thetas_dim is not None and thetas_dim != (4, 8):
@@ -1132,6 +1310,8 @@ class InceptionTimeGeneralEstimator(HyperEstimator):
         kwargs['timestamp'] = timestamp
         if task is not None:
             kwargs['task'] = task
+        else:
+            raise ValueError('task can not be None.')
         if blocks is not None and blocks != 3:
             kwargs['blocks'] = blocks
         if cnn_filters is not None and cnn_filters != 32:
@@ -1190,166 +1370,175 @@ class InceptionTimeGeneralEstimator(HyperEstimator):
         return inceptiontime
 
 
-class IForestDetectionEstimator(HyperEstimator):
+class ConvVAEDetectionEstimator(HyperEstimator):
     """Time Series Anomaly Detection Estimator based on Hypernets.
-    Estimator:  Isolation Forest (IForest).
+    Estimator:  Convolution Variational AutoEncoder (ConvVAE).
     Suitable for: Univariate/Multivariate Anomaly Detection Task.
 
     Parameters
     ----------
-    n_estimators : int, default=100
-        The number of base estimators in the ensemble.
-    max_samples : "auto", int or float, default="auto"
-        The number of samples to draw from X to train each base estimator.
-            - If int, then draw `max_samples` samples.
-            - If float, then draw `max_samples * X.shape[0]` samples.
-            - If "auto", then `max_samples=min(256, n_samples)`.
-        If max_samples is larger than the number of samples provided,
-        all samples will be used for all trees (no sampling).
-    contamination : 'auto' or float, default=0.05
-        The amount of contamination of the data set, i.e. the proportion
-        of outliers in the data set. Used when fitting to define the threshold
-        on the scores of the samples.
-            - If 'auto', the threshold is determined as in the
-              original paper.
-            - If float, the contamination should be in the range (0, 0.5].
-    max_features : int or float, default=1.0
-        The number of features to draw from X to train each base estimator.
-            - If int, then draw `max_features` features.
-            - If float, then draw `max_features * X.shape[1]` features.
-    bootstrap : bool, default=False
-        If True, individual trees are fit on random subsets of the training
-        data sampled with replacement. If False, sampling without replacement
-        is performed.
-    n_jobs : int, default=None
-        The number of jobs to run in parallel for both :meth:`fit` and
-        :meth:`predict`. ``None`` means 1 unless in a
-        :obj:`joblib.parallel_backend` context. ``-1`` means using all
-        processors. See :term:`Glossary <n_jobs>` for more details.
-    random_state : int, RandomState instance or None, default=None
-        Controls the pseudo-randomness of the selection of the feature
-        and split values for each branching step and each tree in the forest.
-        Pass an int for reproducible results across multiple function calls.
-        See :term:`Glossary <random_state>`.
-    verbose : int, default=0
-        Controls the verbosity of the tree building process.
+    task          : Str - Only support anomaly detection.
+                See hyperts.utils.consts for details.
+    timestamp     : Str or None - Timestamp name, the forecast task must be given,
+                default None.
+    window        : Positive Int - Length of the time series sequences for a sample.
+    horizon       : Positive Int - Length of the prediction horizon,
+                 default = 1.
+    forecast_length : Positive Int - Step of the forecast outputs,
+                 default = 1.
+    latent_dim    : Int - Latent representation of encoder, default 2.
+    conv_type     : Str - Type of 1D convolution, optional {'general', 'separable'},
+                default 'general'.
+    cnn_filters   : Positive Int - The dimensionality of the output space (i.e. the number
+        of filters in the convolution).
+    kernel_size   : Positive Int - A single integer specifying the spatial dimensions
+        of the filters,
+    strides       : Int or tuple/list of a single integer - Specifying the stride length
+        of the convolution.
+    nb_layers     : Int - The layers of encoder and decoder, default 2.
+    activation    : Str - The activation of hidden layers, default 'relu'.
+    drop_rate     : Float between 0 and 1 - The rate of Dropout for neural nets.
+    out_activation : Str - Forecast the task output activation function,
+                 optional {'linear', 'sigmoid', 'tanh'}, default 'linear'.
+    metrics       : Str - List of metrics to be evaluated by the model during training and testing,
+                 default = 'auto'.
+    monitor_metric : Str - Quality indicators monitored during neural network training.
+                 default = 'val_loss'.
+    optimizer     : Str or keras Instance - for example, 'adam', 'sgd', and so on.
+                 default = 'auto'.
+    learning_rate : Positive Float - The optimizer's learning rate,
+                 default = 0.001.
+    reducelr_patience : Positive Int - The number of epochs with no improvement after which learning rate
+                 will be reduced, default = 5.
+    earlystop_patience : Positive Int - The number of epochs with no improvement after which training
+                 will be stopped, default = 5.
+    summary       : Bool - Whether to output network structure information,
+                 default = True.
+    batch_size : Int or None - Number of samples per gradient update.
+                 default = 32.
+    epochs     : Int - Number of epochs to train the model,
+                 default = 1.
+    verbose    : 0, 1, or 2. Verbosity mode.
+                 0 = silent, 1 = progress bar, 2 = one line per epoch.
+                 Note that the progress bar is not particularly useful when logged to a file, so verbose=2
+                 is recommended when not running interactively (eg, in a production environment).
+                 default = 1.
+    callbacks  : List of `keras.callbacks.Callback` instances.
+                 List of callbacks to apply during training.
+                 See `tf.keras.callbacks`. Note `tf.keras.callbacks.ProgbarLogger`
+                 and `tf.keras.callbacks.History` callbacks are created automatically
+                 and need not be passed into `model.fit`.
+                 `tf.keras.callbacks.ProgbarLogger` is created or not based on
+                 `verbose` argument to `model.fit`.
+                 default = None.
+    validation_split : Float between 0 and 1.
+                 Fraction of the training data to be used as validation data.
+                 The model will set apart this fraction of the training data, will not train on it, and will
+                 evaluate the loss and any model metrics on this data at the end of each epoch,
+                 default = 0.
+    shuffle    : Boolean (whether to shuffle the training data
+                 before each epoch) or str (for 'batch').
+    max_queue_size : Int - Used for generator or `keras.utils.Sequence`
+                 input only. Maximum size for the generator queue,
+                 default = 10.
+    workers    : Int - Used for generator or `keras.utils.Sequence` input
+                 only. Maximum number of processes to spin up when using process-based
+                 threading. If 0, will execute the generator on the main thread,
+                 default = 1.
+    use_multiprocessing : Bool. Used for generator or
+                 `keras.utils.Sequence` input only. If `True`, use process-based
+                 threading. Note that because this implementation relies on
+                 multiprocessing, you should not pass non-picklable arguments to
+                 the generator as they can't be passed easily to children processes.
+                 default = False.
+
     """
-    def __init__(self, fit_kwargs=None, n_estimators=100,
-                 max_samples="auto", contamination=0.05, max_features=1.0,
-                 bootstrap=False, n_jobs=None, random_state=None,
-                 verbose=0, space=None, name=None, **kwargs):
-
-        if n_estimators is not None and n_estimators != 100:
-            kwargs['n_estimators'] = n_estimators
-        if max_samples is not None and max_samples != 'auto':
-            kwargs['max_samples'] = max_samples
-        if contamination is not None and contamination != 0.05:
-            kwargs['contamination'] = contamination
-        if max_features is not None and max_features != 1.0:
-            kwargs['max_features'] = max_features
-        if bootstrap is not None and bootstrap != False:
-            kwargs['bootstrap'] = bootstrap
-        if n_jobs is not None:
-            kwargs['n_jobs'] = n_jobs
-        if random_state is not None:
-            kwargs['random_state'] = random_state
-        if verbose is not None and verbose != 0:
-            kwargs['verbose'] = verbose
-
-        HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
-
-    def _build_estimator(self, task, fit_kwargs, kwargs):
-        if task in consts.TASK_LIST_DETECTION:
-            iforest = IForestWrapper(fit_kwargs, **kwargs)
-        else:
-            raise ValueError('Isolation Forest model supports only anomaly detection task.')
-        return iforest
-
-
-class OCSVMDetectionEstimator(HyperEstimator):
-    """Time Series Anomaly Detection Estimator based on Hypernets.
-    Estimator:  One Class SVM (OCSVM).
-    Suitable for: Univariate/Multivariate Anomaly Detection Task.
-
-    Parameters
-    ----------
-    kernel : {'linear', 'poly', 'rbf', 'sigmoid', 'precomputed'} or callable,  \
-        default='rbf'
-         Specifies the kernel type to be used in the algorithm.
-         If none is given, 'rbf' will be used. If a callable is given it is
-         used to precompute the kernel matrix.
-    degree : int, default=3
-        Degree of the polynomial kernel function ('poly').
-        Ignored by all other kernels.
-    gamma : {'scale', 'auto'} or float, default='scale'
-        Kernel coefficient for 'rbf', 'poly' and 'sigmoid'.
-        - if ``gamma='scale'`` (default) is passed then it uses
-          1 / (n_features * X.var()) as value of gamma,
-        - if 'auto', uses 1 / n_features.
-        .. versionchanged:: 0.22
-           The default value of ``gamma`` changed from 'auto' to 'scale'.
-    coef0 : float, default=0.0
-        Independent term in kernel function.
-        It is only significant in 'poly' and 'sigmoid'.
-    tol : float, default=1e-3
-        Tolerance for stopping criterion.
-    nu : float, default=0.5
-        An upper bound on the fraction of training
-        errors and a lower bound of the fraction of support
-        vectors. Should be in the interval (0, 1]. By default 0.5
-        will be taken.
-    shrinking : bool, default=True
-        Whether to use the shrinking heuristic.
-        See the :ref:`User Guide <shrinking_svm>`.
-    cache_size : float, default=200
-        Specify the size of the kernel cache (in MB).
-    max_iter : int, default=-1
-        Hard limit on iterations within solver, or -1 for no limit.
-    contamination : 'auto' or float, default=0.05
-        The amount of contamination of the data set, i.e. the proportion
-        of outliers in the data set. Used when fitting to define the threshold
-        on the scores of the samples.
-            - If 'auto', the threshold is determined as in the
-              original paper.
-            - If float, the contamination should be in the range (0, 0.5].
-    verbose : bool, default=False
-        Enable verbose output. Note that this setting takes advantage of a
-        per-process runtime setting in libsvm that, if enabled, may not work
-        properly in a multithreaded context.
-    """
-    def __init__(self, fit_kwargs=None, kernel="rbf", degree=3,
-                 gamma="auto", coef0=0.0, tol=1e-3, nu=0.5, shrinking=True,
-                 cache_size=200, max_iter=-1, contamination=0.05, verbose=False,
+    def __init__(self, fit_kwargs=None, timestamp=None, task='detection',
+                 contamination=0.05, window=3, horizon=1, forecast_length=1,
+                 latent_dim=2, conv_type='general', cnn_filters=16, kernel_size=1,
+                 strides=1, nb_layers=2, activation='relu', drop_rate=0.,
+                 out_activation='linear', reconstract_dim=None, metrics='auto',
+                 monitor_metric='val_loss', optimizer='auto', learning_rate=0.001,
+                 reducelr_patience=5, earlystop_patience=10, summary=True,
+                 batch_size=None, epochs=1, verbose=1, callbacks=None,
+                 validation_split=0., shuffle=True, max_queue_size=10,
+                 workers=1, use_multiprocessing=False,
                  space=None, name=None, **kwargs):
-
-        if kernel is not None and kernel != 'rbf':
-            kwargs['kernel'] = kernel
-        if degree is not None and degree != 'auto':
-            kwargs['degree'] = 3
-        if gamma is not None and gamma != 'auto':
-            kwargs['gamma'] = gamma
-        if coef0 is not None and coef0 != 0.0:
-            kwargs['coef0'] = coef0
-        if tol is not None and tol != 1e-3:
-            kwargs['tol'] = tol
-        if nu is not None and nu != 0.5:
-            kwargs['nu'] = nu
-        if shrinking is not None and shrinking != True:
-            kwargs['shrinking'] = shrinking
-        if cache_size is not None and cache_size !=200:
-            kwargs['cache_size'] = cache_size
-        if max_iter is not None and max_iter != -1:
-            kwargs['max_iter'] = max_iter
+        if timestamp is not None:
+            kwargs['timestamp'] = timestamp
+        else:
+            raise ValueError('timestamp can not be None.')
+        if task is not None:
+            kwargs['task'] = task
+        else:
+            raise ValueError('task can not be None.')
         if contamination is not None and contamination != 0.05:
             kwargs['contamination'] = contamination
-        if verbose is not None and verbose != False:
+        if window is not None and window != 3:
+            kwargs['window'] = window
+        if horizon is not None and horizon != 1:
+            kwargs['horizon'] = horizon
+        if forecast_length is not None and forecast_length != 1:
+            kwargs['forecast_length'] = forecast_length
+        if latent_dim is not None and latent_dim != 2:
+            kwargs['latent_dim'] = latent_dim
+        if conv_type is not None and conv_type != 'general':
+            kwargs['conv_type'] = conv_type
+        if cnn_filters is not None and cnn_filters != 16:
+            kwargs['cnn_filters'] = cnn_filters
+        if kernel_size is not None and kernel_size != 1:
+            kwargs['kernel_size'] = kernel_size
+        if strides is not None and strides != 1:
+            kwargs['strides'] = strides
+        if nb_layers is not None and nb_layers != 2:
+            kwargs['nb_layers'] = nb_layers
+        if activation is not None and activation != 'relu':
+            kwargs['activation'] = activation
+        if drop_rate is not None and drop_rate != 0.:
+            kwargs['drop_rate'] = drop_rate
+        if out_activation is not None and out_activation != 'linear':
+            kwargs['out_activation'] = out_activation
+        if reconstract_dim is not None:
+            kwargs['reconstract_dim'] = reconstract_dim
+        if metrics is not None and metrics != 'auto':
+            kwargs['metrics'] = metrics
+        if monitor_metric is not None and monitor_metric != 'val_loss':
+            kwargs['monitor_metric'] = monitor_metric
+        if optimizer is not None and optimizer != 'auto':
+            kwargs['optimizer'] = optimizer
+        if learning_rate is not None and learning_rate != 0.001:
+            kwargs['learning_rate'] = learning_rate
+        if reducelr_patience is not None and reducelr_patience != 5:
+            kwargs['reducelr_patience'] = reducelr_patience
+        if earlystop_patience is not None and earlystop_patience != 10:
+            kwargs['earlystop_patience'] = earlystop_patience
+        if summary is not None and summary != True:
+            kwargs['summary'] = summary
+
+        if batch_size is not None:
+            kwargs['batch_size'] = batch_size
+        if epochs is not None and epochs != 1:
+            kwargs['epochs'] = epochs
+        if verbose is not None and verbose != 1:
             kwargs['verbose'] = verbose
+        if callbacks is not None:
+            kwargs['callbacks'] = callbacks
+        if validation_split is not None and validation_split != 0.:
+            kwargs['validation_split'] = validation_split
+        if shuffle is not None and shuffle != True:
+            kwargs['shuffle'] = shuffle
+        if max_queue_size is not None and max_queue_size != 10:
+            kwargs['max_queue_size'] = max_queue_size
+        if workers is not None and workers != 1:
+            kwargs['workers'] = workers
+        if use_multiprocessing is not None and use_multiprocessing != False:
+            kwargs['use_multiprocessing'] = use_multiprocessing
 
         HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
 
     def _build_estimator(self, task, fit_kwargs, kwargs):
         if task in consts.TASK_LIST_DETECTION:
-            ocsvm = OneClassSVMWrapper(fit_kwargs, **kwargs)
+            vae = ConvVAEWrapper(fit_kwargs, **kwargs)
         else:
-            raise ValueError('OneClassSVM model supports only anomaly detection task.')
-        return ocsvm
+            raise ValueError('ConvVAE model supports only anomaly detection task.')
+        return vae

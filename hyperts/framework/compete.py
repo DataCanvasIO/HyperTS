@@ -487,7 +487,8 @@ class TSPipeline:
                     if X_timestamp_start <= forecast_timestamp_end:
                         raise ValueError(f'The start date of X [{X_timestamp_start}] should be after '
                                          f'the end date of forecast_start [{forecast_timestamp_end}].')
-                self.__preprocess_forecast_start(self.history)
+                if self.task in consts.TASK_LIST_FORECAST:
+                    self.__preprocess_forecast_start(self.history)
 
             if X[self.timestamp].dtypes == object:
                 X[self.timestamp] = tb.to_datetime(X[self.timestamp])
