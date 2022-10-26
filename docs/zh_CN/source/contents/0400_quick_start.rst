@@ -145,3 +145,35 @@ HyperTS可以被用来解决时序预测、分类及回归任务, 它们公用�
 .. tip::
 
     预测曲线由plotly工具绘制时, 通过点击可以交互式观测每个时刻的数值信息。
+
+--------
+
+保存模型
+=============
+
+使用 ``save()`` 去保存训练好的模型.
+
+.. code-block:: python
+
+    model.save(model_file="./xxx/xxx/models")
+
+此外，也可以采用如下保存模型方式:
+
+.. code-block:: python
+
+    from hyperts.utils.models import save_model
+
+    save_model(model=model, model_file="./xxx/xxx/models")
+
+
+
+加载模型
+=============
+
+使用 ``load_model()`` 去加载已保存的模型.
+
+.. code-block:: python
+
+    from hyperts.utils.models import load_model
+
+    pipeline_model = load_model(model_file="./xxx/xxx/models/dl_models")

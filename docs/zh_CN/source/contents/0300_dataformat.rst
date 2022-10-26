@@ -259,3 +259,34 @@
 
 .. image:: /figures/dataframe/classification_example_1.png
     :width: 950
+
+
+时序异常检测任务
+=================
+
+In HyperTS, the data format for time series anomaly detection and forecasting is basically the same. The difference is that anomaly detection data can carray anomaly labels as follows:
+在HyperTS, 时序异常检测和时序预测的数据格式基本上是异常的。而异常检测唯一不同的一点是，如何条件允许(被专业人员标注), 训练数据可以包含异常值标签。如下所示：
+
+.. code-block:: none
+
+      time_col          var_col_0   var_col_1 ... var_col_n   covar_col_0    covar_col_1 ... covar_col_m anomaly
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        1
+  xxxx-xx-xx xx:xx:xx        x          x              -            x              x               x        0
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              -               x        0
+  xxxx-xx-xx xx:xx:xx        -          x              x            x              x               -        1
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        0
+  xxxx-xx-xx xx:xx:xx        x          -              x            x              x               x        0
+  xxxx-xx-xx xx:xx:xx        x          -              x            x              x               x        0
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              -               x        0
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        1
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        0
+  xxxx-xx-xx xx:xx:xx        -          -              -            x              x               x        0
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        0
+          -                  -          -              -            -              -               -        1
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        0
+
+其中, ``anomaly`` 是异常标签列.
+
+.. note::
+
+    当训练数据包含真实标签时，优化评估过程将采用真实标签。否则，将应用伪标签技术。

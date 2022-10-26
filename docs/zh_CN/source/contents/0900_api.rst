@@ -172,6 +172,19 @@ framework.meta\_learning.tsfeatures
    :undoc-members:
    :show-inheritance:
 
+framework.stats
+----------------
+
+.. automodule:: hyperts.framework.stats.iforest
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: hyperts.framework.stats.ocsvm
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 framework.dl
 --------------
 
@@ -223,6 +236,14 @@ dl.models.nbeats
    :undoc-members:
    :show-inheritance:
 
+dl.models.vae
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.dl.models.vae
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 dl.layers
 ^^^^^^^^^^^^^
 
@@ -234,7 +255,7 @@ dl.layers
 dl.losses
 ^^^^^^^^^^^^^
 
-.. automodule:: hyperts.framework.dl.layers._losses
+.. automodule:: hyperts.framework.dl.losses._losses
    :members:
    :undoc-members:
    :show-inheritance:
@@ -242,7 +263,15 @@ dl.losses
 dl.metrics
 ^^^^^^^^^^^^^
 
-.. automodule:: hyperts.framework.dl.layers._metrics
+.. automodule:: hyperts.framework.dl.metrics._metrics
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+dl.optimizers
+^^^^^^^^^^^^^
+
+.. automodule:: hyperts.framework.dl.optimizers._optimizers
    :members:
    :undoc-members:
    :show-inheritance:

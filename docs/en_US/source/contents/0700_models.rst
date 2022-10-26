@@ -11,6 +11,7 @@ Different tasks require different statistical methods, which are introduced in s
 
 - Time series forecasting: Prophet | ARIMA | VAR
 - Time series classification: TSForest | KNeighbors
+- Time series anomaly detection: TSIsolationForest | TSOneClassSVM
 
 
 Prophet
@@ -30,7 +31,7 @@ For more information, please check the `website <https://facebook.github.io/prop
 
     Prophet is applied to univariate times series forecasting.
 
-
+---------
 
 ARIMA
 =====
@@ -67,7 +68,7 @@ The I part of ARIMA is to perform difference operation to make the time series s
    
     ARIMA is applied to univariate times series forecasting.
 
-
+-------
 
 VAR
 ===
@@ -86,7 +87,7 @@ A second order VAR(2) model for two variables can be fomulated as below:
     
     VAR is applied to multivariate times series forecasting.
 
-
+--------
 
 TSForest
 ========
@@ -101,7 +102,7 @@ For more information, please refer to the paper `A Time Series Forest for Classi
 
     TSForest is applied to univariate times series classification.
 
-
+--------
 
 KNeighbors
 ==========
@@ -111,12 +112,38 @@ K-nearest-neighbor(KNN) classifiers with dynamic time warping `(DTW) <https://en
     
     KNeighbour is applied to both univariate and multivariate times series classification.
 
+---------
+
+TSIsolationForest
+===================
+Isolation forest detects anomalies using isolation (how far data point is to the rest of the data), rather than modeling the normal points. In 2007, it was initialy developed by Fei Tony Liu as one of the original ideas in his PhD study .The significance of this research lies in its deviation from the mainstream philosophy underpinning most existing anomaly detctors at the time, where all the normal instances are profiled before anomalies are identified as instances that do not confrom to the distribution of the normal instances. Isolation forest introduces a different method that explicitly isolates anomalies using binary trees, demostrating a new prossibility of a faster anomaly detector that directly targets anomalies without profilling all the normal instances. The algorithm has a linear time complexity with a low constant and a low memory requirement, which works well with high volume data.
+
+For more information, please check the `wikipedia <https://en.wikipedia.org/wiki/Isolation_forest>`_ and the paper `Isolation Forest <https://cs.nju.edu.cn/zhouzh/zhouzh.files/publication/icdm08b.pdf?q=isolation-forest>`_.
+
+.. tip::
+    
+    TSIsolationForest is applied to both univariate and multivariate times series anomaly detection.
+
+---------
+
+TSOneClassSVM
+===============
+One-Class SVM is an unsupervised learning technique to learn the ability to differentiate the test samples of a particular calss from other classes. One-SVM is one of the most convenient methods to approach One-Class Classification problem statements including anomaly detection. One-SVM works on the basic idea of minimizing the hypersphere of the single class of examples in training data and considers all the other samples outside the hypersphere to be outliers or out of training data distribution. 
+
+.. tip::
+    
+    TSOneClassSVM is applied to both univariate and multivariate times series anomaly detection.
 
 -----------
 
 
 Deep Learning Algorithms
 *************************
+
+
+DeepAR | HybirdRNN | LSTNet | InceptionTime | N-Beats | VAE
+
+------------
 
 DeepAR
 ======
@@ -128,7 +155,7 @@ For more information, please refer to the paper `DeepAR: Probabilistic Forecasti
     
     DeepAR is applied to univariate times series forecasting.
 
-
+------------
 
 HybirdRNN
 =========
@@ -139,7 +166,7 @@ For more information, please refer to the paper `Empirical Evaluation of Gated R
 .. tip::
     HybirdRNN is applied to all tasks: uni/multi-variate forecasting, classification and regression.
 
-
+-----------
 
 LSTNet
 ========
@@ -150,6 +177,39 @@ For more information, please refer to the paper `Modeling Long- and Short-Term T
 .. tip::
     LSTNet is applied to uni/multi-variate forecasting and regression.
 
+-----------
+
+InceptionTime
+===============
+The network architecture of InceptionTime highly resembles to that of GoogleNet. In particular, the network consists of a series of Inception modules followed by a Global Average Pooing layer and a Dense layer with a softmax activation function. However, InceptionTime introduces an additional element within its network's layers: residual connections at every third inception module. For computer vision problems, we expect our model to learn features in a similar fashion. Similarly, InceptionTime expects the bottom-layer neurons to capture the local structure of a time series such as lines and curves, and the top-layer neurons to identify various shape patterns such as 'valleys' and 'hills'.
+
+For more information, please refer to the paper `InceptionTime: Finding AlexNet for time series classification <https://link.springer.com/article/10.1007/s10618-020-00710-y>`_
+
+.. tip::
+    
+    InceptionTime is applied to both univariate and multivariate times series classification.
+
+------------
+
+N-Beats
+===============
+N-Beats is a deep neural architecture based on backward and forward residual links and a very deep stack of fully-connected layers. The architecture has a number of desirable properties, being interpretable, applicable without modification to a wide array of target domains, and fast to train.
+
+For more information, please refer to the paper `N-BEATS: Neural basis expansion analysis for interpretable time series forecasting <https://arxiv.org/abs/1905.10437>`_
+
+.. tip::
+
+    N-Beats is applied to both univariate and multivariate times series forecasting.
+
+------------
+
+VAE
+=====
+Variational AutoEncoder (VAE), is an unsupervised deep learning generative model, which can model the distribution of the training data. It comes from the Bayesian inference, and consists of an encoder, latent distribution, and a decoder. The principle is a simple distribution (such as a Gaussian distribution) with known parameters and superimposable characteristics can theoretically fit any distribution by combining with neural networks.
+
+.. tip::
+    
+    VAE is applied to both univariate and multivariate times series anomaly detection.
 
 --------
 
@@ -162,4 +222,4 @@ it is the crystallization of the experience of countless human experts. Conseque
 HyperTS relies on the basic capabilities provided by Hypernets (``Hpyer Model`` + ``Search Strategy`` + ``Estimation Strategy``), to build ``Search Space`` for time series tasks based on NAS powerful expression capabilities.
 
 .. tip::
-    NAS is applied to uni/multi-variate forecasting and regression.
+    NAS is applied to uni/multi-variate forecasting, classification, and regression.

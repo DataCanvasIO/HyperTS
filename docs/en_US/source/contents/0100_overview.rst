@@ -18,7 +18,7 @@ HyperTS supports the following features:
 
 - **Multi-task support**
 
-  HyerTS provides an uniform interface for various time series tasks, including forcasting, classification and regression.   
+  HyerTS provides an uniform interface for various time series tasks, including forcasting, classification, regression, and anomaly detection.   
 
 - **Multi-(co)variate support** 
 
@@ -70,17 +70,18 @@ Below is the overview of all features and run modes of HyperTS:
    Model & Mode, Prophet —> STATS mode | univariate | forecasting, √
    , ARIMA —> STATS mode | univariate  | forecasting, √
    , VAR —> STATS mode | multivariate | forecasting, √
-   , TSForest —> DL mode | univariate | classification, , √
-   , KNeighbors —> DL mode | uni/multi-variate | classification, , √
+   , TSForest —> DL mode | univariate | classification, √
+   , KNeighbors —> DL mode | uni/multi-variate | classification, √
    , Theta —> STATS mode | univariate | forecasting, , √
    , DeepAR —> DL mode | univariate  | forecasting | covariates , √
    , RNN —> DL mode | uni/multi-variate | forecasting/classification/regression | covariates, √
    , GRU —> DL mode | uni/multi-variate | forecasting/classification/regression  | covariates, √
    , LSTM —> DL mode | uni/multi-variate | forecasting/classification/regression | covariates, √
    , LSTNet —> DL mode | uni/multi-variate | forecasting/classification/regression  | covariates, √
-   , Wavenet —> DL mode | uni/multi-variate | forecasting/classification/regression  | covariates, , √
-   , Transformer —> DL mode | uni/multi-variate | forecasting/classification/regression  | covariates, , √
-   , NAS —> NAS | uni/multi-variate | forecasting/classification/regression  | covariates, , √
+   , InceptionTime —> DL mode | uni/multi-variate | classification  , √
+   , N-Beats —> DL mode | uni/multi-variate | forecasting | covariates , √
+   , VAE —> DL mode | uni/multi-variate | anomaly detection | covariates, √
+   , NAS —> NAS | uni/multi-variate | forecasting/classification/regression  | covariates, √
    Evaluation methods, Train-Validation-Holdout, √
    , Rolling-Window-Evaluation, √
    Model ensemble, GreedyEnsemble, √

@@ -263,3 +263,33 @@ HyperTS provides a function ``from_3d_array_to_nested_df``, that could automatic
 
 .. image:: /figures/dataframe/classification_example_1.png
     :width: 950
+
+
+Time Series Anomaly Detection
+============================================
+
+In HyperTS, the data format for time series anomaly detection and forecasting is basically the same. The difference is that anomaly detection data can carray anomaly labels as follows:
+
+.. code-block:: none 
+
+      time_col          var_col_0   var_col_1 ... var_col_n   covar_col_0    covar_col_1 ... covar_col_m anomaly
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        1
+  xxxx-xx-xx xx:xx:xx        x          x              -            x              x               x        0
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              -               x        0
+  xxxx-xx-xx xx:xx:xx        -          x              x            x              x               -        1
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        0
+  xxxx-xx-xx xx:xx:xx        x          -              x            x              x               x        0
+  xxxx-xx-xx xx:xx:xx        x          -              x            x              x               x        0
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              -               x        0
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        1
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        0
+  xxxx-xx-xx xx:xx:xx        -          -              -            x              x               x        0
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        0
+          -                  -          -              -            -              -               -        1
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        0
+
+where ``anomaly`` is anomaly label column.
+
+.. note::
+
+    When the data has ground truth label, the optimization evalution uses the ground truth. Otherwise, the generated pseudo-label is applied.

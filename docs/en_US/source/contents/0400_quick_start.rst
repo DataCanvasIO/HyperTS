@@ -11,6 +11,7 @@ The figure below shows the ``make_experiment`` workflow of HyperTS:
 
 HyperTS provides the unified API for different tasks, like time series forecasting, classification and regression. An example of how to perform the forecasting task is illustrated as follows. 
 
+-----------
 
 Data Preparation
 =================
@@ -47,7 +48,7 @@ The detail information of this dataset:
 .. tip::
     If you have any questions about the data format, please refer to the section :doc:`Expected Data Format </contents/0300_dataformat>` 。
 
-
+-----------
 
 Model Training
 ==============
@@ -83,7 +84,7 @@ An experiment is firsty created by ``make_experiment`` with several user-defined
 
     For more advanced performance, you could modify other parameters. Please refer to the instructions of :doc:`Advanced Configurations </contents/0500_advanced_config>`.
 
-
+-----------
 
 Prediction
 ================
@@ -99,7 +100,7 @@ Function ``split_X_y()`` is to separate the test data into X (the timestamp and 
 .. image:: /figures/dataframe/quickstart_1.png
     :width: 600
 
-
+-----------
 
 Evaluation
 ==================
@@ -114,7 +115,7 @@ To evaluate the forecast results, use function ``evaluate()`` to get the scores 
 .. image:: /figures/dataframe/quickstart_2.png
     :width: 120
 
-
+-----------
 
 Visualization
 ======================
@@ -123,7 +124,7 @@ Use function ``plot()`` to draw the forecast curve and actural result for compar
 
 .. code-block:: python
 
-    model.plot(forecast=forecast, actual=test_data)
+    model.plot(forecast=forecast, actual=test_data, interactive=True)
 
 .. image:: /figures/images/Actual_vs_Forecast.jpg
     :align: left
@@ -139,3 +140,35 @@ Use function ``plot()`` to draw the forecast curve and actural result for compar
     
 .. tip::
     The forecasting curve graph is made by plotly library. Users could observe each point value by clicking on the curve. 
+
+----------
+
+Save Model
+=============
+
+Use function ``save()`` to save the trained model.
+
+.. code-block:: python
+
+    model.save(model_file="./xxx/xxx/models")
+
+In addition, the second save method can be adopted:
+
+.. code-block:: python
+
+    from hyperts.utils.models import save_model
+
+    save_model(model=model, model_file="./xxx/xxx/models")
+
+
+
+Load Model
+=============
+
+Use function ``load_model()`` to load the saved model.
+
+.. code-block:: python
+
+    from hyperts.utils.models import load_model
+
+    pipeline_model = load_model(model_file="./xxx/xxx/models/dl_models")

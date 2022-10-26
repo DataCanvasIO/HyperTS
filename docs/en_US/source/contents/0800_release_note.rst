@@ -116,3 +116,9 @@ Details of the HypertTS update are as follows:
 - Added neural architecture search mode;
 
 - Fixed some known issues.
+
+
+Version 0.1.4
+******************
+
+See Version 0.1.3.

@@ -11,6 +11,8 @@ HyperTS在时间序列分析上平行地支持统计模型模式, 深度学习�
 
 时序分类: TSForest | KNeighbors
 
+时间序列异常检测: TSIsolationForest | TSOneClassSVM
+
 --------
 
 Prophet
@@ -93,19 +95,43 @@ KNeighbors
 ==========
 KNeighbors是采用k近邻的方式对时间序列进行分类的方法。不同于传统的K近邻基于欧式距离进行度量,这里将采用 `动态时间弯曲距离 <https://en.wikipedia.org/wiki/Dynamic_time_warping>`_ (Dynamic Time Warping, DTW)作为一种新的相似性度量方法,通过调节时间点之间的对应关系,能够寻找两个任意长时间序列中数据之间的最佳匹配路径,对噪声有很强的鲁棒性,可以更有效地度量时间序列的相似性。由于DTW距离不要求两个时间序列中的点一一对应,因此具有更广的适用范围。除此之外,还可以采用微分动态时间弯曲距离(Derivative Dynamic Time Warping, DDTW), 加权动态时间弯曲距离(Weighted Dynamic Time Warping, WDTW)等变种或者 `最长公共子序列 <https://en.wikipedia.org/wiki/Longest_common_subsequence_problem>`_ (Longest Common Subsequence, LCSS)等时序距离度量。
 
+.. tip::
+
 适用范围: 单/多变量时序分类。
+
+----------
+
+TSIsolationForest
+=================
+孤立森林(Isolation Forest) 是一种使用隔离的手段(某点到其他数据的距离)来做异常检测无监督算法, 而不是对正常点建模。该方法由Fei Tony Liu 在其2007年的博士论文中提出，是其最初的研究思路之一。该研究的意义在于，它不同于当时大多数现有异常检测的主流哲学，即先分析所有的正常实例，然后将异常识别为不符合正常分布的实例。孤立森林引入了一种不同的方法，即使用二叉树显式的分离异常, 展示了一种更快的异常检测的新可能性，该检测器直接针对异常，而无需分析所有的正常的实例。该算法具有线性的时间复杂度，低内存需求，适用于大容量数据。
+
+详情可参看: `wikipedia <https://en.wikipedia.org/wiki/Isolation_forest>`_ 或者 `Isolation Forest <https://cs.nju.edu.cn/zhouzh/zhouzh.files/publication/icdm08b.pdf?q=isolation-forest>`_.
+
+.. tip::
+
+    适用范围: 单/多变量时序异常检测。
+
+----------
+
+TSOneClassSVM
+=================
+单类支持向量机(One-Class SVM) 是一种无监督的异常检测算法，它学习区分特定类的测试样本与其他类的能力。One-Class SVM 是处理单类分类问题包括异常检测最常用的方法之一。One-Class SVM 的基本思想是最小化训练数据集中单类实例的超球，并将超球之外或者训练数据分布之外的所有其他样本视为异常值。
+
+.. tip::
+
+    适用范围: 单/多变量时序异常检测。
 
 -----------
 
 深度学习
 ********
-DeepAR | HybirdRNN | LSTNet
+DeepAR | HybirdRNN | LSTNet | InceptionTime | N-Beats | VAE
 
 --------
 
 DeepAR
 ======
-DeepAR是基于深度学习的时间序列预测算法, 为升级版的自回归模型。与传统主流的利用循环神经网络来做时序预测的方法不同, DeepAR并不是直接简单地输出一个确定的预测值做点估计, 而是输出预测值的一个概率分布。这样预测可以带来两点好处: 一方面很多过程本身就具有随机属性, 因此输出一个概率分布更加贴近本质, 预测精确; 另一方面可以评估出预测的不确定性和相关等风险。
+DeepAR 是基于深度学习的时间序列预测算法, 为升级版的自回归模型。与传统主流的利用循环神经网络来做时序预测的方法不同, DeepAR并不是直接简单地输出一个确定的预测值做点估计, 而是输出预测值的一个概率分布。这样预测可以带来两点好处: 一方面很多过程本身就具有随机属性, 因此输出一个概率分布更加贴近本质, 预测精确; 另一方面可以评估出预测的不确定性和相关等风险。
 
 详情可参看: `DeepAR: Probabilistic Forecasting with Autoregressive Recurrent Networks <https://arxiv.org/abs/1704.04110>`_
 
@@ -117,7 +143,7 @@ DeepAR是基于深度学习的时间序列预测算法, 为升级版的自回归
 
 HybirdRNN
 =========
-HybirdRNN模型是指朴素循环神经网络(Recurrent Neural Network, RNN), 门控循环单元网络(Gated Recurrent Unit, GRU)以及长短记忆网络(Long Short-term Memory, LSTM)三种循环神经网络的集合。众所周知, 循环神经网络是一类以序列数据为输入在序列的演进方向上捕获时间特性的深度学习模型。循环神经网络具有记忆性且参数共享, 为了预防深度网络的梯度消失问题, LSTM分别引入了遗忘门, 输入门和输出门等门控机制来学习更长的序列信息。GRU与LSTM类似, 减少为重置门和更新门两个门控, 使得每个循环单元可以自适应的捕捉不同时间刻度下的依赖。GRU更容易训练, 不过二者的效果不分伯仲。
+HybirdRNN 模型是指朴素循环神经网络(Recurrent Neural Network, RNN), 门控循环单元网络(Gated Recurrent Unit, GRU)以及长短记忆网络(Long Short-term Memory, LSTM)三种循环神经网络的集合。众所周知, 循环神经网络是一类以序列数据为输入在序列的演进方向上捕获时间特性的深度学习模型。循环神经网络具有记忆性且参数共享, 为了预防深度网络的梯度消失问题, LSTM分别引入了遗忘门, 输入门和输出门等门控机制来学习更长的序列信息。GRU与LSTM类似, 减少为重置门和更新门两个门控, 使得每个循环单元可以自适应的捕捉不同时间刻度下的依赖。GRU更容易训练, 不过二者的效果不分伯仲。
 
 更多区别可参考: `Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling <https://arxiv.org/abs/1412.3555>`_
 
@@ -129,12 +155,44 @@ HybirdRNN模型是指朴素循环神经网络(Recurrent Neural Network, RNN), �
 
 LSTNet
 ======
-LSTNet全称为长短时序网络(Long-and Short-term Time-series network, LSTNet), 是一种专门为长期和短期混合模式的多变量时间序列预测任务设计的深度学习框架。特点为: 1、通过一维卷积CNN来捕获短期局部信息; 2、使用LSTM或者GRU从来自卷积层的特征捕获长期的宏观信息; 3、对于输入数据维度整理, 使用SLTM或者GRU捕获更长期的信息并充分利用序列的周期特性; 4、用全连接网络模拟AR自回归过程, 为预测添加线性成份, 同时使输出可以响应输入的尺度变化。
+LSTNet 全称为长短时序网络(Long-and Short-term Time-series network, LSTNet), 是一种专门为长期和短期混合模式的多变量时间序列预测任务设计的深度学习框架。特点为: 1、通过一维卷积CNN来捕获短期局部信息; 2、使用LSTM或者GRU从来自卷积层的特征捕获长期的宏观信息; 3、对于输入数据维度整理, 使用SLTM或者GRU捕获更长期的信息并充分利用序列的周期特性; 4、用全连接网络模拟AR自回归过程, 为预测添加线性成份, 同时使输出可以响应输入的尺度变化。
 
 详情可参看: `Modeling Long- and Short-Term Temporal Patterns with Deep Neural Networks <https://arxiv.org/abs/1703.07015>`_
 
 .. tip::
     适用范围: 单/多变量时序预测, 回归。
+
+---------
+
+InceptionTime
+==============
+InceptionTime 的网络架构与GoogleNet非常相似。具体而言, 该网络由一系列Inception模块、一个Global Average Pooling层和一个具有softmax激活函数的输入层组成。此外，InceptionTime在它的网络层中引入了一个附加元素：在每第三个inception模块加残差连接。对于计算机视觉问题，我们期望模型学习到不同的模式在不同的位置。类似地，InceptionTime希望底层神经元捕捉时间序列的局部结构，如直线和曲线，而顶层的神经元识别各种形状的模式，如“山谷”和“丘陵”。
+
+详情可参看: `InceptionTime: Finding AlexNet for time series classification <https://link.springer.com/article/10.1007/s10618-020-00710-y>`_
+
+.. tip::
+    适用范围: 单/多变量时序分类。
+
+-----------
+
+N-Beats
+===============
+N-Beats 是一个深度神经架构的网络，它基于向后和向前的残差连接和一个非常深的全连接堆栈。该模型具有许多理想的属性，如可解释，无需修改就可以适用于广泛的目标领域，并且可以快速地训练。
+
+详情可参看: `N-BEATS: Neural basis expansion analysis for interpretable time series forecasting <https://arxiv.org/abs/1905.10437>`_
+
+.. tip::
+
+    适用范围: 单/多变量时序预测。
+
+------------
+
+VAE
+=====
+变分自动编码器 (Variational AutoEncoder, VAE) 是一种无监督的深度学习模型，可以对训练数据的分布进行建模。它来自贝叶斯推理，由编码器、潜在分布和解码器组成。其原理是一个参数已知，特征可叠加的简单分布 (如高斯分布)，结合神经网络，理论上可以拟合任意分布。VAE在做异常检测的思想也很简单，即找出重构误差大的样本点即为异常点。
+
+.. tip::
+    适用范围: 单/多变量时序异常检测。
 
 --------
 
@@ -148,4 +206,4 @@ HyperTS依托Hypernets提供的基础能力(``Hpyer Model`` + ``Search Strategy`
 序列的 ``Search Space``, 为时间序列任务赋予NAS强大的表达能力。
 
 .. tip::
-    适用范围: 单/多变量时序预测, 回归。
+    适用范围: 单/多变量时序预测, 分类，回归。
