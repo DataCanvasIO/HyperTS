@@ -188,7 +188,7 @@ metafeatures = metafeatures_from_timeseries(x=data, timestamp='ds', scale_ts=Tru
 
 HyperTS支持以下特性:
 
-**多任务支持:** 时间序列预测、分类及回归。
+**多任务支持:** 时间序列预测、分类、回归以及异常检测。
 
 **多模式支持:** 大量的时序模型，从统计模型到深度学习模型，再到神经架构搜索。
 

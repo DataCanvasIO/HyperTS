@@ -186,9 +186,9 @@ metafeatures = metafeatures_from_timeseries(x=data, timestamp='ds', scale_ts=Tru
 
 HyperTS supports the following features:
 
-**Multi-task Support:** Time series forecasting, classification, and regression.
+**Multi-task Support:** Time series forecasting, classification, regression, and anomaly detection.
 
-**Multi-mode Support:** A large collection of TS models, including statistical models (Prophet, ARIMA, VAR, etc.), deep learning models(DeepAR, GRU, LSTNet, NBeats, etc.), and neural architecture search.
+**Multi-mode Support:** A large collection of TS models, including statistical models (Prophet, ARIMA, VAR, iForest, etc.), deep learning models(DeepAR, GRU, LSTNet, NBeats, VAE, etc.), and neural architecture search.
 
 **Multi-variate Support:** From univariate to multivariate time series.
 
