@@ -268,25 +268,45 @@ HyperTS provides a function ``from_3d_array_to_nested_df``, that could automatic
 Time Series Anomaly Detection
 ============================================
 
-In HyperTS, the data format for time series anomaly detection and forecasting is basically the same. The difference is that anomaly detection data can carray anomaly labels as follows:
+Similar to forecasting, the required input data format is a two-dimensional structure (``pandas.DataFrame``), which should contain a TimeStamp column (``time_col``) ,one or more variable columns (``var_col_0``, ``var_col_1``, ``var_col_2``,... ``var_col_n``). And sometimes, one or more covariates columns (``covar_col_0``, ``covar_col_1``, ``covar_col_2``,... ``covar_col_m``). See example below:
+
+```python
+     time_col          var_col_0   var_col_1 ... var_col_n     covar_col_0    covar_col_1 ... covar_col_m
+xxxx-xx-xx xx:xx:xx        x          x              x              x              x               x
+xxxx-xx-xx xx:xx:xx        x          x              -              x              x               x
+xxxx-xx-xx xx:xx:xx        x          x              x              x              -               x
+xxxx-xx-xx xx:xx:xx        -          x              x              x              x               -
+xxxx-xx-xx xx:xx:xx        x          x              x              x              x               x
+xxxx-xx-xx xx:xx:xx        x          -              x              x              x               x
+xxxx-xx-xx xx:xx:xx        x          -              x              x              x               x
+xxxx-xx-xx xx:xx:xx        x          x              x              x              -               x
+xxxx-xx-xx xx:xx:xx        x          x              x              x              x               x
+xxxx-xx-xx xx:xx:xx        x          x              x              x              x               x
+xxxx-xx-xx xx:xx:xx        -          -              -              x              x               x
+xxxx-xx-xx xx:xx:xx        x          x              x              x              x               x
+        -                  -          -              -              -              -               -
+xxxx-xx-xx xx:xx:xx        x          x              x              x              x               x
+```
+
+In addition, the above data can also contain ``ground truth``, which will help in model selection and hyperparameter search. The format is as follow:
 
 .. code-block:: none 
 
-      time_col          var_col_0   var_col_1 ... var_col_n   covar_col_0    covar_col_1 ... covar_col_m anomaly
-  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        1
-  xxxx-xx-xx xx:xx:xx        x          x              -            x              x               x        0
-  xxxx-xx-xx xx:xx:xx        x          x              x            x              -               x        0
-  xxxx-xx-xx xx:xx:xx        -          x              x            x              x               -        1
-  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        0
-  xxxx-xx-xx xx:xx:xx        x          -              x            x              x               x        0
-  xxxx-xx-xx xx:xx:xx        x          -              x            x              x               x        0
-  xxxx-xx-xx xx:xx:xx        x          x              x            x              -               x        0
-  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        1
-  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        0
-  xxxx-xx-xx xx:xx:xx        -          -              -            x              x               x        0
-  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        0
-          -                  -          -              -            -              -               -        1
-  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        0
+      time_col          var_col_0   var_col_1 ... var_col_n   covar_col_0    covar_col_1 ... covar_col_m   anomaly
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x          1
+  xxxx-xx-xx xx:xx:xx        x          x              -            x              x               x          0
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              -               x          0
+  xxxx-xx-xx xx:xx:xx        -          x              x            x              x               -          1
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x          0
+  xxxx-xx-xx xx:xx:xx        x          -              x            x              x               x          0
+  xxxx-xx-xx xx:xx:xx        x          -              x            x              x               x          0
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              -               x          0
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x          1
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x          0
+  xxxx-xx-xx xx:xx:xx        -          -              -            x              x               x          0
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x          0
+          -                  -          -              -            -              -               -          1
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x          0
 
 where ``anomaly`` is anomaly label column.
 

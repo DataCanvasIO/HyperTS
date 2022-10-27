@@ -264,26 +264,45 @@
 时序异常检测任务
 =================
 
-In HyperTS, the data format for time series anomaly detection and forecasting is basically the same. The difference is that anomaly detection data can carray anomaly labels as follows:
-在HyperTS, 时序异常检测和时序预测的数据格式基本上是异常的。而异常检测唯一不同的一点是，如何条件允许(被专业人员标注), 训练数据可以包含异常值标签。如下所示：
+与预测任务相似，输入数据应该是一个含有时间列(TimeStamp)和变量列的```pandas DataFrame```格式的二维数据表, 其应该包含时间戳列(``time_col``)，一个或多个变量列(``var_col_0``, ``var_col_1``, ``var_col_2``,... ``var_col_n``)，如果有协变量，也可包含一个或多个协变量(``covar_col_0``, ``covar_col_1``, ``covar_col_2``,... ``covar_col_m``)，形式如下所示：
+
+```python
+     time_col          var_col_0   var_col_1 ... var_col_n     covar_col_0    covar_col_1 ... covar_col_m
+xxxx-xx-xx xx:xx:xx        x          x              x              x              x               x
+xxxx-xx-xx xx:xx:xx        x          x              -              x              x               x
+xxxx-xx-xx xx:xx:xx        x          x              x              x              -               x
+xxxx-xx-xx xx:xx:xx        -          x              x              x              x               -
+xxxx-xx-xx xx:xx:xx        x          x              x              x              x               x
+xxxx-xx-xx xx:xx:xx        x          -              x              x              x               x
+xxxx-xx-xx xx:xx:xx        x          -              x              x              x               x
+xxxx-xx-xx xx:xx:xx        x          x              x              x              -               x
+xxxx-xx-xx xx:xx:xx        x          x              x              x              x               x
+xxxx-xx-xx xx:xx:xx        x          x              x              x              x               x
+xxxx-xx-xx xx:xx:xx        -          -              -              x              x               x
+xxxx-xx-xx xx:xx:xx        x          x              x              x              x               x
+        -                  -          -              -              -              -               -
+xxxx-xx-xx xx:xx:xx        x          x              x              x              x               x
+```
+
+此外，以上数据也可以包含 *真实标签*，这将有助于模型选择和超参数搜索过程。形式如下所示:
 
 .. code-block:: none
 
-      time_col          var_col_0   var_col_1 ... var_col_n   covar_col_0    covar_col_1 ... covar_col_m anomaly
-  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        1
-  xxxx-xx-xx xx:xx:xx        x          x              -            x              x               x        0
-  xxxx-xx-xx xx:xx:xx        x          x              x            x              -               x        0
-  xxxx-xx-xx xx:xx:xx        -          x              x            x              x               -        1
-  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        0
-  xxxx-xx-xx xx:xx:xx        x          -              x            x              x               x        0
-  xxxx-xx-xx xx:xx:xx        x          -              x            x              x               x        0
-  xxxx-xx-xx xx:xx:xx        x          x              x            x              -               x        0
-  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        1
-  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        0
-  xxxx-xx-xx xx:xx:xx        -          -              -            x              x               x        0
-  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        0
-          -                  -          -              -            -              -               -        1
-  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x        0
+      time_col          var_col_0   var_col_1 ... var_col_n   covar_col_0    covar_col_1 ... covar_col_m   anomaly
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x          1
+  xxxx-xx-xx xx:xx:xx        x          x              -            x              x               x          0
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              -               x          0
+  xxxx-xx-xx xx:xx:xx        -          x              x            x              x               -          1
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x          0
+  xxxx-xx-xx xx:xx:xx        x          -              x            x              x               x          0
+  xxxx-xx-xx xx:xx:xx        x          -              x            x              x               x          0
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              -               x          0
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x          1
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x          0
+  xxxx-xx-xx xx:xx:xx        -          -              -            x              x               x          0
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x          0
+          -                  -          -              -            -              -               -          1
+  xxxx-xx-xx xx:xx:xx        x          x              x            x              x               x          0
 
 其中, ``anomaly`` 是异常标签列.
 
