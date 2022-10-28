@@ -464,7 +464,7 @@ class OCSVMDetectionEstimator(HyperEstimator):
          Specifies the kernel type to be used in the algorithm.
          If none is given, 'rbf' will be used. If a callable is given it is
          used to precompute the kernel matrix.
-    degree : int, default=3
+    degree : int, default=2
         Degree of the polynomial kernel function ('poly').
         Ignored by all other kernels.
     gamma : {'scale', 'auto'} or float, default='scale'
@@ -503,15 +503,15 @@ class OCSVMDetectionEstimator(HyperEstimator):
         per-process runtime setting in libsvm that, if enabled, may not work
         properly in a multithreaded context.
     """
-    def __init__(self, fit_kwargs=None, kernel="rbf", degree=3,
+    def __init__(self, fit_kwargs=None, kernel="rbf", degree=2,
                  gamma="auto", coef0=0.0, tol=1e-3, nu=0.5, shrinking=True,
                  cache_size=200, max_iter=-1, contamination=0.05, verbose=False,
                  space=None, name=None, **kwargs):
 
         if kernel is not None and kernel != 'rbf':
             kwargs['kernel'] = kernel
-        if degree is not None and degree != 'auto':
-            kwargs['degree'] = 3
+        if degree is not None and degree != 2:
+            kwargs['degree'] = degree
         if gamma is not None and gamma != 'auto':
             kwargs['gamma'] = gamma
         if coef0 is not None and coef0 != 0.0:
@@ -1456,7 +1456,7 @@ class ConvVAEDetectionEstimator(HyperEstimator):
     def __init__(self, fit_kwargs=None, timestamp=None, task='detection',
                  contamination=0.05, window=3, horizon=1, forecast_length=1,
                  latent_dim=2, conv_type='general', cnn_filters=16, kernel_size=1,
-                 strides=1, nb_layers=2, activation='relu', drop_rate=0.,
+                 strides=1, nb_layers=2, activation='relu', drop_rate=0.2,
                  out_activation='linear', reconstract_dim=None, metrics='auto',
                  monitor_metric='val_loss', optimizer='auto', learning_rate=0.001,
                  reducelr_patience=5, earlystop_patience=10, summary=True,
@@ -1494,7 +1494,7 @@ class ConvVAEDetectionEstimator(HyperEstimator):
             kwargs['nb_layers'] = nb_layers
         if activation is not None and activation != 'relu':
             kwargs['activation'] = activation
-        if drop_rate is not None and drop_rate != 0.:
+        if drop_rate is not None and drop_rate != 0.2:
             kwargs['drop_rate'] = drop_rate
         if out_activation is not None and out_activation != 'linear':
             kwargs['out_activation'] = out_activation

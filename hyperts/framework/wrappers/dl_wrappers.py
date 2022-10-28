@@ -238,7 +238,7 @@ class ConvVAEWrapper(EstimatorWrapper, WrapperMixin):
 
     def predict(self, X, **kwargs):
         TC, X = self.detection_split_XTC(X)
-        X = self.fit_transform(X)
+        X = self.transform(X)
         pred = self.model.predict_outliers(TC, X)
         if kwargs.get('return_confidence', False) is True:
             confidence = self.model.predict_outliers_confidence(TC, X)
@@ -247,7 +247,7 @@ class ConvVAEWrapper(EstimatorWrapper, WrapperMixin):
 
     def predict_proba(self, X, **kwargs):
         TC, X = self.detection_split_XTC(X)
-        X = self.fit_transform(X)
+        X = self.transform(X)
         return self.model.predict_outliers_prob(TC, X)
 
     @property

@@ -114,7 +114,7 @@ def ConvVAEModel(task, window, nb_outputs, continuous_columns, categorical_colum
                      activation=activation,
                      padding='same',
                      name=f'encoder_conv1d_{i}')(e)
-        e = layers.Dropout(rate=drop_rate, name=f'encoder_dropout_{i}')(e)
+        e = layers.Dropout(rate=drop_rate, name=f'encoder_dropout_rate{drop_rate}_{i}')(e)
     inter_shape = K.int_shape(e)
     e = layers.Flatten(name='encoder_flatten_conv')(e)
     e = layers.Dense(units=hidden_units,
@@ -134,7 +134,7 @@ def ConvVAEModel(task, window, nb_outputs, continuous_columns, categorical_colum
                                    activation=activation,
                                    padding='same',
                                    name=f'decoder_conv1dtranspose_{j}')(d)
-        d = layers.Dropout(rate=drop_rate, name=f'decoder_dropout_{j}')(d)
+        d = layers.Dropout(rate=drop_rate, name=f'decoder_dropout_rate{drop_rate}_{j}')(d)
     d = layers.Conv1DTranspose(filters=nb_outputs,
                                kernel_size=kernel_size,
                                padding='same',
@@ -221,13 +221,13 @@ class ConvVAE(BaseDeepEstimator, BaseDeepDetectionMixin):
                  horizon=1,
                  forecast_length=1,
                  latent_dim=2,
-                 conv_type='general',
+                 conv_type='separable',
                  cnn_filters=16,
                  kernel_size=1,
                  strides=1,
                  nb_layers=2,
                  activation='relu',
-                 drop_rate=0.,
+                 drop_rate=0.2,
                  out_activation='linear',
                  reconstract_dim=None,
                  metrics='auto',

@@ -18,7 +18,7 @@ class TSOneClassSVM(BaseAnomalyDetectorWrapper):
          If none is given, 'rbf' will be used. If a callable is given it is
          used to precompute the kernel matrix.
 
-    degree : int, default=3
+    degree : int, default=2
         Degree of the polynomial kernel function ('poly').
         Ignored by all other kernels.
 
@@ -71,7 +71,7 @@ class TSOneClassSVM(BaseAnomalyDetectorWrapper):
     """
     def __init__(self,
                  kernel="rbf",
-                 degree=3,
+                 degree=2,
                  gamma="auto",
                  coef0=0.0,
                  tol=1e-3,

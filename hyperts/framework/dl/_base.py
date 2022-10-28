@@ -18,6 +18,7 @@ from hyperts.framework.dl.dl_utils.metainfo import MetaTSFprocessor, MetaTSCproc
 from hyperts.utils import consts, get_tool_box
 
 from scipy.stats import binom
+from scipy.special import erf
 from sklearn.preprocessing import MinMaxScaler
 
 from hypernets.utils import logging, fs
@@ -449,8 +450,8 @@ class BaseDeepEstimator(object):
                 self.earlystop_patience = 30
             else:
                 epochs = int(epochs / 1.5)
-                self.reducelr_patience = 15
-                self.earlystop_patience = 30
+                self.reducelr_patience = 5
+                self.earlystop_patience = 10
             self.learning_rate = self.learning_rate / 2
 
         logger.info(f'Fit epochs is {epochs}, batch_size is {batch_size}.')
@@ -1038,13 +1039,14 @@ class BaseDeepDetectionMixin:
 
         return is_outlier
 
-    def predict_outliers_prob(self, X, y):
+    def predict_outliers_prob(self, X, y, methed='erf'):
         """Predict the probability for sequences in X.
 
         Parameters
         ----------
         X : DataFrame of shape (n_samples, 1+(n_covariates)).
         y : DataFrame of shape (n_samples, reconstact_dim).
+        methed : str, optional {'erf', 'linear'}. Probability conversion method.
 
         Returns
         -------
@@ -1062,13 +1064,21 @@ class BaseDeepDetectionMixin:
                          horizon=self.horizon, forecast_length=self.forecast_length)
 
         train_scores = self.decision_scores_
+        mu = np.mean(train_scores)
+        sigma = np.std(train_scores)
+
         test_scores = self.decision_function(X_test, y_test, n_samples=len(X))
 
         probas = np.zeros((X.shape[0], self.classes_))
 
-        scaler = MinMaxScaler((0, 1))
-        scaler.fit(train_scores.reshape(-1, 1))
-        pr = scaler.transform(test_scores.reshape(-1, 1))
+        if methed == 'linear':
+            scaler = MinMaxScaler((0, 1))
+            scaler.fit(train_scores.reshape(-1, 1))
+            pr = scaler.transform(test_scores.reshape(-1, 1))
+        else:
+            pre_erf_score = (test_scores - mu) / (sigma * np.sqrt(24))
+            pr = erf(pre_erf_score)
+
         pr = pr.ravel().clip(0, 1)
         probas[:, 0] = 1. - pr
         probas[:, 1] = pr
@@ -1127,6 +1137,8 @@ class BaseDeepDetectionMixin:
         self.threshold_ = np.percentile(self.decision_scores_, 100*(1-self.contamination))
         self.labels_ = (self.decision_scores_ > self.threshold_).astype('int').ravel()
         self.classes_ = len(np.unique(self.labels_))
+
+        logger.info(f'The anomaly threshold: {self.threshold_}')
 
         return self
 

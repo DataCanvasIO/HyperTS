@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from scipy.stats import binom
+from scipy.special import erf
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.utils.multiclass import check_classification_targets
@@ -392,12 +393,13 @@ class BaseAnomalyDetectorWrapper:
 
         return pred
 
-    def predict_proba(self, X):
+    def predict_proba(self, X, methed='erf'):
         """Predict the probability for sequences in X.
 
         Parameters
         ----------
         X : numpy array of shape (n_samples, n_features).
+        methed : str, optional {'erf', 'linear'}. Probability conversion method.
 
         Returns
         -------
@@ -416,13 +418,21 @@ class BaseAnomalyDetectorWrapper:
             X = X.reshape(-1, 1)
 
         train_scores = self.decision_scores_
+        mu = np.mean(train_scores)
+        sigma = np.std(train_scores)
+
         test_scores = self.decision_function(X)
 
         probas = np.zeros((X.shape[0], self.classes_))
 
-        scaler = MinMaxScaler((0, 1))
-        scaler.fit(train_scores.reshape(-1, 1))
-        pr = scaler.transform(test_scores.reshape(-1, 1))
+        if methed == 'linear':
+            scaler = MinMaxScaler((0, 1))
+            scaler.fit(train_scores.reshape(-1, 1))
+            pr = scaler.transform(test_scores.reshape(-1, 1))
+        else:
+            pre_erf_score = (test_scores - mu) / (sigma * np.sqrt(24))
+            pr = erf(pre_erf_score)
+
         pr = pr.ravel().clip(0, 1)
         probas[:, 0] = 1. - pr
         probas[:, 1] = pr

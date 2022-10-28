@@ -22,8 +22,8 @@ def _set_log_level(log_level):
     logging.set_level(log_level)
 
 
-class TSFDataPreprocessStep(ExperimentStep):
-    """Time Series Forecast Task Data Preprocess Step.
+class TSAFDataPreprocessStep(ExperimentStep):
+    """Time Series Anomaly Detection or Forecasting Task Data Preprocess Step.
 
     """
 
@@ -50,7 +50,7 @@ class TSFDataPreprocessStep(ExperimentStep):
         self.timestamp_col = timestamp_col if timestamp_col is not None else consts.TIMESTAMP
 
     def fit_transform(self, hyper_model, X_train, y_train, X_test=None, X_eval=None, y_eval=None, **kwargs):
-        super().fit_transform(hyper_model, X_train, y_train, X_test=X_test, X_eval=X_eval, y_eval=y_eval)
+        super().fit_transform(hyper_model, X_train, y_train, X_test=X_test, X_eval=X_eval, y_eval=y_eval, **kwargs)
 
         tb = get_tool_box(X_train, y_train)
 
@@ -115,6 +115,19 @@ class TSFDataPreprocessStep(ExperimentStep):
             X_train = tb.concat_df([X_train, y_train], axis=1)
             y_train = tb.DataFrame(train_y, columns=[anomaly_label_col])
             if X_eval is not None or y_eval is not None:
+                X_eval = tb.reset_index(X_eval)
+                y_eval = tb.reset_index(y_eval)
+                pos_label = tb.infer_pos_label(y_train, self.task, anomaly_label_col)
+                if pos_label not in eval_y:
+                    n, m = X_eval.shape[0], X_eval.shape[1]
+                    outliers_indices = np.random.randint(n, size=int(n * 0.05))
+                    features_indices = np.random.randint(m, size=3 if m > 3 else 1)
+                    for i in outliers_indices:
+                        for j in features_indices:
+                            scale = y_eval.iloc[i, j]
+                            noise = np.random.normal(0, scale, size=1)
+                            y_eval.iloc[i, j] = y_eval.iloc[i, j] * 3 + noise
+                    eval_y[outliers_indices] = pos_label
                 X_eval = tb.concat_df([X_eval, y_eval], axis=1)
                 y_eval = tb.DataFrame(eval_y, columns=[anomaly_label_col])
         else:
@@ -134,15 +147,21 @@ class TSFDataPreprocessStep(ExperimentStep):
             self.target_cols = anomaly_label_col
         else:
             self.target_cols = target_cols
+        self.indicator_cols_ = target_cols
 
         return hyper_model, X_train, y_train, X_test, X_eval, y_eval
 
     def transform(self, X, y=None, **kwargs):
+        if self.task in consts.TASK_LIST_DETECTION:
+            target_cols = self.indicator_cols_
+        else:
+            target_cols = None
         if self.covariate_cols is not None and len(self.covariate_cols) > 0:
             X_transform = self.covariate_transform(X)
-            X_transform = self.series_transform(X_transform)
+            X_transform = self.series_transform(X_transform, target_cols)
         else:
-            X_transform = self.series_transform(X)
+            X_transform = self.series_transform(X, target_cols)
+
         return X_transform
 
     def covariate_transform(self, X):
@@ -188,7 +207,7 @@ class TSFDataPreprocessStep(ExperimentStep):
         return X
 
     def get_params(self, deep=True):
-        params = super(TSFDataPreprocessStep, self).get_params()
+        params = super(TSAFDataPreprocessStep, self).get_params()
         return params
 
     def get_fitted_params(self):
@@ -198,7 +217,7 @@ class TSFDataPreprocessStep(ExperimentStep):
         return {**params, **data_shapes, 'freq': freq}
 
 
-class TSCDataPreprocessStep(ExperimentStep):
+class TSRCDataPreprocessStep(ExperimentStep):
     """Time Series Classification or Regression Task Data Preprocess Step.
 
     """
@@ -274,7 +293,7 @@ class TSCDataPreprocessStep(ExperimentStep):
             return X, y
 
     def get_params(self, deep=True):
-        params = super(TSCDataPreprocessStep, self).get_params()
+        params = super(TSRCDataPreprocessStep, self).get_params()
         return params
 
     def get_fitted_params(self):
@@ -579,7 +598,10 @@ class TSPipeline:
         else:
             task = self.task
 
-        scores = calc_score(y_true, y_pred, y_proba=y_proba, metrics=metrics, task=task)
+        scores = calc_score(y_true, y_pred, y_proba,
+                            metrics=metrics,
+                            task=task,
+                            pos_label=self.kwargs.get('pos_label'))
 
         scores = pd.DataFrame.from_dict(scores, orient='index', columns=['Score'])
         scores = scores.reset_index().rename(columns={'index': 'Metirc'})
@@ -986,6 +1008,7 @@ class TSCompeteExperiment(SteppedExperiment):
         self.max_window_length = hist_store_upper_limit
         self.train_end_date = kwargs.pop('train_end_date', None)
         self.generate_freq = kwargs.pop('generate_freq', None)
+        self.pos_label = kwargs.get('pos_label', None)
         if self.task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_DETECTION:
             tb = get_tool_box(X_train, y_train)
             all_data = tb.concat_df([X_train, y_train], axis=1)
@@ -1010,9 +1033,9 @@ class TSCompeteExperiment(SteppedExperiment):
 
         steps = []
 
-        # data clean
+        # data clean and preprocessing
         if task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_DETECTION:
-            steps.append(TSFDataPreprocessStep(self, consts.StepName_DATA_PREPROCESSING,
+            steps.append(TSAFDataPreprocessStep(self, consts.StepName_DATA_PREPROCESSING,
                                                freq=freq,
                                                cv=cv,
                                                ensemble_size=ensemble_size,
@@ -1023,16 +1046,16 @@ class TSCompeteExperiment(SteppedExperiment):
                                                contamination=contamination,
                                                train_data_periods=forecast_train_data_periods))
         else:
-            steps.append(TSCDataPreprocessStep(self, consts.StepName_DATA_PREPROCESSING,
+            steps.append(TSRCDataPreprocessStep(self, consts.StepName_DATA_PREPROCESSING,
                                                cv=cv))
 
-        # search step
+        # model selection and hyper-parameters search step
         steps.append(TSSpaceSearchStep(self, consts.StepName_SPACE_SEARCHING,
                                        cv=cv,
                                        num_folds=num_folds))
 
         if ensemble_size is not None and ensemble_size > 1:
-            # ensemble step
+            # model ensemble step
             tb = get_tool_box(X_train, y_train)
             if scorer is None:
                 kwargs['pos_label'] = tb.infer_pos_label(y_train, task, kwargs.get('pos_label'))
@@ -1109,6 +1132,7 @@ class TSCompeteExperiment(SteppedExperiment):
                           history=self.history,
                           train_end_date=self.train_end_date,
                           generate_freq=self.generate_freq,
+                          pos_label=self.pos_label,
                           anomaly_label_col=self.anomaly_label_col)
 
     def report_best_trial_params(self):
