@@ -125,7 +125,7 @@ def plot_plotly(forecast,
                 name='Ground Truth')
             fig.add_trace(actual_outliers_trace)
 
-        severity_score = forecast[[consts.ANOMALY_CONFIDENCE]]*np.mean(y_actual.values[:, var_id])
+        severity_score = forecast[[consts.ANOMALY_CONFIDENCE]]*np.nanmean(y_actual.values[:, var_id])
         severity_trace = go.Scatter(
             x=X_forecast,
             y=severity_score.values[:, 0],
@@ -341,8 +341,18 @@ def plot_mpl(forecast,
                    c='#808080',
                    alpha=0.5)
 
+        max_train = np.nanmax(y_train.values[:, var_id])
+        if actual is not None:
+            max_actual = np.nanmax(y_actual.values[:, var_id])
+        else:
+            max_actual = max_train
+        if task in consts.TASK_LIST_FORECAST:
+            max_forcast = np.nanmax(y_forecast.values[:, var_id])
+        else:
+            max_forcast = max_train
+        high_text = max([max_train, max_actual, max_forcast])
         plt.text(X_train.iloc[-1],
-                 np.max(y_train.values[:, var_id]),
+                 high_text,
                  s='Observed End Date',
                  fontsize=12,
                  horizontalalignment='right',
@@ -389,7 +399,7 @@ def plot_mpl(forecast,
                         c='#FF0000',
                         label='Ground Truth')
 
-        severity_score = forecast[[consts.ANOMALY_CONFIDENCE]]*np.mean(y_actual.values[:, var_id])
+        severity_score = forecast[[consts.ANOMALY_CONFIDENCE]]*np.nanmean(y_actual.values[:, var_id])
         plt.plot(
             X_forecast,
             severity_score.values[:, 0],
