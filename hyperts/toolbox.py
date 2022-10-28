@@ -10,6 +10,8 @@ from sklearn.utils import check_array
 from sklearn.utils.validation import check_random_state
 from sklearn.utils.random import sample_without_replacement
 
+from hyperts.utils.tstoolbox import TSToolBox
+
 
 def from_3d_array_to_nested_df(data: np.ndarray,
                                columns: str = None,
@@ -269,17 +271,3 @@ def generate_anomaly_pseudo_ground_truth(
     test_pseudo_labels = test_pseudo_labels.reshape(-1, 1)
 
     return train_pseudo_labels, test_pseudo_labels
-
-
-class HyperBox:
-
-    def __init__(self, timestamp, covariates=None):
-        self.timestamp = timestamp
-        self.covariates = covariates
-        self.tb = get_tool_box(pd.DataFrame)
-
-    def duplicated(self, df):
-        pass
-
-    def impute(self, df):
-        pass
