@@ -405,7 +405,7 @@ class TSToolBox(ToolBox):
         return period
 
     @staticmethod
-    def generate_ts_covariables(start_date, periods, freq='H'):
+    def generate_time_covariates(start_date, periods, freq='H'):
         """Generate covariates about time.
 
         Parameters

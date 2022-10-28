@@ -16,7 +16,7 @@ class Test_TSToolbox():
         lags = tb.infer_window_size(max_size=100, freq='D')
         assert isinstance(lags, list)
 
-        date_covariates = tb.generate_ts_covariables(start_date='2022-01-01', periods=100, freq='H')
+        date_covariates = tb.generate_time_covariates(start_date='2022-01-01', periods=100, freq='H')
         assert isinstance(date_covariates, pd.DataFrame)
 
         X_dask = dd.from_pandas(X.head((10)), 1)
