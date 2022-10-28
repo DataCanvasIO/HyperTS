@@ -488,7 +488,10 @@ def make_experiment(train_data,
     # 7. Covarite Transformer
     if covariates is not None:
         from hyperts.utils.transformers import CovariateTransformer
-        cs = CovariateTransformer(covariables=covariates).fit(X_train)
+        cs = CovariateTransformer(
+                covariables=covariates,
+                data_cleaner_args=kwargs.pop('data_cleaner_args')
+        ).fit(X_train)
         actual_covariates = cs.covariables_
     else:
         from hyperts.utils.transformers import IdentityTransformer
