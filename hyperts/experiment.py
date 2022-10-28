@@ -490,7 +490,7 @@ def make_experiment(train_data,
         from hyperts.utils.transformers import CovariateTransformer
         cs = CovariateTransformer(
                 covariables=covariates,
-                data_cleaner_args=kwargs.pop('data_cleaner_args')
+                data_cleaner_args=kwargs.pop('data_cleaner_args', None)
         ).fit(X_train)
         actual_covariates = cs.covariables_
     else:
