@@ -926,8 +926,8 @@ class StatsDetectionSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
     @property
     def default_iforest_init_kwargs(self):
         default_init_kwargs = {
+            'contamination': Choice([0.05] * 5 + [0.06, 0.07, 0.08, 0.09, 0.1]),
             'n_estimators': Choice([50, 100, 200, 500]),
-            'contamination': Choice([0.05, 0.1, 0.2]),
 
             'x_scale': Choice(['min_max', 'z_scale'])
         }
@@ -947,10 +947,10 @@ class StatsDetectionSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
     @property
     def default_ocsvm_init_kwargs(self):
         default_init_kwargs = {
-            'kernel': Choice(['linear', 'poly', 'sigmoid']+['rbf']*7),
+            # 'contamination': Choice([0.05] * 5 + [0.06, 0.07, 0.08, 0.09, 0.1]),
+            'kernel': Choice(['linear', 'poly', 'sigmoid'] + ['rbf'] * 7),
             'tol': Choice([1e-5, 1e-3, 1e-2, 1e-1]),
             'nu': Choice([0.05, 0.1, 0.2, 0.5]),
-            'contamination': Choice([0.05, 0.1, 0.2]),
 
             'x_scale': Choice(['min_max', 'z_scale'])
         }
@@ -1043,15 +1043,15 @@ class DLDetectionSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'earlystop_patience': 15,
             'summary': True,
 
-            'contamination': Choice([0.05, 0.1, 0.2]),
-            'latent_dim': Choice([2, 4, 8, 16, 32]),
+            # 'contamination': Choice([0.05] * 5 + [0.06, 0.07, 0.08, 0.09, 0.1]),
+            'latent_dim': Choice([4, 8, 12]),
             'conv_type': Choice(['general', 'separable']),
-            'cnn_filters': Choice([64] * 2 + [128] * 3 + [256] * 1),
+            'cnn_filters': Choice([16, 32, 64]),
             'nb_layers': Choice([2, 3]),
-            'drop_rate': Choice([0.] * 4 + [0.1] * 4 + [0.2] * 1),
+            'drop_rate': Choice([0.0] * 1 + [0.15] * 1 + [0.2] * 7 + [0.25] * 1),
             'window': Choice(self.window if isinstance(self.window, list) else [self.window]),
 
-            'x_scale': Choice(['min_max', 'z_scale'])
+            'x_scale': Choice(['min_max'] * 1 + ['z_scale'] * 9)
         }
 
         default_init_kwargs = self.initial_window_kwargs(default_init_kwargs)
