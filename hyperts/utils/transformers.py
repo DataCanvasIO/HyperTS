@@ -127,7 +127,9 @@ class StandardTransformer(BaseEstimator, TransformerMixin):
             X = copy.deepcopy(X)
         if not isinstance(X, np.ndarray):
             X = np.array(X)
-        if len(X.shape) == 2:
+        if len(X.shape) <= 2:
+            if len(X.shape) == 1:
+                X = X.reshape(-1, 1)
             self.mean = X.mean(axis=0)
             self.var = ((X - self.mean) ** 2).mean(axis=0)
         else:
@@ -190,8 +192,9 @@ class MinMaxTransformer(BaseEstimator, TransformerMixin):
             X = copy.deepcopy(X)
         if not isinstance(X, np.ndarray):
             X = np.array(X)
-        if len(X.shape) == 1 or len(X.shape) == 2:
-            X = X.reshape(-1, 1)
+        if len(X.shape) <= 2:
+            if len(X.shape) == 1:
+                X = X.reshape(-1, 1)
             self.min = X.min(axis=0, initial=None)
             self.max = X.max(axis=0, initial=None)
         else:
@@ -251,7 +254,9 @@ class MaxAbsTransformer(BaseEstimator, TransformerMixin):
             X = copy.deepcopy(X)
         if not isinstance(X, np.ndarray):
             X = np.array(X)
-        if len(X.shape) == 2:
+        if len(X.shape) <= 2:
+            if len(X.shape) == 1:
+                X = X.reshape(-1, 1)
             self.max_abs = np.max(np.abs(X), axis=0)
         else:
             X = np.abs(X)
