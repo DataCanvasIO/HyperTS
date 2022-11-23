@@ -53,7 +53,6 @@ If you would like the most up-to-date version, you can instead install direclty 
 ```bash
 git clone https://github.com/DataCanvasIO/HyperTS.git
 cd HyperTS
-conda install -c conda-forge prophet==1.0.1 
 pip install -e . 
 pip install tensorflow #optional
 ````
