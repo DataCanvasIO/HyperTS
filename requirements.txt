@@ -1,9 +1,9 @@
 # tensorflow>=2.0.0   # required at using dl mode
 hypernets>=0.2.5.1, <0.2.6
 sktime>=0.8.1
-prophet==1.0.1
+prophet>=1.0.1
 statsmodels>=0.12.1
 numpy>=1.16.5,<1.22
 pandas>=0.25.3
 scikit-learn>=0.22.1
-scipy<1.8.0
+scipy
