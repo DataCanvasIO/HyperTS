@@ -29,11 +29,17 @@ Install with conda
 Notes
 ==========
 
-1. Prophet is required by HyperTS. When installing hyperts using ``pip``, it is recommended that you first install Prophet using ``conda``:
+1.1 Prophet is required by HyperTS (version < 0.2.0). When installing hyperts using ``pip``, it is recommended that you first install Prophet using ``conda``:
 
 .. code-block:: sh
 
     conda install -c conda-forge prophet==1.0.1
+    pip install hyperts
+
+1.2 Since HyperTS version 0.2.0, hyperts relaxes prophet's version (compatible with prophet==1.1.1), so it is possible to install ``hyperts`` without first installing ``prophet`` using ``conda``:
+
+.. code-block:: sh
+
     pip install hyperts
 
 2. Tensorflow is an optional dependency for HyperTS. You can install tensorFlow manually when deep learning and neural architecture search modes, for example:

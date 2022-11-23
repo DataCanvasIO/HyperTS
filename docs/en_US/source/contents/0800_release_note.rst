@@ -122,3 +122,41 @@ Version 0.1.4
 ******************
 
 See Version 0.1.3.
+
+
+Version 0.2.0
+**************
+
+Details of the HypertTS update are as follows:
+
+- Supported time series **anomaly detection** task, and adapt to the full pipeline automation process;
+
+- Added IForest anomaly detection model (stats mode);
+
+- Added TSOneClassSVM anomaly detection model(stats mode);
+
+- Added ConvVAE anomaly detection model(dl mode);
+
+- Added realKnownCause anomaly detection dataset;
+
+- Supported the visualization of anomaly detection results, and can analyze the anomaly location and severity;
+
+- Compatible with Prophet version 1.1.1, now pip install hyperts for simultaneous successful prophet installation;
+
+- Compatible with all versions of scipy;
+
+- Added API documentation module;
+
+- Supported for model persistence (saving and reloading trained models);
+
+- In ```model.predict()``, fixed missing value handling;
+
+- For the time series forecast task, the ```forecast``` function of DL model is calibrated;
+
+- ```DLClassRegressSearchSpace``` was refactored for better adaptation to regression task;
+
+- Extend ```InceptionTime``` to solve the regression task;
+
+- Fixed some known issues;
+
+- Thanks to **@Peter Cotton** for his contributions to hyperts.

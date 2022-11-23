@@ -95,3 +95,41 @@ HyperTS本次更新细节如下:
 **************
 
 同版本 0.1.3.
+
+
+版本 0.2.0
+**************
+
+HyperTS本次更新细节如下:
+
+- 支持时间序列**异常检测**任务，并适配全Pipeline自动化过程;
+
+- 新增IForest异常检测模型(stats mode);
+
+- 新增TSOneClassSVM异常检测模型(stats mode);
+
+- 新增ConvVAE异常检测模型(dl mode);
+
+- 新增realKnownCause异常检测数据集;
+
+- 支持异常检测结果可视化，可分析异常位置以及异常严重程度;
+
+- 兼容Prophet版本1.1.1，现在pip安装hyperts可同时安装成功prophet;
+
+- 兼容scipy所有版本;
+
+- 新增API文档模块;
+
+- 支持模型持久化(保存与重载训练完毕的模型);
+
+- 在 ```model.predict()``` 修复了缺失值处理的问题;
+
+- 对于时序预测任务，校正了DL模块的forecast函数;
+
+- 重构了DL的ClassRegressSearchSpace更好的适应时序回归任务;
+
+- 拓展 InceptionTime 以解决时序回归任务;
+
+- 修复了一些已知问题。
+
+- 感谢 @Peter Cotton 对hyperts的贡献。

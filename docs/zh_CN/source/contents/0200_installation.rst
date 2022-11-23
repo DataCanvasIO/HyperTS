@@ -31,11 +31,17 @@ conda安装
 注意事项
 ==========
 
-1. HyperTS依赖prophet, 在使用``pip``安装hyperts时, 建议您使用 ``conda`` 先来安装 ``prophet``, 然后再安装 ``hyperts``:
+1.1 HyperTS(version < 0.2.0)依赖prophet, 在使用``pip``安装hyperts时, 建议您使用 ``conda`` 先来安装 ``prophet``, 然后再安装 ``hyperts``:
 
 .. code-block:: sh
 
     conda install -c conda-forge prophet==1.0.1
+    pip install hyperts
+
+1.2 自HyperTS 0.2.0版本，hyperts放宽了prophet的版本(兼容了prophet==1.1.1), 因此可以安装 ``hyperts`` 而不需先使用 ``conda`` 安装 ``prophet``:
+
+.. code-block:: sh
+
     pip install hyperts
 
 2. Tensorflow对于HyperTS是可选依赖。当您深度学习及神经架构搜索模式时, 可手动安装 ``tensorflow``, 例如:
