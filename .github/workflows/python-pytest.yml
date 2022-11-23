@@ -18,8 +18,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: [3.7, 3.8] # feature-tools only update to 0.23.3 on python3.6 and the latest is 1.2.0(2021/11)
-        tf-version: [2.4.2, 2.9, 2.10, 2.11]
-        tf-switch: [on, off]
+        tf-version: ["2.4.2", "2.9", "2.10", "2.11", "disable"]
         # prophet_switch: [prophet_Y, prophet_N]
 
         include:
@@ -49,15 +48,6 @@ jobs:
           - os: windows-latest
             tf-version: 2.10
           - os: windows-latest
-            tf-version: 2.11
-
-          - tf-switch: off
-            tf-version: 2.4.2
-          - tf-switch: off
-            tf-version: 2.9
-          - tf-switch: off
-            tf-version: 2.10
-          - tf-switch: off
             tf-version: 2.11
 
     steps:
@@ -91,7 +81,7 @@ jobs:
         pip install -q pytest-cov==2.4.0  python-coveralls  codacy-coverage
 
     - name: Install tensorflow dependencies
-      if:  ${{ matrix.tf-switch == 'on' }}
+      if:  ${{ matrix.tf-switch != 'disable' }}
       shell: bash -l {0}
       run: |
         pip install -q tensorflow==${{ matrix.tf-version }}
