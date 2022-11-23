@@ -18,7 +18,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: [3.7, 3.8] # feature-tools only update to 0.23.3 on python3.6 and the latest is 1.2.0(2021/11)
-        tf_switch: [tf_Y, tf_N]
+        tf-version: [2.4.2, 2.9, 2.10, 2.11]
+        tf-switch: [on, off]
         # prophet_switch: [prophet_Y, prophet_N]
 
         include:
@@ -43,8 +44,21 @@ jobs:
           - os: windows-latest
             python-version: 3.6
 
-#          - tf_switch: tf_N
-#            prophet_switch: prophet_N
+          - os: windows-latest
+            tf-version: 2.9
+          - os: windows-latest
+            tf-version: 2.10
+          - os: windows-latest
+            tf-version: 2.11
+
+          - tf-switch: off
+            tf-version: 2.4.2
+          - tf-switch: off
+            tf-version: 2.9
+          - tf-switch: off
+            tf-version: 2.10
+          - tf-switch: off
+            tf-version: 2.11
 
     steps:
     - uses: actions/checkout@v2
@@ -77,12 +91,12 @@ jobs:
         pip install -q pytest-cov==2.4.0  python-coveralls  codacy-coverage
 
     - name: Install tensorflow dependencies
-      if:  ${{ matrix.tf_switch == 'tf_Y' }}
+      if:  ${{ matrix.tf-switch == 'on' }}
       shell: bash -l {0}
       run: |
-        pip install -q tensorflow==2.4.2
-        pip install -q pyparsing==2.4.7
-        pip install -q protobuf==3.20.1
+        pip install -q tensorflow==${{ matrix.tf-version }}
+#        pip install -q pyparsing==2.4.7
+#        pip install -q protobuf==3.20.1
 
     - name: Conda list
       shell: bash -l {0}
