@@ -282,7 +282,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
             'freq': self.freq,
 
             'p': Choice([1, 2, 3, 4, 5]),
-            'd': Choice([0, 1]),
+            'd': Choice([0, 1, 2]),
             'q': Choice([0, 1, 2]),
             'trend': Choice(['n', 'c', 't']),
             'seasonal_order': Choice([(1, 0, 0), (1, 0, 1), (1, 1, 1),
@@ -422,7 +422,7 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin)
         return {
             'n_neighbors': Choice([1, 3, 5, 7, 9, 15]),
             'weights': Choice(['uniform', 'distance']),
-            'distance': Choice(['dtw', 'ddtw', 'lcss', 'msm']),
+            'distance': Choice(['dtw', 'ddtw', 'lcss']),
             'x_scale': Choice(['z_score', 'scale-none'])
         }
 
