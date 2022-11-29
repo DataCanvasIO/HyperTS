@@ -31,7 +31,7 @@ def set_random_state(seed=9527, mode=consts.Mode_STATS):
     np.random.seed(seed)
     set_random_state(seed)
 
-    if mode == consts.Mode_DL:
+    if mode in [consts.Mode_DL, consts.Mode_NAS]:
         try:
             import tensorflow as tf
             tf.random.set_seed(seed)
