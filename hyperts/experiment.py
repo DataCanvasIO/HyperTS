@@ -518,6 +518,7 @@ def make_experiment(train_data,
             else:
                 raise ValueError(f'eval_size has to be less than {X_train_length - dl_forecast_horizon + 1}.')
         else:
+            assert eval_size > 0 and eval_size < 1, "When eval_size is float, the range should be (0, 1)."
             max_win_size = int((X_train_length * (1 - eval_size) - dl_forecast_horizon + 1) / 2)
 
         if max_win_size < 1:

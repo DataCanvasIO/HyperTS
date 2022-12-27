@@ -261,6 +261,8 @@ class MetaTSFprocessor(MetaPreprocessor):
 
             if dtype == 'object' or dtype == 'category' or dtype == 'bool':
                 cat_vars.append((c, dtype, nunique))
+            if dtype == 'int' and nunique < unique_upper_limit * 3:
+                cat_vars.append((c, dtype, nunique))
             elif self._is_discrete(X[c]) and nunique < unique_upper_limit:
                 cat_vars.append((c, dtype, nunique))
             elif self.auto_categorize and nunique < unique_upper_limit:
