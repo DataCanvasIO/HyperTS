@@ -70,9 +70,11 @@ Below is the overview of all features and run modes of HyperTS:
    Model & Mode, Prophet —> STATS mode | univariate | forecasting, √
    , ARIMA —> STATS mode | univariate  | forecasting, √
    , VAR —> STATS mode | multivariate | forecasting, √
-   , TSForest —> DL mode | univariate | classification, √
-   , KNeighbors —> DL mode | uni/multi-variate | classification, √
    , Theta —> STATS mode | univariate | forecasting, , √
+   , TSForest —> STATS mode | univariate | classification, √
+   , KNeighbors —> STATS mode | uni/multi-variate | classification, √
+   , TSIsolationForest —> STATS mode | uni/multi-variate | anomaly detection, √
+   , TSOneClassSVM —> STATS mode | uni/multi-variate | anomaly detection, √
    , DeepAR —> DL mode | univariate  | forecasting | covariates , √
    , RNN —> DL mode | uni/multi-variate | forecasting/classification/regression | covariates, √
    , GRU —> DL mode | uni/multi-variate | forecasting/classification/regression  | covariates, √
