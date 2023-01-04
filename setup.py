@@ -46,7 +46,36 @@ print("__version__=" + version)
 
 MIN_PYTHON_VERSION = '>=3.6.*'
 
-long_description = open('README.md', encoding='utf-8').read()
+
+def read_description(file_path='README.md', image_root=f'{home_url}/raw/main', ):
+    import os
+    import re
+
+    def _encode_image(m):
+        assert len(m.groups()) == 3
+
+        pre, src, post = m.groups()
+        src = src.rstrip().lstrip()
+
+        remote_src = os.path.join(image_root, os.path.relpath(src))
+        return f'{pre}{remote_src}{post}'
+
+    desc = open(file_path, encoding='utf-8').read()
+
+    # remove QRCode
+    desc = '\n'.join([line for line in desc.splitlines() if line.find('QRcode') < 0])
+
+    # substitute html image
+    desc = re.sub(r'(<img\s+src\s*=\s*\")(./fig/[^"]+)(\")', _encode_image, desc)
+
+    # substitute markdown image
+    desc = re.sub(r'(\!\[.*\]\()(./fig/.+)(\))', _encode_image, desc)
+
+    return desc
+
+
+long_description = read_description()
+
 
 requires = read_requirements()
 if not tf_installed:
