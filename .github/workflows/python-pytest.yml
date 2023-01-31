@@ -17,8 +17,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: [3.7, 3.8] # feature-tools only update to 0.23.3 on python3.6 and the latest is 1.2.0(2021/11)
-        tf-version: ["2.4.2", "2.10", "latest", "disable"]
+        python-version: ["3.7", "3.8"] # feature-tools only update to 0.23.3 on python3.6 and the latest is 1.2.0(2021/11)
+        tf-version: ["==2.4.2", "==2.10", '', "disable"]  # empty string indicates the latest version
 
         exclude:
           - os: windows-latest
@@ -48,7 +48,7 @@ jobs:
     - name: Install tensorflow dependencies
       if:  ${{ matrix.tf-version != 'disable' }}
       run: |
-        pip install -q tensorflow==${{ matrix.tf-version }}
+        pip install -q tensorflow${{ matrix.tf-version }}
 
     - name: pip list
       run: pip list
