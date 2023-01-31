@@ -18,7 +18,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: [3.7, 3.8] # feature-tools only update to 0.23.3 on python3.6 and the latest is 1.2.0(2021/11)
-        tf-version: ["2.4.2", "2.10", "latest" "disable"]
+        tf-version: ["2.4.2", "2.10", "latest", "disable"]
 
         exclude:
           - os: windows-latest
