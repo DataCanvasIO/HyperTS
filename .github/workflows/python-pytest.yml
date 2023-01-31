@@ -41,9 +41,9 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -q git+https://github.com/DataCanvasIO/Hypernets
-        pip install -q -r requirements.txt
-        pip install -q pytest-cov  python-coveralls  codacy-coverage
+        pip install git+https://github.com/DataCanvasIO/Hypernets
+        pip install -r requirements.txt
+        pip install pytest-cov  python-coveralls  codacy-coverage
 
     - name: Install tensorflow dependencies
       if:  ${{ matrix.tf-version != 'disable' }}
@@ -51,7 +51,9 @@ jobs:
         pip install -q tensorflow${{ matrix.tf-version }}
 
     - name: pip list
-      run: pip list
+      run: |
+        pip list
+        pip check
 
     - name: Test with pytest
       run: |
