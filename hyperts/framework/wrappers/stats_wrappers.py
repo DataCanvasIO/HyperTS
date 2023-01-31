@@ -1,6 +1,11 @@
 import numpy as np
 
 try:
+    import logging
+    logger = logging.getLogger('cmdstanpy')
+    logger.addHandler(logging.NullHandler())
+    logger.propagate = False
+    logger.setLevel(logging.CRITICAL)
     try:
         from prophet import Prophet
         from prophet.forecaster import logger
