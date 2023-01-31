@@ -19,8 +19,6 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         python-version: [3.7, 3.8] # feature-tools only update to 0.23.3 on python3.6 and the latest is 1.2.0(2021/11)
         tf-version: ["2.4.2", "2.9", "2.10", "2.11", "disable"]
-        # prophet_switch: [prophet_Y, prophet_N]
-
         include:
           - os: ubuntu-latest
             python-version: 3.7
@@ -42,7 +40,6 @@ jobs:
         exclude:
           - os: windows-latest
             python-version: 3.6
-
           - os: windows-latest
             tf-version: 2.9
           - os: windows-latest
@@ -69,15 +66,10 @@ jobs:
       shell: bash -l {0}
       run: |
         python -m pip install --upgrade pip
-        conda install -y -c conda-forge prophet=1.0.1=${{ matrix.prophet-build }}
-        conda install -y -c conda-forge pystan=2.19.1.1=${{ matrix.pystan-build }}
-        conda install scikit-learn==0.24.2
-        conda install -y -c conda-forge sktime==0.8.1
-        conda install -y -c conda-forge python-geohash
-        pip install -q featuretools==0.27.1
+        conda install -y -c conda-forge sktime==0.8.1 prophet=1.0.1=${{ matrix.prophet-build }} pystan=2.19.1.1=${{ matrix.pystan-build }}
+        pip install -q featuretools==0.27.1 scikit-learn==0.24.2 scipy==1.7.3
         pip install -q git+https://github.com/DataCanvasIO/Hypernets
         pip install -q -r requirements.txt
-        pip install scipy==1.7.3
         pip install -q pytest-cov==2.4.0  python-coveralls  codacy-coverage
 
     - name: Install tensorflow dependencies
