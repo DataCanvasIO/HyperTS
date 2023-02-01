@@ -417,7 +417,7 @@ class TSToolBox(ToolBox):
         freq: str or DateOffset, default 'H'.
         """
         dstime = pd.date_range(start_date, periods=periods, freq=freq)
-        fds = pd.DataFrame(dstime, columns={'TimeStamp'})
+        fds = pd.DataFrame(dstime, columns=['TimeStamp'])
         fds['Hour'] = fds['TimeStamp'].dt.hour
         fds['WeekDay'] = fds['TimeStamp'].dt.weekday
         period_dict = {
