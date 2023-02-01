@@ -398,6 +398,7 @@ class TSEnsembleStep(EnsembleStep):
             tb = get_tool_box(X_train, X_eval)
             X_all = tb.concat_df([X_train, X_eval], axis=0)
             y_all = tb.concat_df([y_train, y_eval], axis=0)
+            X_all, y_all = tb.reset_index(X_all), tb.reset_index(y_all)
         else:
             X_all, y_all = X_train, y_train
 
@@ -428,6 +429,7 @@ class TSFinalTrainStep(FinalTrainStep):
                 tb = get_tool_box(X_train, X_eval)
                 X_all = tb.concat_df([X_train, X_eval], axis=0)
                 y_all = tb.concat_df([y_train, y_eval], axis=0)
+                X_all, y_all = tb.reset_index(X_all), tb.reset_index(y_all)
             else:
                 X_all, y_all = X_train, y_train
 
@@ -806,7 +808,8 @@ class TSPipeline:
                 else:
                     y = None
         else:
-            X = data
+            tb = get_tool_box(data)
+            X = tb.reset_index(data)
             y = X.pop(self.target)
         return X, y
 

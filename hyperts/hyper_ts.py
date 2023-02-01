@@ -524,23 +524,6 @@ class HyperTS(HyperModel):
     def load_estimator(self, model_file):
         return HyperTSEstimator._load(model_file, self.mode)
 
-#    def _get_reward(self, value, key=None):
-#        def cast_float(value):
-#            try:
-#                fv = float(value)
-#                return fv
-#            except TypeError:
-#                return None
-#
-#        if isinstance(value, dict) and isinstance(key, str):
-#            reward = cast_float(value[key])
-#        elif isinstance(value, dict) and not isinstance(key, str):
-#            reward = cast_float(value[key.__name__])
-#        else:
-#            raise ValueError(f'"{key}" should be a string or function name for metric.')
-#
-#        return reward
-
     def export_trial_configuration(self, trial):
         return '`export_trial_configuration` does not implemented'
 
