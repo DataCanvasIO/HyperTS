@@ -40,6 +40,7 @@ def load_arrow_head(return_X_y=False):
     module_path = dirname(__file__)
     data_file_name = join(module_path, 'arrow_head.pkl')
     df = pd.read_pickle(data_file_name)
+    df = df.reset_index(drop=True)
 
     if return_X_y:
         return df[['Var_1']], df['target']
