@@ -754,7 +754,7 @@ class DLClassRegressSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
         if enable_hybirdrnn and hybirdrnn_init_kwargs is not None:
             kwargs['hybirdrnn_init_kwargs'] = hybirdrnn_init_kwargs
         if enable_lstnet and lstnet_init_kwargs is not None:
-            kwargs['inceptiontime_init_kwargs'] = inceptiontime_init_kwargs
+            kwargs['lstnet_init_kwargs'] = lstnet_init_kwargs
         if enable_inceptiontime and inceptiontime_init_kwargs is not None:
             kwargs['inceptiontime_init_kwargs'] = inceptiontime_init_kwargs
         super(DLClassRegressSearchSpace, self).__init__(task, **kwargs)
