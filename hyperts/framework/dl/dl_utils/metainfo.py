@@ -397,6 +397,7 @@ class MetaTSCprocessor(MetaPreprocessor):
         self.y_label_encoder = None
         self.categorical_columns = None
         self.continuous_columns = None
+        self.discard_vars = None
 
     def _validate_fit_transform(self, X, y):
         """Verify that the data conforms to fit_transform.
@@ -424,11 +425,16 @@ class MetaTSCprocessor(MetaPreprocessor):
         """Transform X.
 
         """
-        tb = get_tool_box(X)
         logger.info("Transform [X]...")
         start = time.time()
         if copy_data:
             X = self._copy(X)
+
+        tb = get_tool_box(X)
+
+        if self.auto_discard_unique and self.discard_vars is not None:
+            X = tb.drop(X, columns=self.discard_vars)
+
         if tb.is_nested_dataframe(X):
             X = tb.from_nested_df_to_3d_array(X)
         logger.info(f'transform_X taken {time.time() - start}s')
@@ -483,14 +489,26 @@ class MetaTSCprocessor(MetaPreprocessor):
         num_vars = []
         convert2cat_vars = []
         cat_vars = []
+        discard_vars = []
 
-        Series_shape = self._get_shape(X.iloc[0, 0])
-        unique_upper_limit = round(Series_shape[0] ** 0.5)
-        for c in X.columns:
-            nunique = self._nunique(X[c].iloc[0])
-            dtype = str(X[c].iloc[0].dtype)
+        X_flatten = self._copy(X)
+
+        tb = get_tool_box(X_flatten)
+        if tb.is_nested_dataframe(X_flatten):
+            X_flatten = tb.from_nested_df_to_3d_array(X_flatten)
+            X_flatten = np.reshape(X_flatten, (-1, X.shape[-1]))
+            X_flatten = tb.DataFrame(X_flatten, columns=X.columns.tolist())
+        else:
+            raise ValueError('X should be a nested DataFrame.')
+
+        X_shape = self._get_shape(X_flatten)
+        unique_upper_limit = round(X_shape[0] ** 0.5)
+        for c in X_flatten.columns:
+            nunique = self._nunique(X_flatten[c])
+            dtype = str(X_flatten[c].dtype)
 
             if nunique <= 1 and self.auto_discard_unique:
+                discard_vars.append(c)
                 continue
 
             if dtype == 'object' or dtype == 'category' or dtype == 'bool':
@@ -504,6 +522,7 @@ class MetaTSCprocessor(MetaPreprocessor):
                      f'{len(convert2cat_vars)} of them are from continuous to categorical.')
         self._append_categorical_cols([(c[0], c[2] + 2) for c in cat_vars])
         self._append_continuous_cols([c[0] for c in num_vars], 'input_continuous_all')
+        self.discard_vars = discard_vars
         logger.info(f'Preparing features taken {time.time() - start}s')
 
         return X
