@@ -886,8 +886,8 @@ class BaseDeepEstimator(object):
             data = buf.getvalue()
             buf.close()
             fw.write(data)
-        del self.model
-        self.model = None
+#        del self.model
+#        self.model = None
         tf.keras.backend.clear_session()
         logger.info('Save model to disk.')
 
@@ -926,6 +926,12 @@ class BaseDeepEstimator(object):
             model = load_model(h, custom_objects=custom_objects)
         logger.info('Loaded model from disk.')
         return model
+
+    def __getstate__(self):
+        states = dict(self.__dict__)
+        if 'model' in states:
+            del states['model']
+        return states
 
 
 class BaseDeepDetectionMixin:
