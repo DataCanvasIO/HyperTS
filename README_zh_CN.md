@@ -222,6 +222,26 @@ HyperTS支持以下特性:
   
 ![DataCanvas AutoML Toolkit](docs/static/images/datacanvas_automl_toolkit.png)
 
+## 引用
+
+如果您想引用HyperTS在您的研究中，请使用下面信息:
+
+   Xiaojing Zhang，Haifeng Wu，Jian Yang. 
+   **HyperTS: A Full-Pipeline Automated Time Series Analysis Toolkit.** https://github.com/DataCanvasIO/HyperTS. 2022. Version 0.2.x.
+
+BibTex:
+
+```
+@misc{hyperts,
+  author={Xiaojing Zhang，Haifeng Wu，Jian Yang.},
+  title={{HyperTS}: { A Full-Pipeline Automated Time Series Analysis Toolkit}},
+  howpublished={https://github.com/DataCanvasIO/HyperTS},
+  note={Version 0.2.x},
+  year={2022}
+}
+```
+
+
 ## DataCanvas
 
 ![datacanvas](docs/static/images/dc_logo_1.png)
