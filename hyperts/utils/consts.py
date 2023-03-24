@@ -88,6 +88,7 @@ OptimizerSGD                       = 'sgd'
 OptimizerADAM                      = 'adam'
 OptimizerADAMP                     = 'adamp'
 OptimizerRMSPROP                   = 'rmsprop'
+OptimizerLion                      = 'lion'
 
 TARGET                             = 'ground truth'
 ANOMALY_LABEL                      = 'anomaly'
