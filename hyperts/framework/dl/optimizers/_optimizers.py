@@ -308,7 +308,7 @@ class Lion(optimizer_v2.OptimizerV2):
                learning_rate=0.0001,
                beta_1=0.9,
                beta_2=0.99,
-               weight_decay=0,
+               wd_ratio=0,
                name='lion',
                **kwargs):
     """Construct a new Lion optimizer."""
@@ -317,7 +317,7 @@ class Lion(optimizer_v2.OptimizerV2):
     self._set_hyper('learning_rate', kwargs.get('lr', learning_rate))
     self._set_hyper('beta_1', beta_1)
     self._set_hyper('beta_2', beta_2)
-    self._set_hyper('wd', weight_decay)
+    self._set_hyper('wd', wd_ratio)
 
   def _create_slots(self, var_list):
     # Create slots for the first and second moments.

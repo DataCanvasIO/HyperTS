@@ -699,7 +699,8 @@ class BaseDeepEstimator(object):
         elif optimizer.lower() == consts.OptimizerADAMP:
             optimizer = optimizers.AdamP(lr=learning_rate, weight_decay=0.025)
         elif optimizer.lower() == consts.OptimizerLion:
-            optimizer = optimizers.Lion(lr=0.0001, weight_decay=0.0)
+            learning_rate = 1e-4 if learning_rate > 1e-4 else learning_rate
+            optimizer = optimizers.Lion(lr=learning_rate, wd_ratio=1e-2)
         elif optimizer.lower() == consts.OptimizerRMSPROP:
             optimizer = optimizers.RMSprop(lr=learning_rate, momentum=0.9, decay=1e-8, clipnorm=10.)
         elif optimizer.lower() == consts.OptimizerSGD:
