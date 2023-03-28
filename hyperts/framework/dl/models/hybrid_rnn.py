@@ -11,9 +11,9 @@ from hypernets.utils import logging
 logger = logging.get_logger(__name__)
 
 
-def HybirdRNNModel(task, window, rnn_type, continuous_columns, categorical_columns,
+def HybridRNNModel(task, window, rnn_type, continuous_columns, categorical_columns,
         rnn_units, rnn_layers, drop_rate=0., nb_outputs=1, nb_steps=1, out_activation='linear', **kwargs):
-    """SimpleRNN|GRU|LSTM Model (HybirdRNN).
+    """SimpleRNN|GRU|LSTM Model (HybridRNN).
 
     Parameters
     ----------
@@ -54,13 +54,13 @@ def HybirdRNNModel(task, window, rnn_type, continuous_columns, categorical_colum
         outputs = layers.Activation(out_activation, name=f'output_activation_{out_activation}')(outputs)
 
     all_inputs = list(continuous_inputs.values()) + list(categorical_inputs.values())
-    model = tf.keras.models.Model(inputs=all_inputs, outputs=[outputs], name=f'HybirdRNN-{rnn_type}')
+    model = tf.keras.models.Model(inputs=all_inputs, outputs=[outputs], name=f'HybridRNN-{rnn_type}')
 
     return model
 
 
-class HybirdRNN(BaseDeepEstimator):
-    """SimpleRNN|GRU|LSTM Estimator (HybirdRNN).
+class HybridRNN(BaseDeepEstimator):
+    """SimpleRNN|GRU|LSTM Estimator (HybridRNN).
 
     Parameters
     ----------
@@ -146,7 +146,7 @@ class HybirdRNN(BaseDeepEstimator):
         self.summary = summary
         self.model_kwargs = kwargs.copy()
 
-        super(HybirdRNN, self).__init__(task=task,
+        super(HybridRNN, self).__init__(task=task,
                                         timestamp=timestamp,
                                         window=window,
                                         horizon=horizon,
@@ -172,7 +172,7 @@ class HybirdRNN(BaseDeepEstimator):
             'out_activation': self.out_activation,
         }
         model_params = {**model_params, **self.model_kwargs, **kwargs}
-        return HybirdRNNModel(**model_params)
+        return HybridRNNModel(**model_params)
 
     def _fit(self, train_X, train_y, valid_X, valid_y, **kwargs):
         train_ds = self._from_tensor_slices(X=train_X, y=train_y,

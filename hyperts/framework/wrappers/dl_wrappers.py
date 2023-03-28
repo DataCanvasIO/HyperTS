@@ -4,7 +4,7 @@ from hyperts.framework.wrappers import EstimatorWrapper
 from hyperts.framework.wrappers import WrapperMixin
 
 from hyperts.framework.dl import DeepAR
-from hyperts.framework.dl import HybirdRNN
+from hyperts.framework.dl import HybridRNN
 from hyperts.framework.dl import LSTNet
 from hyperts.framework.dl import NBeats
 from hyperts.framework.dl import InceptionTime
@@ -50,15 +50,15 @@ class DeepARWrapper(EstimatorWrapper, WrapperMixin):
             return None
 
 
-class HybirdRNNWrapper(EstimatorWrapper, WrapperMixin):
+class HybridRNNWrapper(EstimatorWrapper, WrapperMixin):
     """
     Adapt: forecast, classification and regression.
     """
     def __init__(self, fit_kwargs, **kwargs):
         kwargs = self.update_init_kwargs(**kwargs)
-        super(HybirdRNNWrapper, self).__init__(fit_kwargs, **kwargs)
+        super(HybridRNNWrapper, self).__init__(fit_kwargs, **kwargs)
         self.update_fit_kwargs()
-        self.model = HybirdRNN(**self.init_kwargs)
+        self.model = HybridRNN(**self.init_kwargs)
 
     def fit(self, X, y=None, **kwargs):
         if self.drop_sample_rate:

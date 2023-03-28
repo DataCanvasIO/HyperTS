@@ -15,7 +15,7 @@ from hyperts.framework.estimators import VARForecastEstimator
 from hyperts.framework.estimators import TSFClassificationEstimator
 from hyperts.framework.estimators import KNNClassificationEstimator
 from hyperts.framework.estimators import DeepARForecastEstimator
-from hyperts.framework.estimators import HybirdRNNGeneralEstimator
+from hyperts.framework.estimators import HybridRNNGeneralEstimator
 from hyperts.framework.estimators import LSTNetGeneralEstimator
 from hyperts.framework.estimators import NBeatsForecastEstimator
 from hyperts.framework.estimators import InceptionTimeGeneralEstimator
@@ -466,7 +466,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
     timestamp: str or None, optional, default None.
     metrics: str or None, optional, default None. Support mse, mae, rmse, mape, smape, msle, and so on.
     enable_deepar: bool, default True.
-    enable_hybirdrnn: bool, default True.
+    enable_hybridrnn: bool, default True.
     enable_lstnet: bool, default True.
     deepar_init_kwargs: dict or None, optional, default None. If not None, you can customize
         the hyper-parameters by which deepar is searched.
@@ -481,28 +481,28 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
 
     Notes
     ----------
-    1. For the hyper-parameters of deepar_init_kwargs, hybirdrnn_init_kwargs and lstnet_init_kwargs,
+    1. For the hyper-parameters of deepar_init_kwargs, hybridrnn_init_kwargs and lstnet_init_kwargs,
         you can refer to `hyperts.framework.estimators.DeepARForecastEstimator,
-        hyperts.framework.estimators.HybirdRNNGeneralEstimator, and
+        hyperts.framework.estimators.HybridRNNGeneralEstimator, and
         hyperts.framework.estimators.LSTNetGeneralEstimator.`
     2. If other parameters exist, set them directly. For example, covariables=['is_holiday'].
     """
     def __init__(self, task=None, timestamp=None, metrics=None,
                  window=None, horizon=1,
                  enable_deepar=True,
-                 enable_hybirdrnn=True,
+                 enable_hybridrnn=True,
                  enable_lstnet=True,
                  enable_nbeats=True,
                  deepar_init_kwargs=None,
-                 hybirdrnn_init_kwargs=None,
+                 hybridrnn_init_kwargs=None,
                  lstnet_init_kwargs=None,
                  nbeats_init_kwargs=None,
                  drop_observed_sample=True,
                  **kwargs):
         if enable_deepar and deepar_init_kwargs is not None:
             kwargs['deepar_init_kwargs'] = deepar_init_kwargs
-        if enable_hybirdrnn and hybirdrnn_init_kwargs is not None:
-            kwargs['hybirdrnn_init_kwargs'] = hybirdrnn_init_kwargs
+        if enable_hybridrnn and hybridrnn_init_kwargs is not None:
+            kwargs['hybridrnn_init_kwargs'] = hybridrnn_init_kwargs
         if enable_lstnet and lstnet_init_kwargs is not None:
             kwargs['lstnet_init_kwargs'] = lstnet_init_kwargs
         if enable_nbeats and nbeats_init_kwargs is not None:
@@ -515,7 +515,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
         self.window = window
         self.horizon = horizon
         self.enable_deepar = enable_deepar
-        self.enable_hybirdrnn = enable_hybirdrnn
+        self.enable_hybridrnn = enable_hybridrnn
         self.enable_lstnet = enable_lstnet
         self.enable_nbeats = enable_nbeats
         self.drop_observed_sample = drop_observed_sample
@@ -561,7 +561,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
         }
 
     @property
-    def default_hybirdrnn_init_kwargs(self):
+    def default_hybridrnn_init_kwargs(self):
         default_init_kwargs = {
             'timestamp': self.timestamp,
             'task': self.task,
@@ -592,7 +592,7 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
         return default_init_kwargs
 
     @property
-    def default_hybirdrnn_fit_kwargs(self):
+    def default_hybridrnn_fit_kwargs(self):
         return {
             'epochs': consts.TRAINING_EPOCHS,
             'batch_size': None,
@@ -689,11 +689,11 @@ class DLForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
         if self.enable_deepar:
             univar_containers['deepar'] = (
                 DeepARForecastEstimator, self.default_deepar_init_kwargs, self.default_deepar_fit_kwargs)
-        if self.enable_hybirdrnn:
-            univar_containers['hybirdrnn'] = (
-                HybirdRNNGeneralEstimator, self.default_hybirdrnn_init_kwargs, self.default_hybirdrnn_fit_kwargs)
-            multivar_containers['hybirdrnn'] = (
-                HybirdRNNGeneralEstimator, self.default_hybirdrnn_init_kwargs, self.default_hybirdrnn_fit_kwargs)
+        if self.enable_hybridrnn:
+            univar_containers['hybridrnn'] = (
+                HybridRNNGeneralEstimator, self.default_hybridrnn_init_kwargs, self.default_hybridrnn_fit_kwargs)
+            multivar_containers['hybridrnn'] = (
+                HybridRNNGeneralEstimator, self.default_hybridrnn_init_kwargs, self.default_hybridrnn_fit_kwargs)
         if self.enable_lstnet:
             univar_containers['lstnet'] = (
                 LSTNetGeneralEstimator, self.default_lstnet_init_kwargs, self.default_lstnet_fit_kwargs)
@@ -725,7 +725,7 @@ class DLClassRegressSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
     metrics: str or None, optional, default None. Support accuracy, f1, auc, recall, precision.
     enable_hybirdrnn: bool, default True.
     enable_lstnet: bool, default True.
-    hybirdrnn_init_kwargs: dict or None, optional, default None. If not None, you can customize
+    hybridrnn_init_kwargs: dict or None, optional, default None. If not None, you can customize
         the hyper-parameters by which hybirdrnn is searched.
     lstnet_init_kwargs: dict or None, optional, default None. If not None, you can customize
         the hyper-parameters by which lstnet is searched.
@@ -736,23 +736,23 @@ class DLClassRegressSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
 
     Notes
     ----------
-    1. For the hyper-parameters of deepar_init_kwargs, hybirdrnn_init_kwargs and lstnet_init_kwargs,
+    1. For the hyper-parameters of deepar_init_kwargs, hybridrnn_init_kwargs and lstnet_init_kwargs,
         you can refer to `hyperts.framework.estimators.HybirdRNNGeneralEstimator, and
         hyperts.framework.estimators.LSTNetGeneralEstimator.`
     2. If other parameters exist, set them directly. For example, n_estimators=200.
     """
     def __init__(self, task=None, timestamp=None, metrics=None,
-                 enable_hybirdrnn=True,
+                 enable_hybridrnn=True,
                  enable_lstnet=True,
                  enable_inceptiontime=True,
-                 hybirdrnn_init_kwargs=None,
+                 hybridrnn_init_kwargs=None,
                  lstnet_init_kwargs=None,
                  inceptiontime_init_kwargs=None,
                  **kwargs):
         if hasattr(kwargs, 'covariables'):
             kwargs.pop('covariables', None)
-        if enable_hybirdrnn and hybirdrnn_init_kwargs is not None:
-            kwargs['hybirdrnn_init_kwargs'] = hybirdrnn_init_kwargs
+        if enable_hybridrnn and hybridrnn_init_kwargs is not None:
+            kwargs['hybridrnn_init_kwargs'] = hybridrnn_init_kwargs
         if enable_lstnet and lstnet_init_kwargs is not None:
             kwargs['lstnet_init_kwargs'] = lstnet_init_kwargs
         if enable_inceptiontime and inceptiontime_init_kwargs is not None:
@@ -762,12 +762,12 @@ class DLClassRegressSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
         self.task = task
         self.timestamp = timestamp
         self.metrics = metrics
-        self.enable_hybirdrnn = enable_hybirdrnn
+        self.enable_hybridrnn = enable_hybridrnn
         self.enable_lstnet = enable_lstnet
         self.enable_inceptiontime = enable_inceptiontime
 
     @property
-    def default_hybirdrnn_init_kwargs(self):
+    def default_hybridrnn_init_kwargs(self):
         return {
             'timestamp': self.timestamp,
             'task': self.task,
@@ -785,7 +785,7 @@ class DLClassRegressSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
         }
 
     @property
-    def default_hybirdrnn_fit_kwargs(self):
+    def default_hybridrnn_fit_kwargs(self):
         return {
             'epochs': consts.TRAINING_EPOCHS,
             'batch_size': None,
@@ -851,11 +851,11 @@ class DLClassRegressSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
         class_containers = {}
         regress_containers = {}
 
-        if self.enable_hybirdrnn:
+        if self.enable_hybridrnn:
             class_containers['hybirdrnn'] = (
-                HybirdRNNGeneralEstimator, self.default_hybirdrnn_init_kwargs, self.default_hybirdrnn_fit_kwargs)
+                HybridRNNGeneralEstimator, self.default_hybridrnn_init_kwargs, self.default_hybridrnn_fit_kwargs)
             regress_containers['hybirdrnn'] = (
-                HybirdRNNGeneralEstimator, self.default_hybirdrnn_init_kwargs, self.default_hybirdrnn_fit_kwargs)
+                HybridRNNGeneralEstimator, self.default_hybridrnn_init_kwargs, self.default_hybridrnn_fit_kwargs)
         if self.enable_lstnet:
             class_containers['lstnet'] = (
                 LSTNetGeneralEstimator, self.default_lstnet_init_kwargs, self.default_lstnet_fit_kwargs)

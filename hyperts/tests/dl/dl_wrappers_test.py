@@ -51,7 +51,7 @@ class Test_DL_Wrappers():
 
 
     def test_univariate_forecast_rnn(self):
-        from hyperts.framework.wrappers.dl_wrappers import HybirdRNNWrapper
+        from hyperts.framework.wrappers.dl_wrappers import HybridRNNWrapper
 
         X, y = load_random_univariate_forecast_dataset(return_X_y=True)
         tb = get_tool_box(X)
@@ -77,7 +77,7 @@ class Test_DL_Wrappers():
 
             'y_scale': np.random.choice(['min_max', 'max_abs'], size=1)[0]
         }
-        model = HybirdRNNWrapper(fit_kwargs, **init_kwargs)
+        model = HybridRNNWrapper(fit_kwargs, **init_kwargs)
         model.fit(X_train, y_train)
 
         y_pred = model.predict(X_test)
@@ -92,7 +92,7 @@ class Test_DL_Wrappers():
 
 
     def test_multivariate_forecast_with_covariables_rnn(self):
-        from hyperts.framework.wrappers.dl_wrappers import HybirdRNNWrapper
+        from hyperts.framework.wrappers.dl_wrappers import HybridRNNWrapper
 
         X, y = load_network_traffic(return_X_y=True)
         tb = get_tool_box(X)
@@ -119,7 +119,7 @@ class Test_DL_Wrappers():
 
             'y_scale': np.random.choice(['min_max', 'max_abs'], size=1)[0]
         }
-        model = HybirdRNNWrapper(fit_kwargs, **init_kwargs)
+        model = HybridRNNWrapper(fit_kwargs, **init_kwargs)
         model.fit(X_train, y_train)
 
         y_pred = model.predict(X_test)
@@ -134,7 +134,7 @@ class Test_DL_Wrappers():
 
 
     def test_multivariate_forecast_no_covariables_rnn(self):
-        from hyperts.framework.wrappers.dl_wrappers import HybirdRNNWrapper
+        from hyperts.framework.wrappers.dl_wrappers import HybridRNNWrapper
 
         X, y = load_network_traffic(return_X_y=True)
         tb = get_tool_box(X)
@@ -161,7 +161,7 @@ class Test_DL_Wrappers():
 
             'y_scale': np.random.choice(['min_max', 'max_abs'], size=1)[0]
         }
-        model = HybirdRNNWrapper(fit_kwargs, **init_kwargs)
+        model = HybridRNNWrapper(fit_kwargs, **init_kwargs)
         model.fit(X_train, y_train)
 
         y_pred = model.predict(X_test)
@@ -176,7 +176,7 @@ class Test_DL_Wrappers():
 
 
     def test_univariate_classification_rnn(self):
-        from hyperts.framework.wrappers.dl_wrappers import HybirdRNNWrapper
+        from hyperts.framework.wrappers.dl_wrappers import HybridRNNWrapper
 
         X, y = load_arrow_head(return_X_y=True)
         tb = get_tool_box(X)
@@ -200,7 +200,7 @@ class Test_DL_Wrappers():
 
             'x_scale': np.random.choice(['z_score', 'scale-none'], size=1)[0]
         }
-        model = HybirdRNNWrapper(fit_kwargs, **init_kwargs)
+        model = HybridRNNWrapper(fit_kwargs, **init_kwargs)
         model.fit(X_train, y_train)
 
         y_pred = model.predict(X_test)
@@ -212,7 +212,7 @@ class Test_DL_Wrappers():
 
 
     def test_multivariate_classification_rnn(self):
-        from hyperts.framework.wrappers.dl_wrappers import HybirdRNNWrapper
+        from hyperts.framework.wrappers.dl_wrappers import HybridRNNWrapper
 
         X, y = load_basic_motions(return_X_y=True)
         tb = get_tool_box(X)
@@ -234,7 +234,7 @@ class Test_DL_Wrappers():
 
             'x_scale': np.random.choice(['z_score', 'scale-none'], size=1)[0]
         }
-        model = HybirdRNNWrapper(fit_kwargs, **init_kwargs)
+        model = HybridRNNWrapper(fit_kwargs, **init_kwargs)
         model.fit(X_train, y_train)
 
         y_pred = model.predict(X_test)

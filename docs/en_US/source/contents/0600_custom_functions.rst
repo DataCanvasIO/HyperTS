@@ -164,9 +164,9 @@ To make it sample, this example uses a template of an existing algorithm in Hype
     import tensorflow as tf
     import tensorflow.keras.backend as K
     from hyperts.framework.dl import layers
-    from hyperts.framework.dl.models import HybirdRNN
+    from hyperts.framework.dl.models import HybridRNN
 
-    class Transformer(HybirdRNN):
+    class Transformer(HybridRNN):
 
         def __init__(self, 
                     task, 
@@ -243,10 +243,10 @@ Estimator connectes the algorithm model and search space. It defines the hyperpa
 .. code-block:: python
 
     from hyperts.utils import consts
-    from hyperts.framework.wrappers.dl_wrappers import HybirdRNNWrapper
+    from hyperts.framework.wrappers.dl_wrappers import HybridRNNWrapper
     from hyperts.framework.estimators import HyperEstimator
 
-    class TransformerWrapper(HybirdRNNWrapper):
+    class TransformerWrapper(HybridRNNWrapper):
 
         def __init__(self, fit_kwargs, **kwargs):
             super(TransformerWrapper, self).__init__(fit_kwargs, **kwargs)

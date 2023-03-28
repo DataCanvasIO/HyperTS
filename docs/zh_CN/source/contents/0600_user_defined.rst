@@ -165,9 +165,9 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
     import tensorflow as tf
     import tensorflow.keras.backend as K
     from hyperts.framework.dl import layers
-    from hyperts.framework.dl.models import HybirdRNN
+    from hyperts.framework.dl.models import HybridRNN
 
-    class Transformer(HybirdRNN):
+    class Transformer(HybridRNN):
 
         def __init__(self, 
                     task, 
@@ -244,10 +244,10 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
 .. code-block:: python
 
     from hyperts.utils import consts
-    from hyperts.framework.wrappers.dl_wrappers import HybirdRNNWrapper
+    from hyperts.framework.wrappers.dl_wrappers import HybridRNNWrapper
     from hyperts.framework.estimators import HyperEstimator
 
-    class TransformerWrapper(HybirdRNNWrapper):
+    class TransformerWrapper(HybridRNNWrapper):
 
         def __init__(self, fit_kwargs, **kwargs):
             super(TransformerWrapper, self).__init__(fit_kwargs, **kwargs)

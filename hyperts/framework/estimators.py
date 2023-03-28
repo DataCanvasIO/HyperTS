@@ -25,7 +25,7 @@ else:
 
 if is_tensorflow_installed:
     from hyperts.framework.wrappers.dl_wrappers import DeepARWrapper
-    from hyperts.framework.wrappers.dl_wrappers import HybirdRNNWrapper
+    from hyperts.framework.wrappers.dl_wrappers import HybridRNNWrapper
     from hyperts.framework.wrappers.dl_wrappers import LSTNetWrapper
     from hyperts.framework.wrappers.dl_wrappers import NBeatsWrapper
     from hyperts.framework.wrappers.dl_wrappers import InceptionTimeWrapper
@@ -703,9 +703,9 @@ class DeepARForecastEstimator(HyperEstimator):
         return deepar
 
 
-class HybirdRNNGeneralEstimator(HyperEstimator):
+class HybridRNNGeneralEstimator(HyperEstimator):
     """Time Series Forecast|Classification|Regression Estimator based on Hypernets.
-    Estimator: SimpleRNN|GRU|LSTM (HybirdRNN).
+    Estimator: SimpleRNN|GRU|LSTM (HybridRNN).
     Suitable for: The General Time Series Tasks.
 
     Parameters
@@ -858,7 +858,7 @@ class HybirdRNNGeneralEstimator(HyperEstimator):
 
     def _build_estimator(self, task, fit_kwargs, kwargs):
         if task in consts.TASK_LIST_FORECAST + consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION:
-            rnn = HybirdRNNWrapper(fit_kwargs, **kwargs)
+            rnn = HybridRNNWrapper(fit_kwargs, **kwargs)
         else:
             raise ValueError('Check whether the task type meets specifications.')
         return rnn
