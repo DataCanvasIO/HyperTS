@@ -352,7 +352,7 @@ def make_experiment(train_data,
 
     # 1. Set Log Level
     if log_level is None:
-        log_level = logging.WARN
+        log_level = 'WARN'
     logging.set_level(log_level)
 
     # 2. Set Random State
@@ -440,6 +440,11 @@ def make_experiment(train_data,
             eval_data[timestamp] = tb.datetime_format(eval_data[timestamp], format=timestamp_format)
         if X_test is not None:
             X_test[timestamp] = tb.datetime_format(X_test[timestamp], format=timestamp_format)
+    elif task in consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION:
+        if timestamp is not None and timestamp in train_data.columns.to_list():
+            raise ValueError(f"{task} can not inclue timestamp, please check data format!")
+        if not tb.is_nested_dataframe(train_data):
+            raise ValueError(f"{task} must be the nested DataFrame, please check data format!")
 
     # 6. Split X_train, y_train, X_eval, y_eval
     X_train, y_train, X_eval, y_eval = None, None, None, None
