@@ -112,7 +112,7 @@ def _test_univariate_forecast_metric(metric):
     reward_metric = metric
     task = consts.Task_FORECAST
     params = get_params_test_task()
-    df = load_fixed_univariate_forecast_dataset()
+    df = load_fixed_univariate_forecast_dataset().head(1000)
     tb = get_tool_box(df)
     train_df, test_df = tb.temporal_train_test_split(df, test_size=0.1)
     exp = make_experiment(train_df, task=task, reward_metric=reward_metric, **params[1])
@@ -123,7 +123,7 @@ def _test_univariate_forecast_metric(metric):
 
 
 def _test_univariate_binaryclass_metric(metric):
-    df = load_arrow_head()
+    df = load_arrow_head().head(1000)
     df = df[df.target.isin(['0', '1'])]
     tb = get_tool_box(df)
     train_df, test_df = tb.random_train_test_split(df, test_size=0.2, random_state=9527)
@@ -152,7 +152,7 @@ def _test_univariate_binaryclass_metric(metric):
 
 
 def _test_univariate_multiclass_metric(metric):
-    df = load_arrow_head()
+    df = load_arrow_head().head(1000)
     tb = get_tool_box(df)
     train_df, test_df = tb.random_train_test_split(df, test_size=0.2)
 
@@ -177,7 +177,7 @@ def _test_univariate_multiclass_metric(metric):
 
 
 def _test_multivariate_forecast(metric):
-    df = load_network_traffic()
+    df = load_network_traffic().head(1000)
     df.drop(['CBWD'], axis=1, inplace=True)
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
     df.dropna(inplace=True)

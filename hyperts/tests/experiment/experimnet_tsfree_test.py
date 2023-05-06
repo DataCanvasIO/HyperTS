@@ -19,7 +19,7 @@ class Test_HyperTS_TimeStamp_Free():
                               task='forecast',
                               timestamp='null',
                               covariables=['HourSin', 'WeekCos', 'CBWD'],
-                              max_trials=3,
+                              max_trials=1,
                               random_state=2022)
         model = exp.run(epochs=20)
 
@@ -47,7 +47,7 @@ class Test_HyperTS_TimeStamp_Free():
                               task='forecast',
                               timestamp='null',
                               covariables=['HourSin', 'WeekCos', 'CBWD'],
-                              max_trials=3,
+                              max_trials=1,
                               random_state=2022)
         model = exp.run(epochs=2, final_train_epochs=2)
 

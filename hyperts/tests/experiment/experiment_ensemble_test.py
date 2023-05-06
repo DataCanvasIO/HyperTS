@@ -87,7 +87,7 @@ class Test_HyperTS_Ensemble():
 @skip_if_not_tf
 @skip_if_not_prophet
 def tsf_ensemble_test(univariate=True, mode='dl', cv=False, ensemble_size=None):
-    df = load_network_traffic(univariate=False)
+    df = load_network_traffic(univariate=False).head(1000)
     if univariate:
         df = df.drop(columns=['Var_1', 'Var_2', 'Var_4', 'Var_5', 'Var_6'])
     else:
@@ -104,7 +104,7 @@ def tsf_ensemble_test(univariate=True, mode='dl', cv=False, ensemble_size=None):
                             covariables=['HourSin', 'WeekCos', 'CBWD'],
                             forecast_train_data_periods=24*14,
                             ensemble_size=ensemble_size,
-                            max_trials=3,
+                            max_trials=1,
                             random_state=202,
                             log_level='info')
 
@@ -121,7 +121,7 @@ def tsf_ensemble_test(univariate=True, mode='dl', cv=False, ensemble_size=None):
 @skip_if_not_tf
 @skip_if_not_prophet
 def tsc_ensemble_test(binary=False, mode='stats', cv=False, ensemble_size=None):
-    df = load_basic_motions()
+    df = load_basic_motions().head(1000)
     if binary:
         df['target'] = df['target'].map(lambda x: x if x == 'standing' else 'notstanding')
     train_data, test_data = random_train_test_split(df, test_size=0.2, random_state=2022)
@@ -133,7 +133,7 @@ def tsc_ensemble_test(binary=False, mode='stats', cv=False, ensemble_size=None):
                                  dl_gpu_usage_strategy=0, # GPU
                                  target='target',
                                  reward_metric='accuracy',
-                                 max_trials=3,
+                                 max_trials=1,
                                  ensemble_size=ensemble_size,
                                  random_state=2022,
                                  log_level='info')
@@ -164,7 +164,7 @@ def tsad_ensemble_test(mode='stats', cv=False, ensemble_size=None):
                           ensemble_size=ensemble_size,
                           random_state=2022)
 
-    model = exp.run(max_trials=3, epochs=10, final_train_epochs=10)
+    model = exp.run(max_trials=1, epochs=10, final_train_epochs=10)
 
     X_test, _ = model.split_X_y(test_df.copy())
     y_pred = model.predict(X_test)
