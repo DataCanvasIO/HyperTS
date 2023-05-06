@@ -1,9 +1,21 @@
 import pandas as pd
-import dask.dataframe as dd
 
 from hyperts.utils._base import get_tool_box
 from hyperts.datasets import load_random_univariate_forecast_dataset
+import pytest
 
+try:
+    import dask.dataframe as dd
+    is_dask_installed = True
+except ImportError:
+    # import traceback
+    # traceback.print_exc()
+    is_dask_installed = False
+
+if_dask_ready = pytest.mark.skipif(not is_dask_installed, reason='dask or dask_ml are not installed')
+
+
+@if_dask_ready
 class Test_TSToolbox():
 
     def test_import_tstoolbox(self):

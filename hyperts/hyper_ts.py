@@ -199,7 +199,8 @@ class HyperTSEstimator(Estimator):
         if verbose > 0:
             logger.info(f'taken {time.time() - starttime}s')
 
-        return scores, oof_, oof_scores
+        # return scores, oof_, oof_scores
+        return scores, oof_, oof_scores, None, None, None, None
 
     def get_scores(self, y, oof_, metrics):
         tb = get_tool_box(y)
@@ -548,9 +549,9 @@ class HyperTS(HyperModel):
                                      cv, num_folds, max_trials, dataset_id, trial_store,
                                      **fit_kwargs)
         try:
-            trial_no = dispatcher.dispatch(self, X, y, X_eval, y_eval,
-                                           cv, num_folds, max_trials, dataset_id, trial_store,
-                                           **fit_kwargs)
+            trial_no = dispatcher.dispatch(hyper_model=self, X=X, y=y, X_eval=X_eval, y_eval=y_eval, X_test=None,
+                                           cv=cv, num_folds=num_folds, max_trials=max_trials, dataset_id=dataset_id,
+                                           trial_store=trial_store, **fit_kwargs)
 
             for callback in self.callbacks:
                 callback.on_search_end(self)
