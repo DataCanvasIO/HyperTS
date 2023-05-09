@@ -309,7 +309,7 @@ class StatsForecastSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin):
         default_init_kwargs = {
             # 'ic': Choice(['aic', 'fpe', 'hqic', 'bic']),
             'maxlags': Choice([None, 2, 6, 12, 24, 48]),
-            'trend': Choice(['c', 'ct', 'ctt', 'nc', 'n']),
+            'trend': Choice(['c', 'ct', 'ctt', 'n']),
             'y_log': Choice(['none-log']*4+['logx']*1),
             'y_scale': Choice(['min_max']*5+['z_scale']*2+['max_abs']*1)
         }
