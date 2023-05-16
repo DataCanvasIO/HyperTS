@@ -1,5 +1,5 @@
 <h1 align="center">
-<img src="docs/static/images/logo.png" width="400" align=center/>
+<img src="https://raw.githubusercontent.com/DataCanvasIO/HyperTS/main/docs/static/images/logo.png" width="400" align=center/>
 </h1><br>
 
 <h4 align="center">Statistics | Deep Learning | Neural Architecture Search</h4>
@@ -98,7 +98,7 @@ scores = model.evaluate(y_test, y_pred)
 model.plot(forecast=y_pred, actual=test_data)
 ```
 
-![Forecast_Figure](docs/static/images/Actual_vs_Forecast.jpg)
+![Forecast_Figure](https://raw.githubusercontent.com/DataCanvasIO/HyperTS/main/docs/static/images/Actual_vs_Forecast.jpg)
 
 <details>
   <summary>Time Series Classification (click to expand)</summary>
@@ -217,7 +217,7 @@ HyperTS supports the following features:
 * [HyperBoard](https://github.com/DataCanvasIO/HyperBoard): A visualization tool for Hypernets.
 * [Cooka](https://github.com/DataCanvasIO/Cooka): Lightweight interactive AutoML system.
 
-![DataCanvas AutoML Toolkit](docs/static/images/datacanvas_automl_toolkit.png)
+![DataCanvas AutoML Toolkit](https://raw.githubusercontent.com/DataCanvasIO/HyperTS/main/docs/static/images/datacanvas_automl_toolkit.png)
 
 ## Citation
 
@@ -240,6 +240,6 @@ BibTex:
 
 ## DataCanvas
 
-![datacanvas](docs/static/images/dc_logo_1.png)
+![datacanvas](https://raw.githubusercontent.com/DataCanvasIO/HyperTS/main/docs/static/images/dc_logo_1.png)
 
 HyperTS is an open source project created by [DataCanvas](https://www.datacanvas.com/). 

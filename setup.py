@@ -5,7 +5,6 @@ from __future__ import absolute_import
 from setuptools import find_packages
 from setuptools import setup
 import os
-from os import path as P
 
 
 try:
@@ -36,41 +35,20 @@ except NameError:
         locs = locs or globs
         exec(compile(open(fname).read(), fname, "exec"), globs, locs)
 
-HERE = P.dirname((P.abspath(__file__)))
+HERE = os.path.dirname((os.path.abspath(__file__)))
+
 
 version_ns = {}
-execfile(P.join(HERE, 'hyperts', '_version.py'), version_ns)
+execfile(os.path.join(HERE, 'hyperts', '_version.py'), version_ns)
 version = version_ns['__version__']
 
-print("__version__=" + version)
 
-MIN_PYTHON_VERSION = '>=3.6.*'
+MIN_PYTHON_VERSION = '>=3.6'
 
 
-def read_description(file_path='README.md', image_root=f'{home_url}/raw/main', ):
-    import os
-    import re
-
-    def _encode_image(m):
-        assert len(m.groups()) == 3
-
-        pre, src, post = m.groups()
-        src = src.rstrip().lstrip()
-
-        remote_src = os.path.join(image_root, os.path.relpath(src))
-        return f'{pre}{remote_src}{post}'
-
-    desc = open(file_path, encoding='utf-8').read()
-
-    # remove QRCode
-    desc = '\n'.join([line for line in desc.splitlines() if line.find('QRcode') < 0])
-
-    # substitute html image
-    desc = re.sub(r'(<img\s+src\s*=\s*\")(./fig/[^"]+)(\")', _encode_image, desc)
-
-    # substitute markdown image
-    desc = re.sub(r'(\!\[.*\]\()(./fig/.+)(\))', _encode_image, desc)
-
+def read_description(file_path='README.md'):
+    with open(file_path, encoding='utf-8') as f:
+        desc = f.read()
     return desc
 
 
@@ -87,7 +65,7 @@ setup(
     description='',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='',
+    url='https://github.com/DataCanvasIO/HyperTS',
     author='DataCanvas Community',
     author_email='yangjian@zetyun.com',
     license='Apache License 2.0',
