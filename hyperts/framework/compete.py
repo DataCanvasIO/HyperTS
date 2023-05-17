@@ -86,7 +86,8 @@ class TSAFDataPreprocessStep(ExperimentStep):
                         eval_horizon = self.experiment.eval_size
                     elif self.experiment.eval_size != consts.DEFAULT_EVAL_SIZE:
                         eval_horizon = self.experiment.eval_size
-                    elif int(X_train.shape[0] * consts.DEFAULT_MIN_EVAL_SIZE) <= period and period < int(X_train.shape[0] // 10):
+                    elif int(X_train.shape[0] * consts.DEFAULT_MIN_EVAL_SIZE) <= period and \
+                         period < int(X_train.shape[0] // 10):
                         eval_horizon = period
                     else:
                         eval_horizon = consts.DEFAULT_MIN_EVAL_SIZE
