@@ -84,7 +84,9 @@ class TSAFDataPreprocessStep(ExperimentStep):
                     period = tb.fft_infer_period(y_train.iloc[:, 0])
                     if isinstance(self.experiment.eval_size, int):
                         eval_horizon = self.experiment.eval_size
-                    elif int(X_train.shape[0] * consts.DEFAULT_MIN_EVAL_SIZE) <= period and period < int(X_train.shape[0] // 20):
+                    elif self.experiment.eval_size != consts.DEFAULT_EVAL_SIZE:
+                        eval_horizon = self.experiment.eval_size
+                    elif int(X_train.shape[0] * consts.DEFAULT_MIN_EVAL_SIZE) <= period and period < int(X_train.shape[0] // 10):
                         eval_horizon = period
                     else:
                         eval_horizon = consts.DEFAULT_MIN_EVAL_SIZE
