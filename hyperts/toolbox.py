@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 from hyperts.utils import get_tool_box
 from hyperts.framework.meta_learning import tsfeatures
+from hyperts.utils.plot import plot_mpl, plot_plotly, plot_seasonality
+
 from sklearn.neighbors import KDTree
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils import check_array

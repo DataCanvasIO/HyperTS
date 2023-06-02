@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+from scipy.interpolate import make_interp_spline
 
 from hyperts.utils import get_tool_box, consts
 from hypernets.utils import logging
@@ -416,4 +418,141 @@ def plot_mpl(forecast,
     plt.xlabel('Date')
     plt.grid(grid, alpha=0.3)
     plt.legend(fontsize=12, loc=2, bbox_to_anchor=(1.01, 1.0), borderaxespad=0.)
+    plt.show()
+
+
+def plot_seasonality(
+        df: pd.DataFrame,
+        timestamp: str,
+        show_ts_col: str,
+):
+    """Visual the seasonality period of time series.
+
+    Parameters
+    ----------
+    df: pd.Dataframe, required
+        Evaluation data, including timestamp and shown indicator columns.
+        Note taht the data type of timestamp column is datetime.
+    timestamp: str, required
+        Name of datetime column.
+    show_ts_col: str, required
+        Shown time series column name.
+    save_fig: bool, optional, default is False
+        If True, save and return image path.
+
+    Returns
+    ----------
+    fig : 'matpltlib..pyplot.figure'.
+    """
+    def _concat_ht(x):
+        x.fillna(method='ffill', inplace=True)
+        x = x.values
+        return np.append(x, x[0])
+
+    tb = get_tool_box(df)
+
+    if not isinstance(df, pd.DataFrame):
+        raise ValueError(f"df must be pd.DataFrame.")
+
+    df_cols_all = df.columns.tolist()
+    check_cols = [timestamp, show_ts_col]
+    for c in check_cols:
+        if c not in df_cols_all:
+            raise ValueError(f"{c} does not belong to df.")
+
+    timestamp_dtype = df[timestamp].dtype.name
+    if timestamp_dtype not in ['datetime64[ns]', 'datetime', 'datetimetz', 'timedelta']:
+        raise ValueError(f"Expect {timestamp} column of df is datetime type, but found {timestamp_dtype}")
+
+    freq = tb.infer_ts_freq(df, timestamp)
+    if freq == None:
+        return f"The data has no regular frequency and cannot visualize seasonality."
+
+    ts = df[[timestamp, show_ts_col]]
+    ts.set_index(timestamp, inplace=True)
+
+    ts_resampled = ts.resample(freq).mean()
+
+    daily_seasonality = ts_resampled.groupby(ts_resampled.index.hour).mean()
+    weekly_seasonality = ts_resampled.groupby(ts_resampled.index.day_of_week).mean()
+    yearly_seasonality = ts_resampled.groupby(ts_resampled.index.month).mean()
+
+    dict_seasonality = {}
+
+    subplot_num = 1
+    if yearly_seasonality.shape[0] == 12:
+        subplot_num = subplot_num + 1
+    if weekly_seasonality.shape[0] == 7:
+        subplot_num = subplot_num + 1
+    if daily_seasonality.shape[0] == 24:
+        subplot_num = subplot_num + 1
+
+    fig = plt.figure(figsize=(10 ,4*subplot_num))
+    plt.tight_layout()
+    plt.subplots_adjust(hspace=0.5, wspace=0.5)
+
+    plt.subplot(subplot_num, 1, 1)
+    plt.plot(ts.index, ts.values, c='#808080')
+    plt.xlabel('Date')
+    plt.ylabel(f"Original Series [{show_ts_col}]", fontsize=15)
+    plt.grid(linestyle="--", alpha=0.3)
+
+    i = 2
+    if yearly_seasonality.shape[0] == 12:
+        ts_y = _concat_ht(yearly_seasonality)
+        x = np.linspace(0, len(yearly_seasonality), len(ts_y), endpoint=True)
+        X_Y_Spline = make_interp_spline(x, ts_y)
+        X_ts = np.linspace(0, len(yearly_seasonality), 366, endpoint=True)
+        Y_ts = X_Y_Spline(X_ts)
+        xticks = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May.', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.', 'Jan.']
+        dict_seasonality['seasonality_yearly'] = [xticks[:-1], list(ts_y[:-1])]
+
+        ax1 = plt.subplot(subplot_num, 1, i)
+        plt.plot(X_ts, Y_ts, c='r')
+        ax1.set_xticks(np.linspace(0, len(yearly_seasonality), 13, endpoint=True))
+        ax1.set_xticklabels(xticks)
+        ax1.set_xticks(np.linspace(0, len(yearly_seasonality), 13, endpoint=True))
+        ax1.set_xticklabels(xticks)
+        plt.xlabel('Day of year')
+        plt.ylabel('Seasonality: yearly', fontsize=15)
+        plt.grid(linestyle="--", alpha=0.3)
+        i+=1
+
+    if weekly_seasonality.shape[0] == 7:
+        ts_w = _concat_ht(weekly_seasonality)
+        x = np.linspace(0, len(weekly_seasonality), len(ts_w), endpoint=True)
+        X_Y_Spline = make_interp_spline(x, ts_w)
+        X_ts = np.linspace(0, len(weekly_seasonality), 500, endpoint=True)
+        Y_ts = X_Y_Spline(X_ts)
+        xticks = ['Sun.', 'Mon.', 'Tue.', 'Weds.', 'Thus.', 'Fri.', 'Sat.', 'Sun.']
+        dict_seasonality['seasonality_weekly'] = [xticks[:-1], list(ts_w[:-1])]
+
+        ax2 = plt.subplot(subplot_num, 1, i)
+        plt.plot(X_ts, Y_ts, c='g')
+        ax2.set_xticks(np.linspace(0, len(weekly_seasonality), 8, endpoint=True))
+        ax2.set_xticklabels(xticks)
+        plt.xlabel('Day of week')
+        plt.ylabel('Seasonality: weekly', fontsize=15)
+        plt.grid(linestyle="--", alpha=0.3)
+        i+=1
+
+    if daily_seasonality.shape[0] == 24:
+        ts_d = _concat_ht(daily_seasonality)
+        x = np.linspace(0, len(daily_seasonality), len(ts_d), endpoint=True)
+        X_Y_Spline = make_interp_spline(x, ts_d)
+        X_ts = np.linspace(0, len(daily_seasonality), 500, endpoint=True)
+        Y_ts = X_Y_Spline(X_ts)
+        xticks = np.linspace(0, 24, 25, endpoint=True, dtype=int)
+        dict_seasonality['seasonality_daily'] = [list(xticks)[:-1], list(ts_d[:-1])]
+
+        ax3 = plt.subplot(subplot_num, 1, i)
+        plt.plot(X_ts, Y_ts, c='b')
+        ax3.set_xticks(np.linspace(0, len(daily_seasonality), 25, endpoint=True))
+        ax3.set_xticklabels(xticks)
+        plt.xlabel('Hour of day')
+        plt.ylabel('Seasonality: daily', fontsize=15)
+        plt.grid(linestyle="--", alpha=0.3)
+
+    fig.suptitle("Seasonality Analysis", y=0.95, fontsize=17)
+
     plt.show()
