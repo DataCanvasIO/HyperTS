@@ -43,6 +43,7 @@ class ProphetWrapper(EstimatorWrapper, WrapperMixin):
     """
     def __init__(self, fit_kwargs, **kwargs):
         super(ProphetWrapper, self).__init__(fit_kwargs, **kwargs)
+        self._y_min = None
         if is_prophet_installed:
             self.model = Prophet(**self.init_kwargs)
         else:
@@ -55,6 +56,11 @@ class ProphetWrapper(EstimatorWrapper, WrapperMixin):
         df_train = X[[self.timestamp]]
         if self.timestamp != 'ds':
             df_train.rename(columns={self.timestamp: 'ds'}, inplace=True)
+        if self._y_min is None:
+            self._y_min = y.min()
+        else:
+            self._y_min = 1e-6
+
         y = self.fit_transform(y)
         df_train['y'] = y
         with suppress_stdout_stderr():
@@ -67,7 +73,7 @@ class ProphetWrapper(EstimatorWrapper, WrapperMixin):
         df_preds = self.model.predict(df_test)
         preds = df_preds['yhat'].values.reshape((-1, 1))
         preds = self.inverse_transform(preds)
-        preds = np.clip(preds, a_min=1e-6, a_max=abs(preds)) if self.is_scale is not None else preds
+        preds = np.clip(preds, a_min=self._y_min, a_max=abs(preds)) if self.is_scale is not None else preds
         return preds
 
 
@@ -81,6 +87,7 @@ class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
         self.model = None
         self._end_date = None
         self._freq = None
+        self._y_min = None
 
     def fit(self, X, y=None, **kwargs):
         # adapt for prophet
@@ -90,6 +97,10 @@ class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
         self._freq = (date_series_top2[1] - date_series_top2[0]).total_seconds()
         self._end_date = X[self.timestamp].tail(1).to_list()[0].to_pydatetime()
         period = self._seasonality(X, y)
+        if self._y_min is None:
+            self._y_min = y.min()
+        else:
+            self._y_min = 1e-6
 
         y = self.fit_transform(y)
 
@@ -129,7 +140,7 @@ class ARIMAWrapper(EstimatorWrapper, WrapperMixin):
 
         preds = np.array(X[self.timestamp].map(calc_index).to_list()).reshape(-1, 1)
         preds = self.inverse_transform(preds)
-        preds = np.clip(preds, a_min=1e-6, a_max=abs(preds)) if self.is_scale is not None else preds
+        preds = np.clip(preds, a_min=self._y_min, a_max=abs(preds)) if self.is_scale is not None else preds
         return preds
 
     def _seasonality(self, X, y):
@@ -148,6 +159,7 @@ class VARWrapper(EstimatorWrapper, WrapperMixin):
         self.model = None
         self._end_date = None
         self._freq = None
+        self._y_min = None
 
     def fit(self, X, y=None, **kwargs):
         # adapt for prophet
@@ -156,7 +168,10 @@ class VARWrapper(EstimatorWrapper, WrapperMixin):
         date_series_top2 = X[self.timestamp][:2].tolist()
         self._freq = (date_series_top2[1] - date_series_top2[0]).total_seconds()
         self._end_date = X[self.timestamp].tail(1).to_list()[0].to_pydatetime()
-
+        if self._y_min is None:
+            self._y_min = y.min()
+        else:
+            self._y_min = 1e-6
         y = self.fit_transform(y)
 
         model = VAR(endog=y, dates=X[self.timestamp])
@@ -176,7 +191,7 @@ class VARWrapper(EstimatorWrapper, WrapperMixin):
 
         preds = np.array(X[self.timestamp].map(calc_index).to_list())
         preds = self.inverse_transform(preds)
-        preds = np.clip(preds, a_min=1e-6, a_max=abs(preds)) if self.is_scale is not None else preds
+        preds = np.clip(preds, a_min=self._y_min, a_max=abs(preds)) if self.is_scale is not None else preds
         return preds
 
 

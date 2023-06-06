@@ -22,6 +22,7 @@ class DeepARWrapper(EstimatorWrapper, WrapperMixin):
     def __init__(self, fit_kwargs, **kwargs):
         kwargs = self.update_init_kwargs(**kwargs)
         super(DeepARWrapper, self).__init__(fit_kwargs, **kwargs)
+        self._y_min = None
         self.update_fit_kwargs()
         self.model = DeepAR(**self.init_kwargs)
 
@@ -29,6 +30,10 @@ class DeepARWrapper(EstimatorWrapper, WrapperMixin):
         if self.drop_sample_rate:
             X, y = self.drop_hist_sample(X, y, **self.init_kwargs)
         fit_kwargs = self._merge_dict(self.fit_kwargs, kwargs)
+        if self._y_min is None:
+            self._y_min = y.min()
+        else:
+            self._y_min = 1e-6
         y = self.fit_transform(y)
         self.model.fit(X, y, **fit_kwargs)
 
@@ -36,7 +41,7 @@ class DeepARWrapper(EstimatorWrapper, WrapperMixin):
         if self.init_kwargs.get('task') in consts.TASK_LIST_FORECAST:
             preds = self.model.forecast(X)
             preds = self.inverse_transform(preds)
-            preds = np.clip(preds, a_min=1e-6, a_max=abs(preds)) if self.is_scale is not None else preds
+            preds = np.clip(preds, a_min=self._y_min, a_max=abs(preds)) if self.is_scale is not None else preds
             return preds
         else:
             X = self.transform(X)
@@ -57,6 +62,7 @@ class HybridRNNWrapper(EstimatorWrapper, WrapperMixin):
     def __init__(self, fit_kwargs, **kwargs):
         kwargs = self.update_init_kwargs(**kwargs)
         super(HybridRNNWrapper, self).__init__(fit_kwargs, **kwargs)
+        self._y_min = None
         self.update_fit_kwargs()
         self.model = HybridRNN(**self.init_kwargs)
 
@@ -65,6 +71,10 @@ class HybridRNNWrapper(EstimatorWrapper, WrapperMixin):
             X, y = self.drop_hist_sample(X, y, **self.init_kwargs)
         fit_kwargs = self._merge_dict(self.fit_kwargs, kwargs)
         if self.init_kwargs.get('task') in consts.TASK_LIST_FORECAST:
+            if self._y_min is None:
+                self._y_min = y.min()
+            else:
+                self._y_min = 1e-6
             y = self.fit_transform(y)
         else:
             X = self.fit_transform(X)
@@ -74,7 +84,7 @@ class HybridRNNWrapper(EstimatorWrapper, WrapperMixin):
         if self.init_kwargs.get('task') in consts.TASK_LIST_FORECAST:
             preds = self.model.forecast(X)
             preds = self.inverse_transform(preds)
-            preds = np.clip(preds, a_min=1e-6, a_max=abs(preds)) if self.is_scale is not None else preds
+            preds = np.clip(preds, a_min=self._y_min, a_max=abs(preds)) if self.is_scale is not None else preds
             return preds
         elif self.init_kwargs.get('task') in consts.TASK_LIST_CLASSIFICATION:
             X = self.transform(X)
@@ -102,6 +112,7 @@ class LSTNetWrapper(EstimatorWrapper, WrapperMixin):
     def __init__(self, fit_kwargs, **kwargs):
         kwargs = self.update_init_kwargs(**kwargs)
         super(LSTNetWrapper, self).__init__(fit_kwargs, **kwargs)
+        self._y_min = None
         self.update_fit_kwargs()
         self.model = LSTNet(**self.init_kwargs)
 
@@ -110,6 +121,10 @@ class LSTNetWrapper(EstimatorWrapper, WrapperMixin):
             X, y = self.drop_hist_sample(X, y, **self.init_kwargs)
         fit_kwargs = self._merge_dict(self.fit_kwargs, kwargs)
         if self.init_kwargs.get('task') in consts.TASK_LIST_FORECAST:
+            if self._y_min is None:
+                self._y_min = y.min()
+            else:
+                self._y_min = 1e-6
             y = self.fit_transform(y)
         else:
             X = self.fit_transform(X)
@@ -119,7 +134,7 @@ class LSTNetWrapper(EstimatorWrapper, WrapperMixin):
         if self.init_kwargs.get('task') in consts.TASK_LIST_FORECAST:
             preds = self.model.forecast(X)
             preds = self.inverse_transform(preds)
-            preds = np.clip(preds, a_min=1e-6, a_max=abs(preds)) if self.is_scale is not None else preds
+            preds = np.clip(preds, a_min=self._y_min, a_max=abs(preds)) if self.is_scale is not None else preds
             return preds
         elif self.init_kwargs.get('task') in consts.TASK_LIST_CLASSIFICATION:
             X = self.transform(X)
@@ -147,6 +162,7 @@ class NBeatsWrapper(EstimatorWrapper, WrapperMixin):
     def __init__(self, fit_kwargs, **kwargs):
         kwargs = self.update_init_kwargs(**kwargs)
         super(NBeatsWrapper, self).__init__(fit_kwargs, **kwargs)
+        self._y_min = None
         self.update_fit_kwargs()
         self.model = NBeats(**self.init_kwargs)
 
@@ -154,6 +170,10 @@ class NBeatsWrapper(EstimatorWrapper, WrapperMixin):
         if self.drop_sample_rate:
             X, y = self.drop_hist_sample(X, y, **self.init_kwargs)
         fit_kwargs = self._merge_dict(self.fit_kwargs, kwargs)
+        if self._y_min is None:
+            self._y_min = y.min()
+        else:
+            self._y_min = 1e-6
         y = self.fit_transform(y)
         self.model.fit(X, y, **fit_kwargs)
 
@@ -161,7 +181,7 @@ class NBeatsWrapper(EstimatorWrapper, WrapperMixin):
         if self.init_kwargs.get('task') in consts.TASK_LIST_FORECAST:
             preds = self.model.forecast(X)
             preds = self.inverse_transform(preds)
-            preds = np.clip(preds, a_min=1e-6, a_max=abs(preds)) if self.is_scale is not None else preds
+            preds = np.clip(preds, a_min=self._y_min, a_max=abs(preds)) if self.is_scale is not None else preds
             return preds
         else:
             X = self.transform(X)
@@ -191,11 +211,8 @@ class InceptionTimeWrapper(EstimatorWrapper, WrapperMixin):
         self.model.fit(X, y, **fit_kwargs)
 
     def predict(self, X, **kwargs):
-        if self.init_kwargs.get('task') in consts.TASK_LIST_FORECAST:
-            preds = self.model.forecast(X)
-            preds = self.inverse_transform(preds)
-            preds = np.clip(preds, a_min=1e-6, a_max=abs(preds)) if self.is_scale is not None else preds
-            return preds
+        if self.init_kwargs.get('task') in consts.TASK_LIST_FORECAST+consts.TASK_LIST_DETECTION:
+            raise ValueError("InceptionTime model supports only classification or regression task.")
         elif self.init_kwargs.get('task') in consts.TASK_LIST_CLASSIFICATION:
             X = self.transform(X)
             return self.model.predict(X)

@@ -95,7 +95,7 @@ def make_experiment(train_data,
         preprocessing pipelines, different models, and different hyperparameters. Usually selecting some of the models
         that perform well to ensemble can obtain better generalization ability than just selecting the single best model.
     freq : 'str', DateOffset or None, default None.
-        Note: If your task is a discontinuous time series, you can specify the freq as 'Discrete'.
+        Note: If your task is a discontinuous time series, you can specify the freq as 'null'.
     timestamp : str, forecast task 'timestamp' cannot be None, (default=None).
     forecast_train_data_periods : 'int', Cut off a certain period of data from the train data from back to front
         as a train set. (default=None).
@@ -433,13 +433,27 @@ def make_experiment(train_data,
             kwargs['train_end_date'] = pseudo_timestamp[timestamp].max()
             kwargs['generate_freq'] = generate_freq
 
-        if (freq is not None and 'N' in freq) or 'N' in tb.infer_ts_freq(train_data, ts_name=timestamp):
-            timestamp_format = None
-        train_data[timestamp] = tb.datetime_format(train_data[timestamp], format=timestamp_format)
-        if eval_data is not None:
-            eval_data[timestamp] = tb.datetime_format(eval_data[timestamp], format=timestamp_format)
-        if X_test is not None:
-            X_test[timestamp] = tb.datetime_format(X_test[timestamp], format=timestamp_format)
+        if freq is None:
+            try:
+                freq = tb.infer_ts_freq(train_data, ts_name=timestamp)
+            except:
+                freq = 'null'
+
+        if freq is not None and freq != 'null':
+            if 'L' in freq:
+                timestamp_format = '%Y-%m-%d %H:%M:%S.%f'
+            elif 'N' in freq:
+                timestamp_format = None
+            else:
+                timestamp_format = '%Y-%m-%d %H:%M:%S'
+        try:
+            train_data[timestamp] = tb.datetime_format(train_data[timestamp], format=timestamp_format)
+            if eval_data is not None:
+                eval_data[timestamp] = tb.datetime_format(eval_data[timestamp], format=timestamp_format)
+            if X_test is not None:
+                X_test[timestamp] = tb.datetime_format(X_test[timestamp], format=timestamp_format)
+        except:
+            raise ValueError(f" please check whether the datetime format is valid.")
     elif task in consts.TASK_LIST_CLASSIFICATION + consts.TASK_LIST_REGRESSION:
         if timestamp is not None and timestamp in train_data.columns.to_list():
             raise ValueError(f"{task} can not inclue timestamp, please check data format!")
