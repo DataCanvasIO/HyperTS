@@ -251,7 +251,7 @@ HyperTS针对不同的模式内置了丰富的建模算法, 例如:
 
         def __init__(self, fit_kwargs, **kwargs):
             super(TransformerWrapper, self).__init__(fit_kwargs, **kwargs)
-            self.update_dl_kwargs()
+            self.update_fit_kwargs()
             self.model = Transformer(**self.init_kwargs)
 
 
