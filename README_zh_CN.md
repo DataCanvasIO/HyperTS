@@ -220,7 +220,7 @@ HyperTS支持以下特性:
 * [HyperBoard](https://github.com/DataCanvasIO/HyperBoard): 一个为Hypernets提供可视化界面的工具。
 * [Cooka](https://github.com/DataCanvasIO/Cooka): 一个交互式的轻量级自动机器学习系统。
   
-![DataCanvas AutoML Toolkit](docs/static/images/datacanvas_automl_toolkit.png)
+![DataCanvas AutoML Toolkit](https://raw.githubusercontent.com/DataCanvasIO/HyperTS/main/docs/static/images/datacanvas_automl_toolkit.png)
 
 ## 引用
 
