@@ -217,7 +217,7 @@ HyperTS supports the following features:
 * [HyperBoard](https://github.com/DataCanvasIO/HyperBoard): A visualization tool for Hypernets.
 * [Cooka](https://github.com/DataCanvasIO/Cooka): Lightweight interactive AutoML system.
 
-![DataCanvas AutoML Toolkit](https://raw.githubusercontent.com/DataCanvasIO/HyperTS/main/docs/static/images/datacanvas_automl_toolkit.png)
+![DataCanvas AutoML Toolkit](https://raw.githubusercontent.com/DataCanvasIO/HyperTS/main/docs/static/images/DAT_latest.png)
 
 ## Citation
 
