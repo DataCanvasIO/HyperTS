@@ -1,5 +1,5 @@
 # tensorflow>=2.0.0   # required at using dl mode
-hypernets>=0.2.5.1, <0.2.6
+hypernets>=0.3.0
 sktime>=0.8.1
 prophet>=1.0.1
 statsmodels>=0.12.1
