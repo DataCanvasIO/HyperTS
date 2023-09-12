@@ -17,6 +17,7 @@ from hypernets.model.hyper_model import HyperModel
 from hypernets.core.meta_learner import MetaLearner
 from hypernets.pipeline.base import ComposeTransformer
 from hypernets.dispatchers.in_process_dispatcher import InProcessDispatcher
+from hypernets import __version__ as hypernets_version
 
 from hyperts.utils import consts, get_tool_box
 from hyperts.utils.transformers import IdentityTransformer
@@ -199,8 +200,10 @@ class HyperTSEstimator(Estimator):
         if verbose > 0:
             logger.info(f'taken {time.time() - starttime}s')
 
-        # return scores, oof_, oof_scores
-        return scores, oof_, oof_scores, None, None, None, None
+        if int(hypernets_version.split(".")[1]) < 3:
+            return scores, oof_, oof_scores
+        else:
+            return scores, oof_, oof_scores, None, None, None, None
 
     def get_scores(self, y, oof_, metrics):
         tb = get_tool_box(y)
@@ -221,12 +224,15 @@ class HyperTSEstimator(Estimator):
                                            classes=self.classes_)
         else:
             scores = tb.metrics.calc_score(y, proba, metrics=metrics, task=self.task)
+
+        scores = {key: value if value != 0 else 1e-6 for key, value in scores.items()}
+
         return scores
 
     def get_iteration_scores(self):
         iteration_scores = {}
 
-        def get_scores(ts_model, iteration_scores, fold=None, ):
+        def get_scores(ts_model, iteration_scores, fold=None):
             if hasattr(ts_model, 'iteration_scores'):
                 if ts_model.__dict__.get('group_id'):
                     group_id = ts_model.group_id
@@ -242,6 +248,9 @@ class HyperTSEstimator(Estimator):
                 get_scores(ts_model, iteration_scores, i)
         else:
             get_scores(self.model, iteration_scores)
+
+        iteration_scores = {key: value if value != 0 else 1e-6 for key, value in iteration_scores.items()}
+
         return iteration_scores
 
     def fit(self, X, y, pos_label=None, verbose=0, **kwargs):
@@ -394,6 +403,8 @@ class HyperTSEstimator(Estimator):
             scores = get_tool_box(X).metrics.calc_score(y, y_pred,
                                                         metrics=metrics,
                                                         task=self.task)
+
+        scores = {key: value if value != 0 else 1e-6 for key, value in scores.items()}
 
         return scores
 

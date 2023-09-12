@@ -11,14 +11,14 @@ try:
     enable_mpl = True
 except:
     enable_mpl = False
-    logger.error('Importing matplotlib failed. Plotting will not work.')
+    logger.warning('Importing matplotlib failed. Plotting will not work.')
 
 try:
     import plotly.graph_objects as go
     enable_plotly = True
 except:
     enable_plotly = False
-    logger.error('Importing plotly failed. Interactive plots will not work.')
+    logger.warning('Importing plotly failed. Interactive plots will not work.')
 
 def plot_plotly(forecast,
                 timestamp_col,

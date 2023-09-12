@@ -39,6 +39,7 @@ class SearchSpaceMixin:
             raise ValueError('window must be int or list.')
         return default_init_kwargs
 
+
 class WithinColumnSelector:
 
     def __init__(self, selector, selected_cols):
@@ -46,7 +47,7 @@ class WithinColumnSelector:
         self.selected_cols = selected_cols
 
     def __call__(self, df):
-        intersection = set(df.columns.tolist()).intersection(self.selected_cols)
+        intersection = list(set(df.columns.tolist()).intersection(self.selected_cols))
         if len(intersection) > 0:
             selected_df = df[intersection]
             return self.selector(selected_df)

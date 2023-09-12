@@ -38,7 +38,6 @@ class Test_HyperTS_Ensemble():
     def test_dl_multivarite_forecast_cv_ensemble(self):
         tsf_ensemble_test(univariate=False, mode='dl', cv=True, ensemble_size=3)
 
-
     def test_stats_binary_classification_nocv_ensemble(self):
         tsc_ensemble_test(binary=True, mode='stats', cv=False, ensemble_size=3)
 
