@@ -49,7 +49,7 @@ conda install -c conda-forge hyperts
 如果您想体验最新的功能， 您可以通过如下方式从``github``安装:
 
 ```bash
-git clone https://github.com/DataCanvasIO/HyperTS.git
+git clone git@github.com:DataCanvasIO/HyperTS.git
 cd HyperTS
 pip install -e . 
 pip install tensorflow #optional

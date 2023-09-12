@@ -51,7 +51,7 @@ conda install -c conda-forge hyperts
 If you would like the most up-to-date version, you can instead install direclty from ``github``:
 
 ```bash
-git clone https://github.com/DataCanvasIO/HyperTS.git
+git clone git@github.com:DataCanvasIO/HyperTS.git
 cd HyperTS
 pip install -e . 
 pip install tensorflow #optional
