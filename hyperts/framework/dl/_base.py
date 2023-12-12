@@ -695,9 +695,10 @@ class BaseDeepEstimator(object):
             logger.info(f'metrics is `{metrics[0].name}`.')
 
         if optimizer.lower() in ['auto', consts.OptimizerADAM]:
-            try:
-                optimizer = optimizers.AdamW(lr=learning_rate, weight_decay=0.01, epsilon=1e-6, global_clipnorm=1.0)
-            except:
+            if int(str(tf.__version__).split(".")[1]) >= 14:
+                from tensorflow.keras.optimizers import AdamW
+                optimizer = AdamW(lr=learning_rate, weight_decay=0.01, epsilon=1e-6, global_clipnorm=1.0)
+            else:
                 optimizer = optimizers.Adam(lr=learning_rate, decay=1e-8, clipnorm=10.)
         elif optimizer.lower() == consts.OptimizerADAMP:
             optimizer = optimizers.AdamP(lr=learning_rate, weight_decay=0.025)
