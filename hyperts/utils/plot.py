@@ -418,6 +418,7 @@ def plot_mpl(forecast,
     plt.xlabel('Date')
     plt.grid(grid, alpha=0.3)
     plt.legend(fontsize=12, loc=2, bbox_to_anchor=(1.01, 1.0), borderaxespad=0.)
+    plt.subplots_adjust(right=0.85)
     plt.show()
 
 
