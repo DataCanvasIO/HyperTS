@@ -167,33 +167,33 @@ Version 0.2.1
 
 Details of the HypertTS update are as follows:
 
-- Adapted to TensorFlow versions `2.11.0` and above.
+- Adapted to TensorFlow versions ```2.11.0``` and above.
 
 - Fixed the issue of unstable random seed in NAS mode.
 
-- Fixed handling of `int` variables in DL models.
+- Fixed handling of ```int``` variables in DL mode.
 
 - Updated CI.
 
-- Fixed the unordered indexing problem in the `arrow_head` data loading.
+- Fixed the unordered indexing problem in the ```arrow_head``` data loading.
 
 - Refactored the identification of discrete variables in DL mode.
 
-- Added the `Lion` optimizer.
+- Added the ```Lion``` optimizer.
 
-- Corrected variable name spelling error, `HybirdRNN` -> `HybridRNN`.
+- Corrected variable name spelling error, ```HybirdRNN``` -> ```HybridRNN```.
 
-- Corrected the `trend` parameter in the `VAR` model.
+- Corrected the ```trend``` parameter in the ```VAR``` model.
 
-- Adjusted the field of view length for evaluation segmentation in prediction tasks.
+- Adjusted the field of view length for evaluation segmentation in forecast tasks.
 
-- Added seasonal analysis functionality.
+- Added seasonal analysis.
 
-- Fixed the issue of truncating negative values to 0 in prediction problems.
+- Fixed the issue of truncating negative values to 0 in forecast tasks.
 
-- Updated `hypernets` and `numpy` versions.
+- Updated ```hypernets``` and ```numpy``` versions.
 
-- Supported the `AdamW` optimizer (`tensorflow >= 2.14.0`).
+- Supported the ```AdamW``` optimizer (```tensorflow >= 2.14.0```).
 
 - Adjusted the legend margin in visualizations.
 

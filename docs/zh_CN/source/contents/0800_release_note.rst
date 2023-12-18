@@ -140,23 +140,23 @@ HyperTS本次更新细节如下:
 
 HyperTS本次更新细节如下:
 
-- 适配tensorflow `2.11.0`以上版本。
+- 适配tensorflow ```2.11.0```以上版本。
 
 - 修复NAS模式下随机种子不固定的问题。
 
-- 修复DL模型对于`int`变量的处理。
+- 修复DL模型对于```int```变量的处理。
 
 - 更新CI。
 
-- 修复`arrow_head`数据加载`index`无序的问题。
+- 修复```arrow_head``` 数据加载 ```index```无序的问题。
 
 - 重构DL模式下离散变量识别的问题。
 
-- 新增`Lion`优化器。
+- 新增```Lion```优化器。
 
-- 修改变量名拼写错误, `HybirdRNN` -> `HybridRNN`。
+- 修改变量名拼写错误, ```HybirdRNN``` -> ```HybridRNN```。
 
-- 修正`VAR`模型的`trend`参数。
+- 修正```VAR``` 模型的 ```trend```参数。
 
 - 对于预测任务修正eval分割的视野长度。
 
@@ -164,9 +164,9 @@ HyperTS本次更新细节如下:
 
 - 修复预测问题中负值截断为0的问题。
 
-- 更新`hypernets`, `numpy`版本。
+- 更新```hypernets```, ```numpy```版本。
 
-- 支持`AdamW`优化器（`tensorflow >= 2.14.0`）。
+- 支持```AdamW``` 优化器 （```tensorflow >= 2.14.0```）。
 
 - 调整可视化图例边距。
 
