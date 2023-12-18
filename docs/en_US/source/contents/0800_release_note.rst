@@ -167,8 +167,6 @@ Version 0.2.1
 
 Details of the HypertTS update are as follows:
 
-Here is the English translation of the release note:
-
 - Adapted to TensorFlow versions `2.11.0` and above.
 
 - Fixed the issue of unstable random seed in NAS mode.
