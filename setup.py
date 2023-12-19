@@ -43,7 +43,7 @@ execfile(os.path.join(HERE, 'hyperts', '_version.py'), version_ns)
 version = version_ns['__version__']
 
 
-MIN_PYTHON_VERSION = '>=3.6'
+MIN_PYTHON_VERSION = '>=3.7'
 
 
 def read_description(file_path='README.md'):
@@ -57,7 +57,7 @@ long_description = read_description()
 
 requires = read_requirements()
 if not tf_installed:
-    requirements = ['tensorflow>=2.0.0,<2.5.0', ] + requires
+    requirements = ['tensorflow>=2.0.0,<=2.10', ] + requires
 
 setup(
     name='hyperts',
@@ -77,9 +77,11 @@ setup(
         'Intended Audience :: Education',
         'Intended Audience :: Science/Research',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
         'Topic :: Software Development',
