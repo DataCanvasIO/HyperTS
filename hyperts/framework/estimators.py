@@ -13,6 +13,8 @@ from hyperts.framework.wrappers.stats_wrappers import VARWrapper
 from hyperts.framework.wrappers.stats_wrappers import ARIMAWrapper
 from hyperts.framework.wrappers.stats_wrappers import TSForestWrapper
 from hyperts.framework.wrappers.stats_wrappers import KNeighborsWrapper
+from hyperts.framework.wrappers.stats_wrappers import TDEWrapper
+from hyperts.framework.wrappers.stats_wrappers import is_sktime_installed
 from hyperts.framework.wrappers.stats_wrappers import IForestWrapper
 from hyperts.framework.wrappers.stats_wrappers import OneClassSVMWrapper
 
@@ -374,6 +376,88 @@ class KNNClassificationEstimator(HyperEstimator):
         else:
             raise ValueError('KNN model supports only classification task.')
         return knn
+
+    @property
+    def is_sktime_installed(self):
+        if is_sktime_installed:
+            return True
+        else:
+            return False
+
+
+class TDEClassificationEstimator(HyperEstimator):
+    """Time Series Classfication Estimator based on Hypernets.
+    Estimator: Temporal Dictionary Ensemble (TDE).
+    Suitable for: Classfication Task.
+
+    Parameters
+    ----------
+    window_size : int, default=10
+        Size of the window to use in the SFA transform.
+    word_length : int, default=8
+        Length of word to use to use in the SFA transform.
+    norm : bool, default=False
+        Whether to normalize SFA words by dropping the first Fourier coefficient.
+    levels : int, default=1
+        The number of spatial pyramid levels for the SFA transform.
+    igb : bool, default=False
+        Whether to use Information Gain Binning (IGB) or
+        Multiple Coefficient Binning (MCB) for the SFA transform.
+    alphabet_size : default=4
+        Number of possible letters (values) for each word.
+    bigrams : bool, default=False
+        Whether to record word bigrams in the SFA transform.
+    dim_threshold : float, default=0.85
+        Accuracy threshold as a propotion of the highest accuracy dimension for words
+        extracted from each dimensions. Only applicable for multivariate data.
+    max_dims : int, default=20
+        Maximum number of dimensions words are extracted from. Only applicable for
+        multivariate data.
+    n_jobs : int, default=1
+        The number of jobs to run in parallel for both `fit` and `predict`.
+        ``-1`` means using all processors.
+    random_state : int or None, default=None
+        Seed for random, integer.
+    """
+
+    def __init__(self, fit_kwargs=None, window_size=10,
+                 word_length=8, norm=False, levels=1,
+                 igb=False, alphabet_size=4, bigrams=False,
+                 dim_threshold=0.85, max_dims=20,
+                 n_jobs=1, random_state=None,
+                 space=None, name=None, **kwargs):
+
+        if window_size is not None and window_size != 10:
+            kwargs['window_size'] = window_size
+        if word_length is not None and word_length != 8:
+            kwargs['word_length'] = word_length
+        if norm is not None and norm != False:
+            kwargs['norm'] = norm
+        if levels is not None and levels != 1:
+            kwargs['levels'] = levels
+        if igb is not None and igb != False:
+            kwargs['igb'] = igb
+        if alphabet_size is not None and alphabet_size != 4:
+            kwargs['alphabet_size'] = alphabet_size
+        if bigrams is not None and bigrams != False:
+            kwargs['bigrams'] = bigrams
+        if dim_threshold is not None and dim_threshold != 0.85:
+            kwargs['dim_threshold'] = dim_threshold
+        if max_dims is not None and max_dims != 20:
+            kwargs['max_dims'] = max_dims
+        if n_jobs is not None and n_jobs != 1:
+            kwargs['n_jobs'] = n_jobs
+        if random_state is not None:
+            kwargs['random_state'] = random_state
+
+        HyperEstimator.__init__(self, fit_kwargs, space, name, **kwargs)
+
+    def _build_estimator(self, task, fit_kwargs, kwargs):
+        if task in consts.TASK_LIST_CLASSIFICATION:
+            tde = TDEWrapper(fit_kwargs, **kwargs)
+        else:
+            raise ValueError('TDE model supports only classification task.')
+        return tde
 
 
 class IForestDetectionEstimator(HyperEstimator):

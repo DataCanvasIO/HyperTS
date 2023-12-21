@@ -6,6 +6,7 @@ from hyperts.framework.wrappers.stats_wrappers import ARIMAWrapper
 from hyperts.framework.wrappers.stats_wrappers import VARWrapper
 from hyperts.framework.wrappers.stats_wrappers import TSForestWrapper
 from hyperts.framework.wrappers.stats_wrappers import KNeighborsWrapper
+from hyperts.framework.wrappers.stats_wrappers import TDEWrapper
 from hyperts.framework.wrappers.stats_wrappers import IForestWrapper
 from hyperts.framework.wrappers.stats_wrappers import OneClassSVMWrapper
 from hyperts.datasets import load_random_univariate_forecast_dataset
@@ -13,6 +14,7 @@ from hyperts.datasets import load_random_multivariate_forecast_dataset
 from hyperts.datasets import load_arrow_head
 from hyperts.datasets import load_real_known_cause_dataset
 from hyperts.tests import skip_if_not_prophet
+from hyperts.tests import skip_if_not_sktime
 
 class Test_Stats_Wrappers():
 
@@ -81,6 +83,7 @@ class Test_Stats_Wrappers():
         score = accuracy_score(y_test, y_pred)
         assert score >= 0
 
+    @skip_if_not_sktime
     def test_KNeighbors_wrapper(self):
         X, y = load_arrow_head(return_X_y=True)
         tb = get_tool_box(X)
@@ -88,10 +91,27 @@ class Test_Stats_Wrappers():
         fit_kwargs = {}
         init_kwargs = {
             'n_neighbors': 3,
-            'distance': 'ddtw',
+            'distance': 'dtw',
             'x_scale': np.random.choice(['min_max', 'z_score'], size=1)[0]
         }
         model = KNeighborsWrapper(fit_kwargs=fit_kwargs, **init_kwargs)
+
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        score = accuracy_score(y_test, y_pred)
+        assert score >= 0
+
+    def test_TDE_wrapper(self):
+        X, y = load_arrow_head(return_X_y=True)
+        tb = get_tool_box(X)
+        X_train, X_test, y_train, y_test = tb.random_train_test_split(X, y)
+        fit_kwargs = {}
+        init_kwargs = {
+            'window_size': 10,
+            'word_length': 8,
+            'norm': np.random.choice([True, False], size=1)[0]
+        }
+        model = TDEWrapper(fit_kwargs=fit_kwargs, **init_kwargs)
 
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)

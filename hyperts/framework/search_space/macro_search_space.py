@@ -14,6 +14,7 @@ from hyperts.framework.estimators import ARIMAForecastEstimator
 from hyperts.framework.estimators import VARForecastEstimator
 from hyperts.framework.estimators import TSFClassificationEstimator
 from hyperts.framework.estimators import KNNClassificationEstimator
+from hyperts.framework.estimators import TDEClassificationEstimator
 from hyperts.framework.estimators import DeepARForecastEstimator
 from hyperts.framework.estimators import HybridRNNGeneralEstimator
 from hyperts.framework.estimators import LSTNetGeneralEstimator
@@ -360,10 +361,13 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin)
     metrics: str or None, optional, default None. Support accuracy, f1, auc, recall, precision.
     enable_tsf: bool, default True.
     enable_knn: bool, default True.
+    enable_tde: bool, default True.
     tsf_init_kwargs: dict or None, optional, default None. If not None, you can customize
         the hyper-parameters by which tsf is searched.
     knn_init_kwargs: dict or None, optional, default None. If not None, you can customize
         the hyper-parameters by which knn is searched.
+    tde_init_kwargs: dict or None, optional, default None. If not None, you can customize
+        the hyper-parameters by which tde is searched.
 
     Returns
     ----------
@@ -379,8 +383,10 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin)
     def __init__(self, task=None, timestamp=None,
                  enable_tsf=True,
                  enable_knn=True,
+                 enable_tde=True,
                  tsf_init_kwargs=None,
                  knn_init_kwargs=None,
+                 tde_init_kwargs=None,
                  **kwargs):
         if hasattr(kwargs, 'covariables'):
             kwargs.pop('covariables', None)
@@ -388,12 +394,15 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin)
             kwargs['tsf_init_kwargs'] = tsf_init_kwargs
         if enable_knn and knn_init_kwargs is not None:
             kwargs['knn_init_kwargs'] = knn_init_kwargs
+        if enable_tde and tde_init_kwargs is not None:
+            kwargs['tde_init_kwargs'] = tde_init_kwargs
         super(StatsClassificationSearchSpace, self).__init__(task, **kwargs)
 
         self.task = task
         self.timestamp = timestamp
         self.enable_tsf = enable_tsf
         self.enable_knn = enable_knn
+        self.enable_tde = enable_tde
 
     @property
     def default_tsf_init_kwargs(self):
@@ -413,7 +422,7 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin)
         return {
             'n_neighbors': Choice([1, 3, 5, 7, 9, 15]),
             'weights': Choice(['uniform', 'distance']),
-            'distance': Choice(['dtw', 'ddtw', 'lcss']),
+            'distance': Choice(['dtw', 'euclidean', 'lcss']),
             'x_scale': Choice(['z_score', 'scale-none'])
         }
 
@@ -422,12 +431,38 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin)
         return {
             'n_neighbors': Choice([1, 3, 5, 7, 9, 15]),
             'weights': Choice(['uniform', 'distance']),
-            'distance': Choice(['dtw', 'ddtw', 'lcss']),
+            'distance': Choice(['dtw', 'euclidean', 'lcss']),
             'x_scale': Choice(['z_score', 'scale-none'])
         }
 
     @property
     def default_knn_fit_kwargs(self):
+        return {
+            'timestamp': self.timestamp
+        }
+
+    @property
+    def default_tde_univar_init_kwargs(self):
+        return {
+            'window_size': Choice([10]*6 + [15, 20, 25, 30]),
+            'word_length': Choice([8]*6 + [10, 12, 14, 16]),
+            'norm': Choice([True]+[False]*4),
+            'levels': Choice([1]*8 + [2, 3]),
+            'igb': Choice([True]+[False]*4)
+        }
+
+    @property
+    def default_tde_multivar_init_kwargs(self):
+        return {
+            'window_size': Choice([10]*6 + [15, 20, 25, 30]),
+            'word_length': Choice([8]*6 + [10, 12, 14, 16]),
+            'norm': Choice([True]+[False]*4),
+            'levels': Choice([1]*8 + [2, 3]),
+            'igb': Choice([True]+[False]*4)
+        }
+    
+    @property
+    def default_tde_fit_kwargs(self):
         return {
             'timestamp': self.timestamp
         }
@@ -440,11 +475,16 @@ class StatsClassificationSearchSpace(BaseSearchSpaceGenerator, SearchSpaceMixin)
         if self.enable_tsf:
             univar_containers['tsf'] = (
             TSFClassificationEstimator, self.default_tsf_init_kwargs, self.default_tsf_fit_kwargs)
-        if self.enable_knn:
+        if self.enable_knn and KNNClassificationEstimator().is_sktime_installed:
             univar_containers['knn'] = (
             KNNClassificationEstimator, self.default_knn_univar_init_kwargs, self.default_knn_fit_kwargs)
             multivar_containers['knn'] = (
             KNNClassificationEstimator, self.default_knn_multivar_init_kwargs, self.default_knn_fit_kwargs)
+        if self.enable_tde:
+            univar_containers['tde'] = (
+            TDEClassificationEstimator, self.default_tde_univar_init_kwargs, self.default_tde_fit_kwargs)
+            multivar_containers['tde'] = (
+            TDEClassificationEstimator, self.default_tde_multivar_init_kwargs, self.default_tde_fit_kwargs)
 
         if self.task in [consts.Task_UNIVARIATE_BINARYCLASS, consts.Task_UNIVARIATE_MULTICALSS]:
             return univar_containers

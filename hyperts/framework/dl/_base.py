@@ -711,7 +711,13 @@ class BaseDeepEstimator(object):
             optimizer = optimizers.SGD(lr=learning_rate, momentum=0.9, nesterov=True, decay=1e-8, clipnorm=10.)
         else:
             raise ValueError(f'Unsupport this optimizer: {optimizer}.')
-        logger.info(f'The compile optimizer is `{optimizer._name}`, learning rate is {learning_rate}.')
+        try:
+            logger.info(f'The compile optimizer is `{optimizer._name}`, learning rate is {learning_rate}.')
+        except:
+            try:
+                logger.info(f'The compile optimizer is `{optimizer.name}`, learning rate is {learning_rate}.')
+            except:
+                pass
 
         model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
         return model

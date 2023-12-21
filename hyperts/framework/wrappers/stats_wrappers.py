@@ -21,8 +21,12 @@ except:
 from statsmodels.tsa.api import SARIMAX
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.vector_ar.var_model import VAR
-from sktime.classification.interval_based import TimeSeriesForestClassifier
-from sktime.classification.distance_based import KNeighborsTimeSeriesClassifier
+# from sktime.classification.interval_based import TimeSeriesForestClassifier
+try:
+    from sktime.classification.distance_based import KNeighborsTimeSeriesClassifier
+    is_sktime_installed = True
+except:
+    is_sktime_installed = False
 
 from hypernets.utils import logging
 
@@ -32,6 +36,8 @@ from hyperts.framework.wrappers import WrapperMixin
 from hyperts.framework.wrappers import suppress_stdout_stderr
 from hyperts.framework.stats import TSIsolationForest
 from hyperts.framework.stats import TSOneClassSVM
+from hyperts.framework.stats import TimeSeriesForestClassifier
+from hyperts.framework.stats import IndividualTDEClassifier
 
 logger = logging.get_logger(__name__)
 
@@ -225,7 +231,10 @@ class KNeighborsWrapper(EstimatorWrapper, WrapperMixin):
     """
     def __init__(self, fit_kwargs, **kwargs):
         super(KNeighborsWrapper, self).__init__(fit_kwargs, **kwargs)
-        self.model = KNeighborsTimeSeriesClassifier(**self.init_kwargs)
+        if is_sktime_installed:
+            self.model = KNeighborsTimeSeriesClassifier(**self.init_kwargs)
+        else:
+            self.model = None
 
     def fit(self, X, y=None, **kwargs):
         # adapt for prophet
@@ -238,6 +247,28 @@ class KNeighborsWrapper(EstimatorWrapper, WrapperMixin):
 
     def predict_proba(self, X, **kwargs):
         X = self.transform(X)
+        return self.model.predict_proba(X)
+
+    @property
+    def classes_(self):
+        return self.model.classes_
+
+class TDEWrapper(EstimatorWrapper, WrapperMixin):
+    """
+    Adapt: univariate/multivariate classification.
+    """
+    def __init__(self, fit_kwargs, **kwargs):
+        super(TDEWrapper, self).__init__(fit_kwargs, **kwargs)
+        self.model = IndividualTDEClassifier(**self.init_kwargs)
+
+    def fit(self, X, y=None, **kwargs):
+        # adapt for prophet
+        self.model.fit(X, y)
+
+    def predict(self, X, **kwargs):
+        return self.model.predict(X)
+
+    def predict_proba(self, X, **kwargs):
         return self.model.predict_proba(X)
 
     @property
