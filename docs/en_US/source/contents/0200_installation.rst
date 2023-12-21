@@ -80,3 +80,5 @@ or
     ValueError: In models with integration (d > 0) or seasonal integration (D > 0)...
 
 Please check the ``statsmodels`` version and control that it is not greater than 0.12.1.
+
+7. Since HyperTS version 0.2.3, ```hyperts``` has removed the dependency on ```sktime```, and ```sktime``` can be installed independently if you want to use the KNN algorithm in classification tasks.

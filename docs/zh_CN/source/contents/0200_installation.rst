@@ -84,3 +84,5 @@ conda安装
     ValueError: In models with integration (d > 0) or seasonal integration (D > 0)...
 
 建议您检查 ``statsmodels`` 的版本并控制其版为0.12.1。
+
+7. 自HyperTS 0.2.3版本，hyperts移除了对sktime的依赖，如果在分类任务中想要使用KNN算法，可以独立安装```sktime```。
