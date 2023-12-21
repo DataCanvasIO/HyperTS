@@ -66,6 +66,22 @@ class BaseTimeSeriesForest:
         # We need to add is-fitted state when inheriting from scikit-learn
         self._is_fitted = False
 
+    @property
+    def _estimator(self):
+        """Access first parameter in self, self inheriting from sklearn BaseForest.
+
+        The attribute was renamed from base_estimator to estimator in sklearn 1.2.0.
+        """
+        import sklearn
+        from packaging.specifiers import SpecifierSet
+
+        sklearn_version = sklearn.__version__
+
+        if sklearn_version in SpecifierSet(">=1.2.0"):
+            return self.estimator
+        else:
+            return self.base_estimator
+
     def fit(self, X, y):
         """Build a forest of trees from the training set (X, y).
 
@@ -110,7 +126,7 @@ class BaseTimeSeriesForest:
 
         self.estimators_ = Parallel(n_jobs=n_jobs)(
             delayed(_fit_estimator)(
-                _clone_estimator(self.base_estimator, rng), X, y, self.intervals_[i]
+                _clone_estimator(self._estimator, rng), X, y, self.intervals_[i]
             )
             for i in range(self.n_estimators)
         )
