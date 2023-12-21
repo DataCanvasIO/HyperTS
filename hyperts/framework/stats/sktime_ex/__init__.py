@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Classifier Base."""
+"""Everything in this file comes from sktime: https://github.com/sktime/sktime
+"""
 __all__ = [
     "BaseClassifier",
 ]

@@ -3,6 +3,8 @@
 
 Dictionary based TDE classifiers based on SFA transform. Contains a single
 IndividualTDE and TDE.
+
+Everything in this file comes from sktime: https://github.com/sktime/sktime
 """
 
 __author__ = ["MatthewMiddlehurst"]

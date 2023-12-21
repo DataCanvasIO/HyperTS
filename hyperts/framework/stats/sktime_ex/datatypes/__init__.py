@@ -1,3 +1,6 @@
+"""Everything in this file comes from sktime: https://github.com/sktime/sktime
+"""
+
 from hyperts.framework.stats.sktime_ex.datatypes._series_check import check_dict as check_dict_Series
 from hyperts.framework.stats.sktime_ex.datatypes._panel_check import check_dict as check_dict_Panel
 from hyperts.framework.stats.sktime_ex.datatypes._hierarchical_check import check_dict as check_dict_Hierarchical

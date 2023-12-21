@@ -2,6 +2,8 @@
 """Time Series Forest (TSF) Classifier.
 
 Interval based TSF classifier, extracts basic summary features from random intervals.
+
+Everything in this file comes from sktime: https://github.com/sktime/sktime
 """
 
 __author__ = ["kkoziara", "luiszugasti", "kanand77"]
