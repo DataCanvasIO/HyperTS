@@ -8,3 +8,4 @@ numpy>=1.16.5,<1.25
 pandas>=0.25.3
 scikit-learn>=0.22.1
 scipy
+numba
