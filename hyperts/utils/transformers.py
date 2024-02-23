@@ -299,7 +299,12 @@ class CategoricalTransformer(BaseEstimator, TransformerMixin):
         else:
             self.label_encoder = label_encoder
         if onehot_encoder is None:
-            self.onehot_encoder = OneHotEncoder(sparse=False, categories="auto")
+            if hasattr(OneHotEncoder(), "sparse"):
+                self.onehot_encoder = OneHotEncoder(sparse=False, categories="auto")
+            elif hasattr(OneHotEncoder(), "sparse_output"):
+                self.onehot_encoder = OneHotEncoder(sparse_output=False, categories="auto")
+            else:
+                raise ValueError("please check the version of scikit-learn package.")
         else:
             self.onehot_encoder = onehot_encoder
 
