@@ -1,7 +1,8 @@
-# tensorflow>=2.0.0   # required at using dl mode
+# tensorflow>=2.0.0,<=2.10.0   # required at using dl mode
 hypernets>=0.3.0
 # sktime>=0.8.1   # required if using knn in classification
 # sktime==0.18 is very slowly now(2023/05/08)
+# sktime has been deprecated, all functions have been driven by hyperts. Do not uncomment unless necessary.
 prophet>=1.0.1
 statsmodels>=0.12.1
 numpy>=1.16.5

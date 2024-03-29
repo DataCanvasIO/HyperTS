@@ -54,7 +54,7 @@ If you would like the most up-to-date version, you can instead install direclty 
 git clone git@github.com:DataCanvasIO/HyperTS.git
 cd HyperTS
 pip install -e . 
-pip install tensorflow #optional
+pip install tensorflow #optional, recommended version: >=2.0.0,<=2.10.0
 ````
 
 For more installation tips, see [installation](https://hyperts.readthedocs.io/en/latest/contents/0200_installation.html).

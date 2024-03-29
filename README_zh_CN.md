@@ -52,7 +52,7 @@ conda install -c conda-forge hyperts
 git clone git@github.com:DataCanvasIO/HyperTS.git
 cd HyperTS
 pip install -e . 
-pip install tensorflow #optional
+pip install tensorflow #optional, recommended version: >=2.0.0,<=2.10.0
 ````
 
 更多安装细节及注意事项，请看 [安装指南](https://hyperts.readthedocs.io/zh_CN/latest/contents/0200_installation.html).
