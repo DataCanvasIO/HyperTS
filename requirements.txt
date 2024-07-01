@@ -5,7 +5,7 @@ hypernets>=0.3.0
 # sktime has been deprecated, all functions have been driven by hyperts. Do not uncomment unless necessary.
 prophet>=1.0.1
 statsmodels>=0.12.1
-numpy>=1.16.5
+numpy>=1.16.5,<2.0.0  # restrict<2.0.0, date: 2024/07/01
 pandas>=0.25.3,<2.0
 scikit-learn>=0.22.1
 scipy
